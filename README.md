@@ -9,6 +9,8 @@ Jude is a set of development extensions for Julia in the Atom editor to improve 
 
 Jude performs a full syntax parse of all your Julia files in the workspace, and does scoping analysis statically to resolve names. Names are resolved specific to the scope where they are used, not using fuzzy matching over the entire project. Your project files are not loaded into Julia or executed to run the analysis. All the parsing is done locally within Javascript. 
 
+![Jude demo gif](https://raw.githubusercontent.com/jamesdanged/Jude/master/img/JudeDemo.gif)
+
 ##### Autocomplete
 Autocomplete leverages Atom's built in autocomplete plus. Just start typing and it will present choices relevant to the block scope (eg try block, for loop, function scope) where the cursor is located. Additionally, there is function signature help which can be brought up by pressing `Ctrl+Space` after the `<function name>(`. This enables you to choose between various options if the function is overloaded, and then tab through the arguments. 
 
@@ -51,4 +53,3 @@ Jude reparses some or all of your code as you type. This is done in <50 ms for s
 
 
 
-![A screenshot of your package](https://f.cloud.github.com/assets/69169/2290250/c35d867a-a017-11e3-86be-cd7c5bf3ff9b.gif)
