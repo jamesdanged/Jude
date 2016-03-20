@@ -1,0 +1,6 @@
+{
+  "atom-text-editor[data-grammar='source julia']": {
+    "ctrl-alt-left": "jude:go-back",
+    "ctrl-alt-right": "jude:go-forward"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "Jude",
+  "main": "./dist/core/main.js",
+  "version": "0.1.0",
+  "description": "Autocomplete and jump to definition for Julia.",
+  "keywords": [],
+  "activationHooks": [
+    "language-julia:grammar-used"
+  ],
+  "repository": "https://github.com/atom/JuliaJude",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "providedServices": {
+    "linter": {
+      "versions": {
+        "1.0.0": "provideLinter"
+      }
+    },
+    "autocomplete.provider": {
+      "versions": {
+        "2.0.0": "provideAutocomplete"
+      }
+    }
+  },
+  "dependencies": {
+    "chokidar": "^1.4.3"
+  },
+  "package-deps": [
+    "linter",
+    "autocomplete-plus"
+  ]
+}
