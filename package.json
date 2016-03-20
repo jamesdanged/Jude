@@ -1,8 +1,8 @@
 {
   "name": "Jude",
   "main": "./dist/core/main.js",
-  "version": "0.1.0",
-  "description": "Autocomplete and jump to definition for Julia.",
+  "version": "0.0.0",
+  "description": "Autocomplete and jump to definition for Julia",
   "keywords": [],
   "activationHooks": [
     "language-julia:grammar-used"
