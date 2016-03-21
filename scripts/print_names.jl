@@ -4,6 +4,13 @@ println("Retrieving $module_name")
 eval(parse("import $module_name"))
 module_object = eval(parse(module_name))
 
+if string(module_object) != module_name
+  # must query as "Base.LinAlg" not "LinAlg"
+  println("##DATA##\tcancel\t$module_name is an inner module.")
+  exit(0)
+end
+
+
 allSymbols = Set{Symbol}(names(module_object, true, true)) # all names + imported
 exportedSymbols = Set{Symbol}(names(module_object))
 
@@ -34,13 +41,18 @@ function print_name_info(symbol::Symbol, isExported::Bool)
   elseif typeof(symbol_obj) == DataType
     print_type_info(symbol, symbol_obj, name, isExported)
   elseif typeof(symbol_obj) == Module
-    # TODO
+    print_module_info(symbol, symbol_obj, name, isExported)
   else
     #println("Neither type nor function: $name. Is a $(typeof(symbol_obj))")
     print_variable_info(symbol, symbol_obj, name, isExported)
   end
 end
 
+function print_module_info(symbol::Symbol, obj, name::AbstractString, isExported::Bool)
+  modulePath = string(obj)  # eg Base.LinAlg
+  exp = isExported ? "exported" : "hidden"
+  println("##DATA##\tmodule\t$name\t$exp\t$modulePath")
+end
 
 function print_variable_info(symbol::Symbol, obj, name::AbstractString, isExported::Bool)
   exp = isExported ? "exported" : "hidden"
@@ -52,7 +64,7 @@ function print_type_info(symbol::Symbol, type_obj::DataType, name::AbstractStrin
   generic_params = type_obj.parameters
   field_names = fieldnames(type_obj)
   field_types = type_obj.types
-  is_abstract = type_obj.abstract
+  is_abstract = getfield(type_obj, :abstract)
   is_immutable = !type_obj.mutable
 
   code = "type "

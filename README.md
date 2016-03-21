@@ -23,7 +23,7 @@ Jump to definition allows you to quickly go to the declaration of any given name
 Jude will additionally provide lint warnings and error messages when it cannot parse your code or resolve a name. This is a parser written in Javascript (actually Typescript) separate from the Julia compiler, so there are some gaps in its coverage. Currently, most Julia syntax should be parsed correctly, but this is a work in progress! Please help make it better by reporting any parsing problems or even submitting pull requests. The goal is not necessarily to be a full syntax checker for Julia, but just to be able to resolve names properly. Many errors are shown in the Chromium Dev Tools console, which can be opened with the command `Window: Toggle Dev Tools`. You can customize the linter, for example, to hide the error message panel that pops up at the bottom of the screen by going to the Linter package options and unselecting `Show Error Panel`. If you don't see the Linter package installed, type `apm install linter` in the console.
 
 ##### Imported modules
-For imported modules that are not in the workspace, Jude starts up a child Julia process and queries it for the module contents. It will import type definitions, function signatures, macros, and variables at the module level. The child process is short lived. During the first run with Jude newly installed, it may take over a minute to retrieve all the modules if you have a lot of imports in your workspace. Afterwards, the results are cached. Currently, Jude simply calls `julia` to the shell, which it expects on your path. Eventually this will be configurable.
+For imported modules that are not in the workspace, Jude starts up a short lived child Julia process and queries it for the module contents. It will import type definitions, function signatures, macros, and variables at the module level. During the first run with Jude newly installed, it may take a minute to retrieve the Base library and any modules you have imported into your files. Afterwards, the results are cached. Currently, Jude simply calls `julia` to the shell, which it expects on your path. Eventually this will be configurable.
 
 ##### Limitations
 Julia is a very flexible language, but for Jude to provide these capabilities, some restrictions are in place. 
@@ -31,6 +31,9 @@ Julia is a very flexible language, but for Jude to provide these capabilities, s
 * Jude can only follow `include("...")` calls where the string is a constant literal.
 * `include("...")` can only be present at the module level, not inside a function.
 * Binary operators cannot be overridden to not be binary, eg: `+ = 5`
+* Anonymous functions have no signature information. 
+  * `foo = (a, b) => a + b` has no signature information because it is treated as a variable.
+  * `foo(a,b) = a + b` is recognized.
 
 Jude reparses some or all of your code as you type. This is done in <50 ms for small to medium sized codebases, especially if it is broken into modules. If you are editing a file that has no "module" declarations (maybe it is just included in another file that does), the reparse can be <5 ms. If the parsing starts to cause noticable slow down in the GUI, you can reduce the parsing intervals by changing the lint delay in the Linter package (`Lint As You Type Interval`, which defaults to 300 ms).
 
@@ -38,11 +41,9 @@ Jude reparses some or all of your code as you type. This is done in <50 ms for s
 
 * The bodies of macro definitions are not parsed.
 * Code quotes are not parsed, eg `:(a + b)`, `quote ... end`
-* Sub modules from files not in the workspace are not imported yet, eg `import Base.LinAlg`
 * Jump to definition for overloaded functions currently leverages Autocomplete+ for the GUI to select the overload. When you jump, Autocomplete+ will insert the function signature you selected, and Jude will then undo the change. This clears any redos on your undo stack. Eventually, a separate GUI will be created, along with a separate shortcut from `ctrl-space`. 
 
 ##### Roadmap
-* Handle sub modules.
 * Configuration option for julia path.
 * Testing. 
 * Fix gaps in syntax coverage.

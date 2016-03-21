@@ -1,5 +1,6 @@
 "use strict"
 
+import {StringSet} from "../utils/StringSet";
 import * as nodepath from "path"
 import {SessionModel} from "../core/SessionModel";
 import {atomGetOpenFiles} from "../utils/atomApi";
@@ -15,12 +16,14 @@ import {FileLevelNode} from "../parseTree/nodes";
 import {ModuleContentsNode} from "../parseTree/nodes";
 import {IncludeNode} from "../parseTree/nodes";
 import {InvalidParseError} from "../utils/errors";
+import {stringSetToArray} from "../utils/StringSet";
 
 
 
 
 export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
   let parseSet = sessionModel.parseSet
+  let moduleLibrary = sessionModel.moduleLibrary
 
   // map out the inclusion trees
   let t0 = Date.now()
@@ -29,8 +32,9 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
   console.log("Mapped inclusion trees: " + (t1 - t0) + " ms")
 
   // This pass will get a list of imports each module has.
-  // We will discard the names resolved.
+  // Variable, function, type names are not resolved yet.
   t0 = Date.now()
+  moduleLibrary.toQueryFromJulia = {}
   let openFiles = atomGetOpenFiles()
   let alreadyInitializedRoots: ModuleScope[] = []
   for (let resolveRoot of parseSet.resolveRoots) {
@@ -40,31 +44,25 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
     if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) {
       continue
     }
-    let recurser = new ScopeRecurser(parseSet, sessionModel.moduleLibrary, true, alreadyInitializedRoots, openFiles)
+    let recurser = new ScopeRecurser(parseSet, moduleLibrary, true, alreadyInitializedRoots, openFiles)
     recurser.resolveRecursively(resolveRoot)
   }
   t1 = Date.now()
-  console.log("First resolve: " + (t1 - t0) + " ms")
+  console.log("Gather import list: " + (t1 - t0) + " ms")
 
 
   // refresh julia load paths if necessary
-  if (sessionModel.moduleLibrary.loadPaths.length === 0) {
+  if (moduleLibrary.loadPaths.length === 0) {
     t0 = Date.now()
-    await sessionModel.moduleLibrary.refreshLoadPathsAsync()
+    await moduleLibrary.refreshLoadPathsAsync()
     t1 = Date.now()
     console.log("Refreshed load paths from Julia: " + (t1 - t0) + " ms")
   }
 
 
-  // load all modules that were imported but could not be found
+  // load all top level modules that were imported but could not be found
   t0 = Date.now()
-  let unresolvedModuleImports = createStringSet([])
-  for (let root of parseSet.resolveRoots) {
-    for (let mod of root.unresolvedImports) {
-      addToSet(unresolvedModuleImports, mod)
-    }
-  }
-  for (let moduleName in unresolvedModuleImports) {
+  for (let moduleName in moduleLibrary.toQueryFromJulia) {
     //console.log("loading unresolved module import: " + moduleName + "...")
     await resolveModuleForLibrary(moduleName, sessionModel)
   }
@@ -73,15 +71,14 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
 
 
 
-  // now re-resolve all the scopes a second time
+  // now resolve all the scopes
   t0 = Date.now()
 
   // determine sequence to resolve, starting with dependencies first
-  // relies upon list of unresolved imports... TODO
   let isDependencyOf = (mod1: ResolveRoot, mod2: ResolveRoot): boolean => {
     for (let importName of mod2.imports) {
-      if (importName in sessionModel.moduleLibrary.modules) {
-        let scope = sessionModel.moduleLibrary.modules[importName]
+      if (importName in moduleLibrary.modules) {
+        let scope = moduleLibrary.modules[importName]
         if (mod1.scope === scope) return true
       } else {
         // may be error in locating the module or may be an inner module
@@ -106,32 +103,63 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
   // store them back in that order
   parseSet.resolveRoots = rootsOrderedByDependencies
 
-  // clear previous errors and name resolutions
-  for (let fileName in parseSet.fileLevelNodes) {
-    parseSet.errors[fileName].nameErrors = []
-    parseSet.identifiers[fileName].map.clear()
-    parseSet.scopes[fileName].reset()
-  }
-  for (let resolveRoot of parseSet.resolveRoots) {
-    resolveRoot.reset()
-  }
 
-  // resolve
-  alreadyInitializedRoots = []
-  for (let resolveRoot of parseSet.resolveRoots) {
-    if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) {
-      continue
-    }
-    let recurser = new ScopeRecurser(parseSet, sessionModel.moduleLibrary, false, alreadyInitializedRoots, openFiles)
-    recurser.resolveRecursively(resolveRoot)
-  }
+  await resolveRepeatedlyAsync(sessionModel)
 
   sessionModel.partiallyResolved = false
 
   t1 = Date.now()
-  console.log("Second resolve: " + (t1 - t0) + " ms")
+  console.log("Resolve names fully: " + (t1 - t0) + " ms")
 }
 
+/**
+ * Runs a resolve, then if any modules outside of workspace are needed, loads them from Julia, then
+ * repeats.
+ *
+ * This progressively will properly resolve inner modules.
+ * It allows us to only query from Julia the modules actively used in the workspace.
+ *
+ * The resolve roots need to already be set up.
+ */
+async function resolveRepeatedlyAsync(sessionModel: SessionModel) {
+  let parseSet = sessionModel.parseSet
+  let moduleLibrary = sessionModel.moduleLibrary
+  let openFiles = atomGetOpenFiles()
+
+  let alreadyTriedToQuery: StringSet = {}
+
+  while (true) {
+
+    // clear previous errors and name resolutions
+    moduleLibrary.toQueryFromJulia = {}
+    for (let fileName in parseSet.fileLevelNodes) {
+      parseSet.resetNamesForFile(fileName)
+    }
+    for (let resolveRoot of parseSet.resolveRoots) {
+      resolveRoot.reset()
+    }
+
+    // resolve
+    let alreadyInitializedRoots = []
+    for (let resolveRoot of parseSet.resolveRoots) {
+      if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) {
+        continue
+      }
+      let recurser = new ScopeRecurser(parseSet, moduleLibrary, false, alreadyInitializedRoots, openFiles)
+      recurser.resolveRecursively(resolveRoot)
+    }
+
+    // if any modules need to load from Julia, load them, and then do another round of resolving
+    let needAnotherRound = false
+    for (let fullModuleName in moduleLibrary.toQueryFromJulia) {
+      if (fullModuleName in alreadyTriedToQuery) continue
+      addToSet(alreadyTriedToQuery, fullModuleName)
+      await resolveModuleForLibrary(fullModuleName, sessionModel)
+    }
+
+    if (!needAnotherRound) break
+  }
+}
 
 
 
@@ -263,7 +291,7 @@ function populateRoots(sessionModel: SessionModel): void {
  * Will have to do a full resolve at some point after doing this partial resolve
  * to correct the inconsistencies. A good time to do that is when switching tabs.
  */
-export function resolveScopesInWorkspaceInvolvingFile(path: string, sessionModel: SessionModel): void {
+export async function resolveScopesInWorkspaceInvolvingFile(path: string, sessionModel: SessionModel) {
   let t0 = Date.now()
 
   let parseSet = sessionModel.parseSet
@@ -282,7 +310,7 @@ export function resolveScopesInWorkspaceInvolvingFile(path: string, sessionModel
     }
   }
 
-  // reset them all
+  // reset modules that involve the file directly
   for (let resolveRoot of rootsInvolvingFile) {
     resolveRoot.scope.reset()
     parseSet.resetNamesForFile(resolveRoot.containingFile)
@@ -290,8 +318,9 @@ export function resolveScopesInWorkspaceInvolvingFile(path: string, sessionModel
       parseSet.resetNamesForFile(relatedFileNode.path)
     }
   }
+  sessionModel.moduleLibrary.toQueryFromJulia = {}
 
-  // re resolve them all
+  // re resolve them
   let openFiles = atomGetOpenFiles()
   let alreadyInitializedRoots: ModuleScope[] = []
   for (let resolveRoot of rootsInvolvingFile) {
@@ -300,23 +329,10 @@ export function resolveScopesInWorkspaceInvolvingFile(path: string, sessionModel
     recurser.resolveRecursively(resolveRoot)
   }
 
-
-  //let indexFirstDependency = resolveRoots.findIndex((o) => {
-  //  if (o.root === fileLevelNode) return true
-  //  return o.relateds.indexOf(fileLevelNode) >= 0
-  //})
-  //if (indexFirstDependency < 0) throw new AssertError("")
-  //
-  //let openFiles = atomGetOpenFiles()
-  //let alreadyInitializedRoots: ModuleScope[] = []
-  //for (let i = indexFirstDependency; i < resolveRoots.length; i++) {
-  //  let resolveRoot = resolveRoots[i]
-  //  resolveRoot.scope.reset()
-  //
-  //  if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) continue
-  //  let recurser = new ScopeRecurser(parseSet, sessionModel.moduleLibrary, false, alreadyInitializedRoots, openFiles)
-  //  recurser.resolveRecursively(resolveRoot)
-  //}
+  // if any inner modules newly need to be queried from julia, retrieve them
+  if (stringSetToArray(sessionModel.moduleLibrary.toQueryFromJulia).length > 0) {
+    await resolveRepeatedlyAsync(sessionModel)
+  }
 
   sessionModel.partiallyResolved = true
 

@@ -1,5 +1,6 @@
 "use strict"
 
+import {addToSet} from "../utils/StringSet";
 import {MacroDefNode} from "../parseTree/nodes";
 import {MultiPartName} from "../parseTree/nodes";
 import {ModuleScope} from "./Scope";
@@ -48,10 +49,7 @@ export class ScopeBuilder {
     this._recurser.logNameError(err)
   }
   logUnresolvedImport(moduleName: string): void {
-    let unresolvedList = this._recurser.currResolveRoot.unresolvedImports
-    if (unresolvedList.indexOf(moduleName) < 0) {
-      unresolvedList.push(moduleName)
-    }
+    addToSet(this.moduleLibrary.toQueryFromJulia, moduleName)
   }
   logImport(moduleName: string): void {
     let importList = this._recurser.currResolveRoot.imports

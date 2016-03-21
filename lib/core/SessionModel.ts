@@ -130,7 +130,6 @@ export class ResolveRoot {
   containingFile: string
   scope: ModuleScope
   imports: string[]
-  unresolvedImports: string[]
 
   constructor() {
     this.root = null
@@ -138,13 +137,11 @@ export class ResolveRoot {
     this.containingFile = null
     this.scope = null
     this.imports = []
-    this.unresolvedImports = []
   }
 
   reset(): void {
     this.scope.reset()
     this.imports = []
-    this.unresolvedImports = []
   }
 }
 

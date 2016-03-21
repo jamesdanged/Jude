@@ -12,6 +12,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+var StringSet_1 = require("../utils/StringSet");
 var Scope_1 = require("./Scope");
 var Resolve_1 = require("./Resolve");
 var errors_1 = require("../utils/errors");
@@ -43,10 +44,7 @@ class ScopeBuilder {
         this._recurser.logNameError(err);
     }
     logUnresolvedImport(moduleName) {
-        let unresolvedList = this._recurser.currResolveRoot.unresolvedImports;
-        if (unresolvedList.indexOf(moduleName) < 0) {
-            unresolvedList.push(moduleName);
-        }
+        StringSet_1.addToSet(this.moduleLibrary.toQueryFromJulia, moduleName);
     }
     logImport(moduleName) {
         let importList = this._recurser.currResolveRoot.imports;

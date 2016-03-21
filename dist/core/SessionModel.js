@@ -99,12 +99,10 @@ class ResolveRoot {
         this.containingFile = null;
         this.scope = null;
         this.imports = [];
-        this.unresolvedImports = [];
     }
     reset() {
         this.scope.reset();
         this.imports = [];
-        this.unresolvedImports = [];
     }
 }
 exports.ResolveRoot = ResolveRoot;

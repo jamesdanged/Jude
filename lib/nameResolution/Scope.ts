@@ -119,7 +119,7 @@ export class ModuleScope extends Scope {
 
   isLibraryReference: boolean // true if a module populated by querying julia rather than one based on workspace files
   // below only populated if isLibraryReference
-  moduleName: string
+  moduleFullName: string
   moduleLibrary: ModuleLibrary
   initializedLibraryReference: boolean  // delayed init to save startup time
 
@@ -132,7 +132,7 @@ export class ModuleScope extends Scope {
 
 
     this.isLibraryReference = false
-    this.moduleName = null
+    this.moduleFullName = null
     this.moduleLibrary = null
     this.initializedLibraryReference = false
   }
@@ -173,9 +173,10 @@ export class ModuleScope extends Scope {
    * When a module is importall'd, it takes precedence over used modules.
    * If multiple modules importall'd export the same name, only the first module's is used.
    *
-   * If multiple modules used export the same name, an error is given.
+   * If multiple modules used export the same name, an error is reported to console. Not a clean way to propogate the
+   * error back to user yet.
    */
-  searchUsedImportAlldModules(name: string): (Resolve | string) {
+  searchUsedImportAlldModules(name: string): Resolve {
 
     for (let tup of this._importAllModules) {
       let scope: ModuleScope = tup[1]
@@ -203,12 +204,12 @@ export class ModuleScope extends Scope {
     msg += matchingUsings.map((item) => { return item[0]}).join(", ")
     msg += ") all export '" + name + "'. Must invoke qualify with module name."
     console.error(msg)
-    return msg
+    return null
   }
 
   tryResolveExportedName(name: string): Resolve {
     if (this.isLibraryReference && !this.initializedLibraryReference)
-      initializeLibraryReference(this.moduleName, this.moduleLibrary)
+      initializeLibraryReference(this.moduleFullName, this.moduleLibrary)
 
     if (!(name in this.exportedNames)) {
       return null
@@ -219,24 +220,24 @@ export class ModuleScope extends Scope {
   /**
    * Resolves only at this scope, not a parent scope.
    * Also resolves to used modules.
+   * For modules outside workspace, their scopes are lazy populated. This populates only the requested name.
    *
    * @param name
-   * @returns (matching info | error message) Null if not found. Error message is only if conflict to report.
+   * @returns Matching resolve. Null if not found.
    */
   tryResolveNameThisLevel(name: string): Resolve {
     if (this.isLibraryReference && !this.initializedLibraryReference)
-      initializeLibraryReference(this.moduleName, this.moduleLibrary)
+      initializeLibraryReference(this.moduleFullName, this.moduleLibrary)
 
     if (name in this.names) return this.names[name]
 
     if (this.isLibraryReference) {
-      tryAddNameFromSerializedState(name, this.moduleName, this.moduleLibrary)
+      tryAddNameFromSerializedState(name, this.moduleFullName, this.moduleLibrary)
       if (name in this.names) return this.names[name]
     }
 
     let result = this.searchUsedImportAlldModules(name)
     if (result === null) return null
-    if (typeof(result) === "string") return null // discard msg. Have to call searchUsedModules directly to get error.
     return result as Resolve
   }
 

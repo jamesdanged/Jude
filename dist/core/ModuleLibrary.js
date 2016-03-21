@@ -40,13 +40,13 @@ var TypeDefFsa_1 = require("../fsas/declarations/TypeDefFsa");
 var nodes_3 = require("../parseTree/nodes");
 var Token_3 = require("../tokens/Token");
 var Resolve_5 = require("./../nameResolution/Resolve");
+var Resolve_6 = require("./../nameResolution/Resolve");
 var atomModule = require("atom");
 /**
  * Contains summary info for all modules registered in the system.
  * Modules may be in the workspace or not.
  *
  * Excludes modules not findable along the julia module path.
- * Excludes inner modules.
  */
 class ModuleLibrary {
     constructor() {
@@ -55,51 +55,23 @@ class ModuleLibrary {
         this.modules = {};
         this.prefixTrees = {};
         this.workspaceModulePaths = {};
+        this.toQueryFromJulia = {};
     }
     initialize() {
         // restore state
-        for (let moduleName in this.serializedLines) {
+        for (let moduleFullName in this.serializedLines) {
             let scope = new Scope_1.ModuleScope();
             scope.isLibraryReference = true;
-            scope.moduleName = moduleName;
+            scope.moduleFullName = moduleFullName;
             scope.moduleLibrary = this;
-            this.modules[moduleName] = scope;
-            this.prefixTrees[moduleName] = PrefixTree_2.createPrefixTree(scope.names);
+            this.modules[moduleFullName] = scope;
+            this.prefixTrees[moduleFullName] = PrefixTree_2.createPrefixTree(scope.names);
         }
     }
     refreshLoadPathsAsync() {
         return __awaiter(this, void 0, Promise, function* () {
             let loadPaths = yield juliaChildProcess_1.runJuliaToGetLoadPathsAsync();
             this.loadPaths = loadPaths;
-        });
-    }
-    addModuleFromJuliaAsync(moduleName) {
-        return __awaiter(this, void 0, Promise, function* () {
-            try {
-                console.log("Fetching module '" + moduleName + "' from Julia process to get type and function information.");
-                let linesList = (yield juliaChildProcess_2.runJuliaToGetModuleDataAsync(moduleName));
-                let moduleLines = {};
-                for (let line of linesList) {
-                    if (line.length < 3)
-                        throw new assert_2.AssertError("");
-                    let name = line[1];
-                    if (!(name in moduleLines)) {
-                        moduleLines[name] = [];
-                    }
-                    moduleLines[name].push(line);
-                }
-                let scope = new Scope_1.ModuleScope();
-                scope.isLibraryReference = true;
-                scope.moduleName = moduleName;
-                scope.moduleLibrary = this;
-                this.serializedLines[moduleName] = moduleLines;
-                this.modules[moduleName] = scope;
-                this.prefixTrees[moduleName] = PrefixTree_2.createPrefixTree(scope.names);
-                console.log("Successfully retrieved '" + moduleName + "' from Julia process.");
-            }
-            catch (err) {
-                assert_1.throwErrorFromTimeout(err);
-            }
         });
     }
     /**
@@ -121,63 +93,135 @@ exports.ModuleLibrary = ModuleLibrary;
  * If the module exists in the workspace, will reference the parse.
  * Otherwise will fetch function and type information from a Julia session.
  *
- * Parse sets must already be built before this is run.
+ * If the module is found to have inner modules, those are loaded too.
  *
- * @param moduleName
- * @return ??
+ * Parse sets must already be built before this is run.
  */
-function resolveModuleForLibrary(moduleName, sessionModel) {
+function resolveModuleForLibrary(fullModuleName, sessionModel) {
     return __awaiter(this, void 0, Promise, function* () {
         let moduleLibrary = sessionModel.moduleLibrary;
-        if (moduleName in moduleLibrary.modules)
+        if (fullModuleName in moduleLibrary.modules)
             throw new assert_2.AssertError("");
-        if (moduleName === "Base" || moduleName === "Core") {
-            yield moduleLibrary.addModuleFromJuliaAsync(moduleName);
-            return;
-        }
-        // search for a matching file in the file system
-        let foundPath = null;
-        for (let loadPath of moduleLibrary.loadPaths) {
-            let path = nodepath.resolve(loadPath, moduleName, "src", moduleName + ".jl");
-            let file = new atomModule.File(path, false);
-            let exists = yield file.exists();
-            if (exists) {
-                foundPath = yield file.getRealPath();
-                break;
-            }
-        }
-        if (foundPath === null) {
-            // module doesn't exist
-            return; // TODO return an error?
-        }
-        // see if the file is one in the workspace
-        if (foundPath in sessionModel.parseSet.fileLevelNodes) {
-            let fileLevelNode = sessionModel.parseSet.fileLevelNodes[foundPath];
-            // look for a module inside with the same name
-            for (let expr of fileLevelNode.expressions) {
-                if (expr instanceof nodes_1.ModuleDefNode) {
-                    let moduleDefNode = expr;
-                    if (moduleDefNode.name.name === moduleName) {
-                        // get the matching scope
-                        let resolveRoot = sessionModel.parseSet.getResolveRoot(moduleDefNode);
-                        let moduleScope = resolveRoot.scope;
-                        // register it in the module library
-                        //console.log("Registering workspace module '" + moduleName + "' in the library." )
-                        moduleLibrary.modules[moduleName] = moduleScope;
-                        moduleLibrary.prefixTrees[moduleName] = PrefixTree_2.createPrefixTree(moduleScope.names);
-                        moduleLibrary.workspaceModulePaths[foundPath] = moduleName;
-                        return;
-                    }
+        let outerModuleName = fullModuleName.split(".")[0];
+        if (outerModuleName !== "Base" && outerModuleName !== "Core") {
+            // search for a matching file in the file system
+            let foundPath = null;
+            for (let loadPath of moduleLibrary.loadPaths) {
+                let path = nodepath.resolve(loadPath, outerModuleName, "src", outerModuleName + ".jl");
+                let file = new atomModule.File(path, false);
+                let exists = yield file.exists();
+                if (exists) {
+                    foundPath = yield file.getRealPath();
+                    break;
                 }
             }
-            // if reached here, no matching module, even though there should be one
-            return; // TODO return an error?
+            if (foundPath === null) {
+                // this can happen eg import LinAlg, which is actually an inner module of Base
+                console.error("Module '" + outerModuleName + "' was not found in the file system.");
+                return;
+            }
+            // see if the file is one in the workspace
+            if (foundPath in sessionModel.parseSet.fileLevelNodes) {
+                let fileLevelNode = sessionModel.parseSet.fileLevelNodes[foundPath];
+                // look for a module inside with the same name
+                for (let expr of fileLevelNode.expressions) {
+                    if (expr instanceof nodes_1.ModuleDefNode) {
+                        let moduleDefNode = expr;
+                        if (moduleDefNode.name.name === outerModuleName) {
+                            // get the matching scope
+                            let resolveRoot = sessionModel.parseSet.getResolveRoot(moduleDefNode);
+                            let moduleScope = resolveRoot.scope;
+                            // register it in the module library
+                            //console.log("Registering workspace module '" + moduleName + "' in the library." )
+                            moduleLibrary.modules[outerModuleName] = moduleScope;
+                            moduleLibrary.prefixTrees[outerModuleName] = PrefixTree_2.createPrefixTree(moduleScope.names);
+                            moduleLibrary.workspaceModulePaths[foundPath] = outerModuleName;
+                            return;
+                        }
+                    }
+                }
+                // if reached here, no matching module, even though there should be one
+                console.error("Module '" + outerModuleName + "' should be in the workspace at " + foundPath +
+                    " but the file did not declare a module with name '" + outerModuleName + "'.");
+                return;
+            }
         }
-        // otherwise, just load the definition from julia
-        yield sessionModel.moduleLibrary.addModuleFromJuliaAsync(moduleName);
+        yield addModuleFromJuliaAsync(moduleLibrary, fullModuleName);
     });
 }
 exports.resolveModuleForLibrary = resolveModuleForLibrary;
+///**
+// * Adds the module, and then any inner modules.
+// */
+//async function recursivelyAddModulesFromJulia(moduleLibrary: ModuleLibrary, moduleFullName: string) {
+//  // load the definition from julia
+//  await addModuleFromJuliaAsync(moduleLibrary, moduleFullName)
+//
+//  if (!(moduleFullName in moduleLibrary.modules)) {
+//    // Failed to load the module??
+//    return
+//  }
+//
+//  let moduleLinesByName = moduleLibrary.serializedLines[moduleFullName]
+//  if (!moduleLinesByName) throw new AssertError("")
+//  for (let name in moduleLinesByName) {
+//    let arr: string[][] = moduleLinesByName[name]
+//    for (let line of arr) {
+//      if (line[0] === "module") {
+//        let innerModuleName = line[1]
+//        let innerModuleFullName = moduleFullName + "." + innerModuleName
+//        await recursivelyAddModulesFromJulia(moduleLibrary, innerModuleFullName)
+//      }
+//    }
+//  }
+//}
+/**
+ *
+ * @param moduleLibrary
+ * @param moduleFullName  '.' delimited name
+ */
+function addModuleFromJuliaAsync(moduleLibrary, moduleFullName) {
+    return __awaiter(this, void 0, Promise, function* () {
+        try {
+            console.log("Fetching module '" + moduleFullName + "' from Julia process to get type and function information.");
+            let linesList = (yield juliaChildProcess_2.runJuliaToGetModuleDataAsync(moduleFullName));
+            // convert array into a hash indexed by the name
+            let moduleLinesByName = {};
+            for (let line of linesList) {
+                if (line.length < 2)
+                    throw new assert_2.AssertError("");
+                if (line[0] === "cancel") {
+                    // if a module declares
+                    //   import LinAlg
+                    // This should not be queried directly, but as Base.LinAlg.
+                    // But this cannot be known until Julia responds by resolving the path for us.
+                    console.log("Skipping resolving '" + moduleFullName + ": " + line[1]);
+                    return;
+                }
+                if (line.length < 3)
+                    throw new assert_2.AssertError("");
+                let name = line[1];
+                if (!(name in moduleLinesByName)) {
+                    moduleLinesByName[name] = [];
+                }
+                moduleLinesByName[name].push(line);
+            }
+            // The scope is lazily populated.
+            let scope = new Scope_1.ModuleScope();
+            scope.isLibraryReference = true;
+            scope.moduleFullName = moduleFullName;
+            scope.moduleLibrary = moduleLibrary;
+            moduleLibrary.serializedLines[moduleFullName] = moduleLinesByName;
+            moduleLibrary.modules[moduleFullName] = scope;
+            // the prefix tree is ready immediately
+            moduleLibrary.prefixTrees[moduleFullName] = PrefixTree_2.createPrefixTree(scope.names);
+            console.log("Successfully retrieved '" + moduleFullName + "' from Julia process.");
+        }
+        catch (err) {
+            assert_1.throwErrorFromTimeout(err);
+        }
+    });
+}
 /**
  * simply loads exported names into the export list of the scope
  *
@@ -189,11 +233,11 @@ function initializeLibraryReference(moduleName, moduleLibrary) {
     if (!(scope instanceof Scope_1.ModuleScope))
         throw new assert_2.AssertError("");
     let moduleScope = scope;
-    let serNames = moduleLibrary.serializedLines[moduleName];
-    if (!serNames)
+    let moduleLinesByName = moduleLibrary.serializedLines[moduleName];
+    if (!moduleLinesByName)
         throw new assert_2.AssertError("");
-    for (let name in serNames) {
-        let arr = serNames[name];
+    for (let name in moduleLinesByName) {
+        let arr = moduleLinesByName[name];
         for (let line of arr) {
             if (line[2] === "exported") {
                 StringSet_1.addToSet(moduleScope.exportedNames, name);
@@ -216,10 +260,10 @@ function tryAddNameFromSerializedState(name, moduleName, moduleLibrary) {
     if (!(scope instanceof Scope_1.ModuleScope))
         throw new assert_2.AssertError("");
     let moduleScope = scope;
-    let serNames = moduleLibrary.serializedLines[moduleName];
-    if (!serNames)
+    let moduleLinesByName = moduleLibrary.serializedLines[moduleName];
+    if (!moduleLinesByName)
         throw new assert_2.AssertError("");
-    let arr = serNames[name];
+    let arr = moduleLinesByName[name];
     if (!arr)
         return; // name not in module
     for (let line of arr) {
@@ -235,9 +279,29 @@ function tryAddNameFromSerializedState(name, moduleName, moduleLibrary) {
         else if (line[0] === "macro") {
             addMacroToScope(line, moduleScope);
         }
+        else if (line[0] === "module") {
+            addModuleToScope(line, moduleScope, moduleLibrary);
+        }
     }
 }
 exports.tryAddNameFromSerializedState = tryAddNameFromSerializedState;
+function addModuleToScope(parts, outerModuleScope, moduleLibrary) {
+    if (parts.length !== 4)
+        throw new assert_2.AssertError("");
+    let name = parts[1];
+    let fullModulePath = parts[3];
+    if (name in outerModuleScope.names) {
+        assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared multiple times in loaded Julia module??"));
+    }
+    if (fullModulePath in moduleLibrary.modules) {
+        let innerModuleScope = moduleLibrary.modules[fullModulePath];
+        outerModuleScope.names[name] = new Resolve_5.ModuleResolve(name, innerModuleScope);
+    }
+    else {
+        // module hasn't been retrieved from Julia yet
+        StringSet_1.addToSet(moduleLibrary.toQueryFromJulia, fullModulePath);
+    }
+}
 function addVariableToScope(parts, scope) {
     if (parts.length !== 3)
         throw new assert_2.AssertError("");
@@ -246,7 +310,7 @@ function addVariableToScope(parts, scope) {
     if (name in scope.names) {
         assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared multiple times in loaded Julia module??"));
     }
-    scope.names[name] = new Resolve_5.VariableResolve(Token_3.Token.createEmptyIdentifier(name), null);
+    scope.names[name] = new Resolve_6.VariableResolve(Token_3.Token.createEmptyIdentifier(name), null);
 }
 function addMacroToScope(parts, scope) {
     if (parts.length !== 3)
