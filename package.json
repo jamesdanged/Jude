@@ -28,6 +28,7 @@
     "chokidar": "^1.4.3"
   },
   "package-deps": [
+    "language-julia",
     "linter",
     "autocomplete-plus"
   ]
