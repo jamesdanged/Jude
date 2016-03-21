@@ -32,7 +32,6 @@ var atomModule = require("atom");
 // TODO
 // ccall as an identifier
 // symbol quote blocks, eg ":( ... )", "quote ... end"
-// inner modules queried from julia
 /**
  * Handles interactions with the editor. Responds to user activity and file system changes.
  */

@@ -47,7 +47,6 @@ import * as atomModule from "atom"
 // TODO
 // ccall as an identifier
 // symbol quote blocks, eg ":( ... )", "quote ... end"
-// inner modules queried from julia
 
 
 /**
