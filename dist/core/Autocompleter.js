@@ -58,6 +58,8 @@ class Autocompleter {
             }
         }
         else {
+            if (options.prefix === ".")
+                return []; // TODO handle module names on left
             return this.getSuggestionsRegularRequest(options);
         }
     }
