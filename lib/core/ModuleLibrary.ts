@@ -3,6 +3,8 @@
 /// <reference path="./../defs/atom/atom.d.ts" />
 
 
+import {last} from "../utils/arrayUtils";
+import {ExternalModuleResolve} from "../nameResolution/Resolve";
 import {MacroResolve} from "../nameResolution/Resolve";
 import {reinitializePrefixTree} from "../nameResolution/PrefixTree";
 import {PrefixTreeNode} from "../nameResolution/PrefixTree";
@@ -42,8 +44,6 @@ import {IdentifierNode} from "../parseTree/nodes";
 import {Token} from "../tokens/Token";
 import {Indent} from "../tokens/Token";
 import {ImportedResolve} from "./../nameResolution/Resolve";
-import {LocalModuleResolve} from "./../nameResolution/Resolve";
-import {ModuleResolve} from "./../nameResolution/Resolve";
 import {VariableResolve} from "./../nameResolution/Resolve";
 import {GenericDefArgListNode} from "../parseTree/nodes";
 import {FunctionDefArgListNode} from "../parseTree/nodes";
@@ -69,7 +69,7 @@ export class ModuleLibrary {
   loadPaths: string[]
   serializedLines: {[moduleFullName: string]: ModuleLineSet}  // module full name -> module member name -> lines, split by tab. Module name can be . delimited.
   modules: {[moduleFullName: string]: ModuleScope}   // module full name -> root scope of module
-  prefixTrees: {[moduleFullName: string]: PrefixTreeNode}
+  //prefixTrees: {[moduleFullName: string]: PrefixTreeNode}
   workspaceModulePaths: {[filePath: string]: string} // file path -> module full name. Set of files that are recognized as modules.
   toQueryFromJulia: StringSet  // full module path of modules to query from julia
 
@@ -77,20 +77,22 @@ export class ModuleLibrary {
     this.loadPaths = []
     this.serializedLines = {}
     this.modules = {}
-    this.prefixTrees = {}
+    //this.prefixTrees = {}
     this.workspaceModulePaths = {}
     this.toQueryFromJulia = {}
   }
 
   initialize() {
-    // restore state
+    // restore state, assuming the controller or main procedure already set this.serializedLines
     for (let moduleFullName in this.serializedLines) {
       let scope = new ModuleScope()
-      scope.isLibraryReference = true
+      scope.moduleShortName = last(moduleFullName.split("."))
+      scope.isExternal = true
       scope.moduleFullName = moduleFullName
       scope.moduleLibrary = this
+      scope.prefixTree = createPrefixTree(this.serializedLines[moduleFullName])
       this.modules[moduleFullName] = scope
-      this.prefixTrees[moduleFullName] = createPrefixTree(scope.names)
+      //this.prefixTrees[moduleFullName] = createPrefixTree(scope.names)
     }
   }
 
@@ -178,7 +180,7 @@ export async function resolveModuleForLibrary(fullModuleName: string, sessionMod
             // register it in the module library
             //console.log("Registering workspace module '" + moduleName + "' in the library." )
             moduleLibrary.modules[outerModuleName] = moduleScope
-            moduleLibrary.prefixTrees[outerModuleName] = createPrefixTree(moduleScope.names)
+            //moduleLibrary.prefixTrees[outerModuleName] = createPrefixTree(moduleScope.names)
             moduleLibrary.workspaceModulePaths[foundPath] = outerModuleName
             return
           }
@@ -253,17 +255,19 @@ async function addModuleFromJuliaAsync(moduleLibrary: ModuleLibrary, moduleFullN
       moduleLinesByName[name].push(line)
     }
 
-    // The scope is lazily populated.
+    // The scope is lazily populated
+    // but the prefix tree is ready immediately
     let scope = new ModuleScope()
-    scope.isLibraryReference = true
+    scope.moduleShortName = last(moduleFullName.split("."))
+    scope.isExternal = true
     scope.moduleFullName = moduleFullName
     scope.moduleLibrary = moduleLibrary
+    reinitializePrefixTree(moduleLinesByName, scope.prefixTree)
 
     moduleLibrary.serializedLines[moduleFullName] = moduleLinesByName
     moduleLibrary.modules[moduleFullName] = scope
 
-    // the prefix tree is ready immediately
-    moduleLibrary.prefixTrees[moduleFullName] = createPrefixTree(scope.names)
+    //moduleLibrary.prefixTrees[moduleFullName] = createPrefixTree(scope.names)
 
     console.log("Successfully retrieved '" + moduleFullName + "' from Julia process.")
   } catch (err) {
@@ -317,21 +321,21 @@ export function tryAddNameFromSerializedState(name: string, moduleName: string, 
 
   for (let line of arr) {
     if (line[0] === "function") {
-      addFunctionToScope(line, moduleScope)
+      addFunctionFromSerialized(line, moduleScope)
     } else if (line[0] === "type") {
-      addTypeToScope(line, moduleScope)
+      addTypeFromSerialized(line, moduleScope)
     } else if (line[0] === "variable") {
-      addVariableToScope(line, moduleScope)
+      addVariableFromSerialized(line, moduleScope)
     } else if (line[0] === "macro") {
-      addMacroToScope(line, moduleScope)
+      addMacroFromSerialized(line, moduleScope)
     } else if (line[0] === "module") {
-      addModuleToScope(line, moduleScope, moduleLibrary)
+      addModuleFromSerialized(line, moduleScope, moduleLibrary)
     }
   }
 }
 
 
-function addModuleToScope(parts: string[], outerModuleScope: ModuleScope, moduleLibrary: ModuleLibrary) {
+function addModuleFromSerialized(parts: string[], outerModuleScope: ModuleScope, moduleLibrary: ModuleLibrary) {
   if (parts.length !== 4) throw new AssertError("")
   let name = parts[1]
   let fullModulePath = parts[3]
@@ -340,14 +344,14 @@ function addModuleToScope(parts: string[], outerModuleScope: ModuleScope, module
   }
   if (fullModulePath in moduleLibrary.modules) {
     let innerModuleScope = moduleLibrary.modules[fullModulePath]
-    outerModuleScope.names[name] = new ModuleResolve(name, innerModuleScope)
+    outerModuleScope.names[name] = new ExternalModuleResolve(fullModulePath, innerModuleScope)
   } else {
     // module hasn't been retrieved from Julia yet
     addToSet(moduleLibrary.toQueryFromJulia, fullModulePath)
   }
 }
 
-function addVariableToScope(parts: string[], scope: ModuleScope): void {
+function addVariableFromSerialized(parts: string[], scope: ModuleScope): void {
   if (parts.length !== 3) throw new AssertError("")
   let name = parts[1]
   // store it
@@ -357,7 +361,7 @@ function addVariableToScope(parts: string[], scope: ModuleScope): void {
   scope.names[name] = new VariableResolve(Token.createEmptyIdentifier(name), null)
 }
 
-function addMacroToScope(parts: string[], scope: ModuleScope): void {
+function addMacroFromSerialized(parts: string[], scope: ModuleScope): void {
   if (parts.length !== 3) throw new AssertError("")
   let name = parts[1]
   // store it
@@ -368,7 +372,7 @@ function addMacroToScope(parts: string[], scope: ModuleScope): void {
 }
 
 
-function addTypeToScope(parts: string[], scope: ModuleScope): void {
+function addTypeFromSerialized(parts: string[], scope: ModuleScope): void {
   if (parts.length !== 4) throw new AssertError("")
 
   let name = parts[1]
@@ -397,7 +401,7 @@ function addTypeToScope(parts: string[], scope: ModuleScope): void {
 
 
 
-function addFunctionToScope(parts: string[], scope: Scope): void {
+function addFunctionFromSerialized(parts: string[], scope: Scope): void {
   if (parts.length !== 6) throw new AssertError("")
 
   let name = parts[1]
@@ -461,48 +465,48 @@ function addFunctionToScope(parts: string[], scope: Scope): void {
 }
 
 
-export async function refreshPrefixTreesAsync(moduleLibrary: ModuleLibrary, refreshFromSerialized: boolean) {
-  // TODO option to just refresh certain prefix trees that need to be refreshed
-
-  let t0 = Date.now()
-
-  // refresh prefix trees first time
-  // this will load up all names that had been accessed in the module
-  // but not any that were never accessed from the serialized state
-  for (let moduleName in moduleLibrary.modules) {
-    let moduleScope = moduleLibrary.modules[moduleName]
-    if (!moduleScope.isLibraryReference) {
-      let prefixTree = moduleLibrary.prefixTrees[moduleName]
-      if (!prefixTree) throw new AssertError("")
-      reinitializePrefixTree(moduleScope.names, prefixTree)
-    }
-  }
-
-  // asynchronously load up prefix tree with entire serialized contents of module
-  // may be a bit slower
-  if (refreshFromSerialized) {
-    for (let moduleName in moduleLibrary.modules) {
-      let moduleScope = moduleLibrary.modules[moduleName]
-      if (moduleScope.isLibraryReference) {
-        if (moduleName in moduleLibrary.serializedLines) {
-          await runDelayed(() => {
-            let lineSet: ModuleLineSet = moduleLibrary.serializedLines[moduleName]
-            let prefixTree = moduleLibrary.prefixTrees[moduleName]
-            if (!prefixTree) throw new AssertError("")
-            let namesObj: StringSet = {}
-            for (let name in lineSet) {
-              addToSet(namesObj, name)
-            }
-            reinitializePrefixTree(namesObj, prefixTree)
-          })
-        }
-      }
-    }
-  }
-
-  let t1 = Date.now()
-  console.log("Refreshed prefix trees: " + (t1 - t0) + " ms")
-}
-
-
-
+//export async function refreshPrefixTreesAsync(moduleLibrary: ModuleLibrary, refreshFromSerialized: boolean) {
+//  // TODO option to just refresh certain prefix trees that need to be refreshed
+//
+//  let t0 = Date.now()
+//
+//  // refresh prefix trees first time
+//  // this will load up all names that had been accessed in the module
+//  // but not any that were never accessed from the serialized state
+//  for (let moduleName in moduleLibrary.modules) {
+//    let moduleScope = moduleLibrary.modules[moduleName]
+//    if (!moduleScope.isLibraryReference) {
+//      let prefixTree = moduleLibrary.prefixTrees[moduleName]
+//      if (!prefixTree) throw new AssertError("")
+//      reinitializePrefixTree(moduleScope.names, prefixTree)
+//    }
+//  }
+//
+//  // asynchronously load up prefix tree with entire serialized contents of module
+//  // may be a bit slower
+//  if (refreshFromSerialized) {
+//    for (let moduleName in moduleLibrary.modules) {
+//      let moduleScope = moduleLibrary.modules[moduleName]
+//      if (moduleScope.isLibraryReference) {
+//        if (moduleName in moduleLibrary.serializedLines) {
+//          await runDelayed(() => {
+//            let lineSet: ModuleLineSet = moduleLibrary.serializedLines[moduleName]
+//            let prefixTree = moduleLibrary.prefixTrees[moduleName]
+//            if (!prefixTree) throw new AssertError("")
+//            let namesObj: StringSet = {}
+//            for (let name in lineSet) {
+//              addToSet(namesObj, name)
+//            }
+//            reinitializePrefixTree(namesObj, prefixTree)
+//          })
+//        }
+//      }
+//    }
+//  }
+//
+//  let t1 = Date.now()
+//  console.log("Refreshed prefix trees: " + (t1 - t0) + " ms")
+//}
+//
+//
+//

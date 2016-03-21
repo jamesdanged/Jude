@@ -12,21 +12,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+var Resolve_1 = require("../nameResolution/Resolve");
 var arrayUtils_1 = require("../utils/arrayUtils");
 var assert_1 = require("../utils/assert");
 var assert_2 = require("../utils/assert");
 var atomApi_1 = require("../utils/atomApi");
 var Scope_1 = require("../nameResolution/Scope");
-var nodes_1 = require("../parseTree/nodes");
-var Resolve_1 = require("../nameResolution/Resolve");
 var Resolve_2 = require("../nameResolution/Resolve");
 var Resolve_3 = require("../nameResolution/Resolve");
 var Resolve_4 = require("../nameResolution/Resolve");
+var Resolve_5 = require("../nameResolution/Resolve");
 var Token_1 = require("../tokens/Token");
 var nodepath = require("path");
 // TODO need to warn/document that the file tree panel may interfere with autocomplete
 // and need to switch between tabs at least once to have popup show properly.
 class Autocompleter {
+    // internal
     constructor(sessionModel, jumper) {
         this.sessionModel = sessionModel;
         this.jumper = jumper;
@@ -58,8 +59,7 @@ class Autocompleter {
             }
         }
         else {
-            if (options.prefix === ".")
-                return []; // TODO handle module names on left
+            console.log("prefix: " + options.prefix);
             return this.getSuggestionsRegularRequest(options);
         }
     }
@@ -73,20 +73,11 @@ class Autocompleter {
         point = new Token_1.Point(point.row, point.column - 1); // before the paren
         let path = options.editor.getPath();
         let identifiers = arrayUtils_1.getFromHash(this.sessionModel.parseSet.identifiers, path);
-        let identNode = null;
-        let resolve = null;
-        for (let kv of identifiers.map) {
-            let iIdentNode = kv[0];
-            let iResolve = kv[1];
-            if (iIdentNode.token.range.pointWithin(point)) {
-                identNode = iIdentNode;
-                resolve = iResolve;
-                break;
-            }
-        }
+        let identNode = identifiers.getIdentifierForPoint(point);
         if (identNode === null)
             return [];
-        if (!(resolve instanceof Resolve_4.FunctionResolve))
+        let resolve = identifiers.map.get(identNode);
+        if (!(resolve instanceof Resolve_5.FunctionResolve))
             return [];
         let funcResolve = resolve;
         let suggestions = [];
@@ -124,8 +115,44 @@ class Autocompleter {
             return [];
         if (prefix.trim() === "")
             return [];
+        let identifiers = arrayUtils_1.getFromHash(parseSet.identifiers, path);
         let fileScopes = arrayUtils_1.getFromHash(parseSet.scopes, path);
         let fileLevelNode = arrayUtils_1.getFromHash(parseSet.fileLevelNodes, path);
+        // if this is immediately after a module name + '.' then return choices from that module
+        let isModuleDot = false;
+        let moduleScope = null;
+        // immediately after '.' without any other letters
+        if (prefix === ".") {
+            point = new Token_1.Point(point.row, point.column - 1); // before the dot
+            let identNode = identifiers.getIdentifierForPoint(point);
+            if (identNode === null)
+                return [];
+            let resolve = identifiers.map.get(identNode);
+            if (!(resolve instanceof Resolve_2.ModuleResolve))
+                return [];
+            isModuleDot = true;
+            moduleScope = resolve.moduleRootScope;
+            prefix = "";
+        }
+        else {
+            // maybe after '.' with some letters typed
+            let rowText = editor.lineTextForBufferRow(point.row);
+            let dotCol = point.column - prefix.length - 1; // -1 because cursor at point i is after the i-1 character
+            if (dotCol > 0 && rowText[dotCol] === ".") {
+                point = new Token_1.Point(point.row, dotCol - 1); // before the dot
+                let identNode = identifiers.getIdentifierForPoint(point);
+                if (identNode === null)
+                    return [];
+                let resolve = identifiers.map.get(identNode);
+                if (!(resolve instanceof Resolve_2.ModuleResolve))
+                    return [];
+                isModuleDot = true;
+                moduleScope = resolve.moduleRootScope;
+            }
+        }
+        if (isModuleDot) {
+            return this.getSuggestionsForScope(moduleScope, prefix);
+        }
         // find narrowest scope that contains the point
         let matchingScope = fileScopes.getScope(point);
         // if no scope contains, then use the corresponding module root scope
@@ -145,59 +172,36 @@ class Autocompleter {
                 matchingScope = parseSet.resolveRoots[idxWithRelateds].scope;
             }
         }
-        // all the top level names in the scope
+        return this.getSuggestionsForScope(matchingScope, prefix);
+    }
+    getSuggestionsForScope(scope, prefix) {
+        // get all names in the scope that start with the prefix
+        // and repeat through each parent scope
         let suggestions = [];
-        let currScope = matchingScope;
+        let currScope = scope;
         prefix = prefix.toLowerCase();
         while (true) {
+            // get the module name if the scope is module level
             let moduleName = null;
             if (currScope instanceof Scope_1.ModuleScope) {
-                let resolveRoot = this.sessionModel.parseSet.resolveRoots.find((o) => { return o.scope === currScope; });
-                if (resolveRoot) {
-                    if (resolveRoot.root instanceof nodes_1.ModuleDefNode) {
-                        let node = resolveRoot.root;
-                        moduleName = node.name.name;
-                    }
-                }
+                moduleName = currScope.moduleShortName; // may be nulls
             }
-            for (let name in currScope.names) {
-                if (name.toLowerCase().startsWith(prefix)) {
-                    let resolve = currScope.names[name];
-                    suggestions.push(createSuggestion(name, moduleName, resolve));
-                }
-            }
+            // all names that match prefix
+            currScope.getMatchingNames(prefix).forEach((name) => {
+                let resolve = currScope.names[name];
+                suggestions.push(createSuggestion(name, moduleName, resolve));
+            });
             if (currScope.parent === null)
                 break;
             currScope = currScope.parent;
         }
         // any names from using/importall modules
         if (currScope instanceof Scope_1.ModuleScope) {
-            let refModules = [];
-            for (let tup of currScope.usingModules) {
-                refModules.push(tup);
-            }
-            for (let tup of currScope.importAllModules) {
-                refModules.push(tup);
-            }
-            for (let tup of refModules) {
-                let moduleName = tup[0];
-                let moduleScope = tup[1];
-                if (moduleName in this.sessionModel.moduleLibrary.modules) {
-                    let prefixTree = this.sessionModel.moduleLibrary.prefixTrees[moduleName];
-                    if (!prefixTree)
-                        throw new assert_2.AssertError("");
-                    let names = prefixTree.getMatchingNames(prefix);
-                    for (let name of names) {
-                        suggestions.push(createSuggestion(name, moduleName, null));
-                    }
-                }
-                else {
-                    // may be a locally defined module not accessible via load paths
-                    for (let name in moduleScope.names) {
-                        let resolve = moduleScope.names[name];
-                        suggestions.push(createSuggestion(name, moduleName, resolve));
-                    }
-                }
+            let refModules = currScope.usingModules.concat(currScope.importAllModules);
+            for (let moduleScope of refModules) {
+                moduleScope.prefixTree.getMatchingNames(prefix).forEach((name) => {
+                    suggestions.push(createSuggestion(name, moduleScope.moduleShortName, null));
+                });
             }
         }
         return suggestions;
@@ -213,13 +217,15 @@ exports.Autocompleter = Autocompleter;
  */
 function createSuggestion(name, moduleName, resolve) {
     let suggestionType = "";
-    if (resolve instanceof Resolve_4.FunctionResolve)
+    if (resolve instanceof Resolve_5.FunctionResolve)
         suggestionType = "function";
-    if (resolve instanceof Resolve_3.VariableResolve)
+    if (resolve instanceof Resolve_1.MacroResolve)
+        suggestionType = "function";
+    if (resolve instanceof Resolve_4.VariableResolve)
         suggestionType = "variable";
-    if (resolve instanceof Resolve_2.TypeResolve)
+    if (resolve instanceof Resolve_3.TypeResolve)
         suggestionType = "class";
-    if (resolve instanceof Resolve_1.ModuleResolve)
+    if (resolve instanceof Resolve_2.ModuleResolve)
         suggestionType = "import";
     return {
         text: name,

@@ -12,20 +12,21 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+var Resolve_1 = require("./Resolve");
 var StringSet_1 = require("../utils/StringSet");
 var Scope_1 = require("./Scope");
-var Resolve_1 = require("./Resolve");
+var Resolve_2 = require("./Resolve");
 var errors_1 = require("../utils/errors");
 var arrayUtils_1 = require("../utils/arrayUtils");
 var assert_1 = require("../utils/assert");
 var nodes_1 = require("../parseTree/nodes");
-var Resolve_2 = require("./Resolve");
 var Resolve_3 = require("./Resolve");
 var Resolve_4 = require("./Resolve");
 var Resolve_5 = require("./Resolve");
 var Resolve_6 = require("./Resolve");
 var Resolve_7 = require("./Resolve");
 var Resolve_8 = require("./Resolve");
+var Resolve_9 = require("./Resolve");
 /**
  * Works with the ScopeRecurser to build out a scope tree.
  * The recurser does the navigation through the node tree.
@@ -52,7 +53,30 @@ class ScopeBuilder {
             importList.push(moduleName);
         }
     }
-    registerImportedName(multiPartName) {
+    registerImportAllOrUsing(multiPartName, isUsing) {
+        if (!(this.currScope instanceof Scope_1.ModuleScope))
+            throw new assert_1.AssertError("");
+        let scope = this.currScope;
+        // register the name itself
+        this.registerImport(multiPartName);
+        // if it refers to a module, add to list of used modules, so names can resolve against it
+        let result = scope.tryResolveMultiPartName(multiPartName);
+        if (result instanceof errors_1.NameError) {
+            this.logNameError(result);
+            return;
+        }
+        let resolve = result;
+        if (!(resolve instanceof Resolve_2.ModuleResolve))
+            return;
+        let referencedScope = resolve.moduleRootScope;
+        if (isUsing) {
+            scope.addUsingModule(referencedScope);
+        }
+        else {
+            scope.addImportAllModule(referencedScope);
+        }
+    }
+    registerImport(multiPartName) {
         if (!(this.currScope instanceof Scope_1.ModuleScope))
             throw new assert_1.AssertError("");
         if (multiPartName.length == 0)
@@ -61,10 +85,10 @@ class ScopeBuilder {
         let name = identNode.name;
         if (name in this.currScope.names) {
             this.logNameError(new errors_1.NameError("Conflicting import: '" + name + "' already declared as " +
-                Resolve_3.getResolveInfoType(this.currScope.names[name]) + " in this scope.", identNode.token));
+                Resolve_4.getResolveInfoType(this.currScope.names[name]) + " in this scope.", identNode.token));
             return;
         }
-        // if the first part is not already imported, must be imported
+        // If the first part is not already imported, must be imported.
         let firstPart = multiPartName[0];
         let firstName = firstPart.name;
         this.logImport(firstName);
@@ -76,9 +100,21 @@ class ScopeBuilder {
                 this.logUnresolvedImport(firstName);
                 return;
             }
-            this.registerModuleNameFromLibrary(firstPart);
+            // register the imported module
+            // get corresponding node if in the workspace
+            let resolveRoot = this.parseSet.resolveRoots.find((o) => { return o.scope === rootScope; });
+            if (resolveRoot) {
+                let rootNode = resolveRoot.root;
+                if (!(rootNode instanceof nodes_1.ModuleDefNode))
+                    throw new assert_1.AssertError(""); // cannot be in the module library if it is a file level node
+                let moduleDefNode = rootNode;
+                this.currScope.names[firstName] = new Resolve_3.LocalModuleResolve(moduleDefNode, resolveRoot.containingFile, rootScope);
+            }
+            else {
+                this.currScope.names[firstName] = new Resolve_1.ExternalModuleResolve(firstName, rootScope);
+            }
         }
-        // finally, try to search through modules for the name
+        // finally, try to search through modules for the full multi part name
         let resolveOrError = this.currScope.tryResolveMultiPartName(multiPartName);
         if (resolveOrError instanceof errors_1.NameError) {
             this.logNameError(resolveOrError);
@@ -86,82 +122,45 @@ class ScopeBuilder {
         }
         let res = resolveOrError;
         if (multiPartName.length === 1) {
-            if (!(res instanceof Resolve_1.ModuleResolve)) {
-                this.logNameError(new errors_1.NameError("Cannot import a " + Resolve_3.getResolveInfoType(res), firstPart.token));
+            if (!(res instanceof Resolve_2.ModuleResolve)) {
+                this.logNameError(new errors_1.NameError("Cannot import a " + Resolve_4.getResolveInfoType(res), firstPart.token));
                 return;
             }
             return; // first part was imported above
         }
-        if (res instanceof Resolve_2.LocalModuleResolve) {
-            this.currScope.names[name] = new Resolve_2.LocalModuleResolve(res.moduleDefNode, res.filePath, res.moduleRootScope);
+        if (res instanceof Resolve_3.LocalModuleResolve) {
+            this.currScope.names[name] = res.shallowCopy();
             return;
         }
-        if (res instanceof Resolve_1.ModuleResolve) {
-            this.currScope.names[name] = new Resolve_1.ModuleResolve(res.name, res.moduleRootScope);
+        if (res instanceof Resolve_1.ExternalModuleResolve) {
+            this.currScope.names[name] = res.shallowCopy();
             return;
         }
-        if (res instanceof Resolve_4.ImportedResolve) {
+        if (res instanceof Resolve_5.ImportedResolve) {
             // importing an import. Copy the structure.
-            this.currScope.names[name] = new Resolve_4.ImportedResolve(res.ref, res.module);
+            this.currScope.names[name] = res.shallowCopy();
             return;
         }
-        if (res instanceof Resolve_5.FunctionResolve || res instanceof Resolve_6.TypeResolve || res instanceof Resolve_7.VariableResolve || res instanceof Resolve_8.MacroResolve) {
+        if (res instanceof Resolve_6.FunctionResolve || res instanceof Resolve_7.TypeResolve || res instanceof Resolve_8.VariableResolve || res instanceof Resolve_9.MacroResolve) {
             // get the module that contains the function/type/variable/macro
             let concatNameToImportMinusEnd = multiPartName.slice(0, multiPartName.length - 1);
             if (concatNameToImportMinusEnd.length === 0)
                 throw new assert_1.AssertError("");
             let containingModule = this.currScope.tryResolveMultiPartName(concatNameToImportMinusEnd);
-            if (!(containingModule instanceof Resolve_1.ModuleResolve))
+            if (!(containingModule instanceof Resolve_2.ModuleResolve))
                 throw new assert_1.AssertError("");
             // store the reference
-            this.currScope.names[name] = new Resolve_4.ImportedResolve(res, containingModule);
+            this.currScope.names[name] = new Resolve_5.ImportedResolve(res, containingModule);
             return;
         }
         throw new assert_1.AssertError(""); // should not get here
-    }
-    registerImportAllUsingHelper(multiPartName, isUsing) {
-        if (!(this.currScope instanceof Scope_1.ModuleScope))
-            throw new assert_1.AssertError("");
-        let moduleScope = this.currScope;
-        let lastIdent = arrayUtils_1.last(multiPartName);
-        // register the name itself
-        this.registerImportedName(multiPartName);
-        // if it refers to a module, add to list of used modules, so names can resolve against it
-        let res = moduleScope.tryResolveMultiPartName(multiPartName);
-        if (res instanceof errors_1.NameError) {
-            this.logNameError(res);
-            return;
-        }
-        let moduleResolveInfo = res;
-        if (moduleResolveInfo instanceof Resolve_2.LocalModuleResolve) {
-            let scopeToUse = this.parseSet.getResolveRoot(moduleResolveInfo.moduleDefNode).scope;
-            if (isUsing) {
-                moduleScope.addUsingModule(lastIdent.name, scopeToUse);
-            }
-            else {
-                moduleScope.addImportAllModule(lastIdent.name, scopeToUse);
-            }
-        }
-        else if (moduleResolveInfo instanceof Resolve_1.ModuleResolve) {
-            if (isUsing) {
-                moduleScope.addUsingModule(lastIdent.name, moduleResolveInfo.moduleRootScope);
-            }
-            else {
-                moduleScope.addImportAllModule(lastIdent.name, moduleResolveInfo.moduleRootScope);
-            }
-        }
-        else {
-        }
     }
     /**
      * Assignment can create a name in the current scope.
      * But if the name already exists up to the outermost function, then it doesn't create the name, but just references
      * the existing name.
-     *
-     * Also resolves the identifier node.
      */
     createNameByAssignmentIfNecessary(identNode) {
-        //if (identNode === null) return
         let name = identNode.name;
         if (identNode.isEndIndex()) {
             this.logNameError(new errors_1.NameError("Cannot assign to end keyword.", identNode.token));
@@ -169,43 +168,43 @@ class ScopeBuilder {
         }
         let resolve = this.currScope.tryResolveNameThroughParentScopes(name, true);
         if (resolve === null) {
-            this.registerVariableName(identNode);
+            this.registerVariable(identNode);
         }
         else {
-            if (!(resolve instanceof Resolve_7.VariableResolve)) {
+            if (!(resolve instanceof Resolve_8.VariableResolve)) {
                 this.logNameError(new errors_1.NameError("'" + name + "' already declared as " +
-                    Resolve_3.getResolveInfoType(resolve) + " in this scope.", identNode.token));
+                    Resolve_4.getResolveInfoType(resolve) + " in this scope.", identNode.token));
                 return;
             }
             else {
             }
         }
     }
-    registerVariableName(identifierNode) {
+    registerVariable(identifierNode) {
         let name = identifierNode.name;
         let resolve = this.currScope.tryResolveNameThisLevel(name);
         if (resolve !== null) {
             this.logNameError(new errors_1.NameError("'" + name + "' already declared in this scope.", identifierNode.token));
             return;
         }
-        this.currScope.names[name] = new Resolve_7.VariableResolve(identifierNode.token, this.currFile);
+        this.currScope.names[name] = new Resolve_8.VariableResolve(identifierNode.token, this.currFile);
     }
-    registerFunctionName(functionDefNode) {
+    registerFunction(functionDefNode) {
         if (functionDefNode.name.length === 1) {
             let identifierNode = functionDefNode.name[0];
             let name = identifierNode.name;
             // register the function definition
             let resolve = this.currScope.tryResolveNameThisLevel(name);
             if (resolve === null) {
-                resolve = new Resolve_5.FunctionResolve(identifierNode.name);
+                resolve = new Resolve_6.FunctionResolve(identifierNode.name);
                 this.currScope.names[name] = resolve;
             }
-            else if (resolve instanceof Resolve_6.TypeResolve) {
+            else if (resolve instanceof Resolve_7.TypeResolve) {
                 // a special constructor function for the type
                 return;
             }
-            else if (!(resolve instanceof Resolve_5.FunctionResolve)) {
-                this.logNameError(new errors_1.NameError("'" + name + "' already declared as " + Resolve_3.getResolveInfoType(resolve) + " in this scope.", identifierNode.token));
+            else if (!(resolve instanceof Resolve_6.FunctionResolve)) {
+                this.logNameError(new errors_1.NameError("'" + name + "' already declared as " + Resolve_4.getResolveInfoType(resolve) + " in this scope.", identifierNode.token));
                 return;
             }
             let functionResolve = resolve;
@@ -222,8 +221,8 @@ class ScopeBuilder {
             }
             else {
                 let resolve = res;
-                if (!(resolve instanceof Resolve_5.FunctionResolve)) {
-                    this.logNameError(new errors_1.NameError("'" + lastPart.name + "' already declared as " + Resolve_3.getResolveInfoType(resolve) +
+                if (!(resolve instanceof Resolve_6.FunctionResolve)) {
+                    this.logNameError(new errors_1.NameError("'" + lastPart.name + "' already declared as " + Resolve_4.getResolveInfoType(resolve) +
                         " in module '" + modulePath + "'", lastPart.token));
                 }
                 else {
@@ -231,17 +230,17 @@ class ScopeBuilder {
             }
         }
     }
-    registerTypeName(typeDefNode) {
+    registerType(typeDefNode) {
         let identifierNode = typeDefNode.name;
         let name = identifierNode.name;
         let resolve = this.currScope.tryResolveNameThisLevel(name);
         if (resolve !== null) {
-            this.logNameError(new errors_1.NameError("'" + name + "' already declared as " + Resolve_3.getResolveInfoType(resolve) + " in this scope.", identifierNode.token));
+            this.logNameError(new errors_1.NameError("'" + name + "' already declared as " + Resolve_4.getResolveInfoType(resolve) + " in this scope.", identifierNode.token));
             return;
         }
-        this.currScope.names[name] = new Resolve_6.TypeResolve(typeDefNode, this.currFile);
+        this.currScope.names[name] = new Resolve_7.TypeResolve(typeDefNode, this.currFile);
     }
-    registerMacroName(macroDefNode) {
+    registerMacro(macroDefNode) {
         let nameTok = macroDefNode.name.token;
         let name = macroDefNode.name.name;
         if (name[0] === "@")
@@ -249,10 +248,10 @@ class ScopeBuilder {
         name = "@" + name;
         let resolve = this.currScope.tryResolveNameThisLevel(name);
         if (resolve !== null) {
-            this.logNameError(new errors_1.NameError("'" + name + "' already declared as " + Resolve_3.getResolveInfoType(resolve) + " in this scope.", nameTok));
+            this.logNameError(new errors_1.NameError("'" + name + "' already declared as " + Resolve_4.getResolveInfoType(resolve) + " in this scope.", nameTok));
             return;
         }
-        let macroResolve = new Resolve_8.MacroResolve(name);
+        let macroResolve = new Resolve_9.MacroResolve(name);
         macroResolve.node = macroDefNode;
         macroResolve.filePath = this.currFile;
         this.currScope.names[name] = macroResolve;
@@ -260,42 +259,15 @@ class ScopeBuilder {
     /**
      * Registers a module that is declared in the file itself, not found via module library.
      */
-    registerModuleName(moduleDefNode, moduleRootScope) {
+    registerModule(moduleDefNode, moduleRootScope) {
         let identifierNode = moduleDefNode.name;
         let name = identifierNode.name;
         let resolve = this.currScope.tryResolveNameThisLevel(name);
         if (resolve !== null) {
-            this.logNameError(new errors_1.NameError("'" + name + "' already declared as " + Resolve_3.getResolveInfoType(resolve) + " in this scope.", identifierNode.token));
+            this.logNameError(new errors_1.NameError("'" + name + "' already declared as " + Resolve_4.getResolveInfoType(resolve) + " in this scope.", identifierNode.token));
             return;
         }
-        this.currScope.names[name] = new Resolve_2.LocalModuleResolve(moduleDefNode, this.currFile, moduleRootScope);
-    }
-    /**
-     * Registers the module into this scope.
-     * Should not be called if the name already exists in the scope.
-     */
-    registerModuleNameFromLibrary(identifierNode) {
-        let moduleName = identifierNode.name;
-        let rootScope = this.moduleLibrary.modules[moduleName];
-        if (!rootScope)
-            throw new assert_1.AssertError("");
-        let resolve = this.currScope.tryResolveNameThisLevel(moduleName);
-        if (resolve !== null) {
-            this.logNameError(new errors_1.NameError("'" + moduleName + "' already declared as " + Resolve_3.getResolveInfoType(resolve) + " in this scope.", identifierNode.token));
-            return;
-        }
-        // get corresponding node if in the workspace
-        let resolveRoot = this.parseSet.resolveRoots.find((o) => { return o.scope === rootScope; });
-        if (resolveRoot) {
-            let rootNode = resolveRoot.root;
-            if (!(rootNode instanceof nodes_1.ModuleDefNode))
-                throw new assert_1.AssertError(""); // cannot be in the module library if it is a file level node
-            let moduleDefNode = rootNode;
-            this.currScope.names[moduleName] = new Resolve_2.LocalModuleResolve(moduleDefNode, resolveRoot.containingFile, rootScope);
-        }
-        else {
-            this.currScope.names[moduleName] = new Resolve_1.ModuleResolve(moduleName, rootScope);
-        }
+        this.currScope.names[name] = new Resolve_3.LocalModuleResolve(moduleDefNode, this.currFile, moduleRootScope);
     }
 }
 exports.ScopeBuilder = ScopeBuilder;

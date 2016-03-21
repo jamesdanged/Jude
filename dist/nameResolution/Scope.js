@@ -18,6 +18,8 @@ var assert_1 = require("../utils/assert");
 var errors_1 = require("../utils/errors");
 var Resolve_2 = require("./Resolve");
 var ModuleLibrary_2 = require("../core/ModuleLibrary");
+var PrefixTree_1 = require("./PrefixTree");
+var PrefixTree_2 = require("./PrefixTree");
 class Scope {
     constructor(type) {
         this.type = type;
@@ -86,6 +88,15 @@ class Scope {
         }
         throw new assert_1.AssertError(""); // should not reach here
     }
+    getMatchingNames(prefix) {
+        let matchingNames = [];
+        for (let name in this.names) {
+            if (name.toLowerCase().startsWith(prefix)) {
+                matchingNames.push(name);
+            }
+        }
+        return matchingNames;
+    }
 }
 exports.Scope = Scope;
 class ModuleScope extends Scope {
@@ -94,7 +105,9 @@ class ModuleScope extends Scope {
         this._usingModules = [];
         this._importAllModules = [];
         this.exportedNames = {};
-        this.isLibraryReference = false;
+        this.prefixTree = PrefixTree_2.createPrefixTree({});
+        this.moduleShortName = null;
+        this.isExternal = false;
         this.moduleFullName = null;
         this.moduleLibrary = null;
         this.initializedLibraryReference = false;
@@ -102,28 +115,32 @@ class ModuleScope extends Scope {
     get usingModules() { return this._usingModules.slice(); }
     get importAllModules() { return this._importAllModules.slice(); }
     reset() {
-        if (this.isLibraryReference)
+        if (this.isExternal)
             throw new assert_1.AssertError("");
         this.names = {};
         this._usingModules = [];
         this._importAllModules = [];
         this.exportedNames = {};
+        this.refreshPrefixTree();
     }
-    addUsingModule(moduleName, scope) {
-        if (this.isLibraryReference)
+    addUsingModule(scope) {
+        if (this.isExternal)
             throw new assert_1.AssertError("");
         // do not add duplicate
-        if (this._usingModules.findIndex((tup) => { return tup[0] === moduleName; }) >= 0)
+        if (this._usingModules.findIndex((iScope) => { return iScope.moduleShortName === scope.moduleShortName; }) >= 0)
             return;
-        this._usingModules.push([moduleName, scope]);
+        this._usingModules.push(scope);
     }
-    addImportAllModule(moduleName, scope) {
-        if (this.isLibraryReference)
+    addImportAllModule(scope) {
+        if (this.isExternal)
             throw new assert_1.AssertError("");
         // do not add duplicate
-        if (this._importAllModules.findIndex((tup) => { return tup[0] === moduleName; }) >= 0)
+        if (this._importAllModules.findIndex((iScope) => { return iScope.moduleShortName === scope.moduleShortName; }) >= 0)
             return;
-        this._importAllModules.push([moduleName, scope]);
+        this._importAllModules.push(scope);
+    }
+    refreshPrefixTree() {
+        PrefixTree_1.reinitializePrefixTree(this.names, this.prefixTree);
     }
     /**
      * Returns the matching resolve info, searching all using and importall modules.
@@ -135,36 +152,33 @@ class ModuleScope extends Scope {
      * error back to user yet.
      */
     searchUsedImportAlldModules(name) {
-        for (let tup of this._importAllModules) {
-            let scope = tup[1];
+        for (let scope of this._importAllModules) {
             let resolve = scope.tryResolveExportedName(name);
             if (resolve !== null)
                 return resolve;
         }
         let matchingUsings = [];
-        for (let tup of this._usingModules) {
-            let modName = tup[0];
-            let usedScope = tup[1];
-            let resolve = usedScope.tryResolveExportedName(name);
+        for (let scope of this._usingModules) {
+            let resolve = scope.tryResolveExportedName(name);
             if (resolve !== null) {
-                matchingUsings.push([modName, usedScope, resolve]);
+                matchingUsings.push([scope, resolve]);
             }
         }
         if (matchingUsings.length === 0) {
             return null;
         }
         if (matchingUsings.length === 1) {
-            return matchingUsings[0][2];
+            return matchingUsings[0][1];
         }
         // conflicts between multiple usings
         let msg = "Modules used (";
-        msg += matchingUsings.map((item) => { return item[0]; }).join(", ");
+        msg += matchingUsings.map((item) => { return item[0].moduleShortName; }).join(", ");
         msg += ") all export '" + name + "'. Must invoke qualify with module name.";
         console.error(msg);
         return null;
     }
     tryResolveExportedName(name) {
-        if (this.isLibraryReference && !this.initializedLibraryReference)
+        if (this.isExternal && !this.initializedLibraryReference)
             ModuleLibrary_1.initializeLibraryReference(this.moduleFullName, this.moduleLibrary);
         if (!(name in this.exportedNames)) {
             return null;
@@ -180,11 +194,11 @@ class ModuleScope extends Scope {
      * @returns Matching resolve. Null if not found.
      */
     tryResolveNameThisLevel(name) {
-        if (this.isLibraryReference && !this.initializedLibraryReference)
+        if (this.isExternal && !this.initializedLibraryReference)
             ModuleLibrary_1.initializeLibraryReference(this.moduleFullName, this.moduleLibrary);
         if (name in this.names)
             return this.names[name];
-        if (this.isLibraryReference) {
+        if (this.isExternal) {
             ModuleLibrary_2.tryAddNameFromSerializedState(name, this.moduleFullName, this.moduleLibrary);
             if (name in this.names)
                 return this.names[name];
@@ -193,6 +207,9 @@ class ModuleScope extends Scope {
         if (result === null)
             return null;
         return result;
+    }
+    getMatchingNames(prefix) {
+        return this.prefixTree.getMatchingNames(prefix);
     }
 }
 exports.ModuleScope = ModuleScope;

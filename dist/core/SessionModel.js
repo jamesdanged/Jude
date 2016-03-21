@@ -174,6 +174,18 @@ class FileIdentifiers {
     constructor() {
         this.map = new Map();
     }
+    /**
+     * Returns the identifier that is found at the cursor point. Null if no corresponding match.
+     */
+    getIdentifierForPoint(point) {
+        for (let kv of this.map) {
+            let iIdentNode = kv[0];
+            if (iIdentNode.token.range.pointWithin(point)) {
+                return iIdentNode;
+            }
+        }
+        return null;
+    }
 }
 exports.FileIdentifiers = FileIdentifiers;
 /**

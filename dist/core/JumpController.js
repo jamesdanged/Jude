@@ -13,8 +13,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
     });
 };
 /// <reference path="./../defs/atom/atom.d.ts" />
-var assert_1 = require("../utils/assert");
 var Resolve_1 = require("../nameResolution/Resolve");
+var assert_1 = require("../utils/assert");
 var arrayUtils_1 = require("../utils/arrayUtils");
 var Resolve_2 = require("../nameResolution/Resolve");
 var atomApi_1 = require("../utils/atomApi");
@@ -121,7 +121,7 @@ class JumpController {
                 destPath = resolve.filePath;
                 destPoint = resolve.moduleDefNode.name.token.range.start;
             }
-            else if (resolve instanceof Resolve_1.ModuleResolve) {
+            else if (resolve instanceof Resolve_1.ExternalModuleResolve) {
                 console.error("Not supported for modules outside workspace.");
                 return [];
             }

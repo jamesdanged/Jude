@@ -18,7 +18,6 @@ var fileUtils_1 = require("../utils/fileUtils");
 var taskUtils_1 = require("../utils/taskUtils");
 var parseFile_1 = require("../parseTree/parseFile");
 var resolveFullWorkspace_2 = require("../nameResolution/resolveFullWorkspace");
-var ModuleLibrary_1 = require("./ModuleLibrary");
 var assert_1 = require("../utils/assert");
 var nodes_1 = require("../parseTree/nodes");
 function parseFullWorkspaceAsync(sessionModel) {
@@ -45,7 +44,7 @@ function parseFullWorkspaceAsync(sessionModel) {
         t1 = Date.now();
         console.log("Parsed expression trees: " + (t1 - t0) + " ms");
         yield resolveFullWorkspace_2.resolveFullWorkspaceAsync(sessionModel);
-        yield ModuleLibrary_1.refreshPrefixTreesAsync(sessionModel.moduleLibrary, true);
+        //await refreshPrefixTreesAsync(sessionModel.moduleLibrary, true)
         // report parse errors to console
         for (let path in sessionModel.parseSet.errors) {
             let errorSet = sessionModel.parseSet.errors[path];
@@ -82,7 +81,7 @@ function refreshFileAsync(path, fileContents, sessionModel) {
         else {
             yield resolveFullWorkspace_1.resolveScopesInWorkspaceInvolvingFile(path, sessionModel);
         }
-        yield ModuleLibrary_1.refreshPrefixTreesAsync(sessionModel.moduleLibrary, false);
+        //await refreshPrefixTreesAsync(sessionModel.moduleLibrary, false)
     });
 }
 exports.refreshFileAsync = refreshFileAsync;

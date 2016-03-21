@@ -73,32 +73,45 @@ class MacroResolve extends Resolve {
     }
 }
 exports.MacroResolve = MacroResolve;
-/**
- * Resolves to a module in the module library.
- * Only contains scope resolutions, not any expression tree.
- */
 class ModuleResolve extends Resolve {
     constructor(moduleShortName, moduleRootScope) {
         super(moduleShortName); // short name is just the module name, no prefixes. Such as 'InnerMod' in Mod1.Mod2.InnerMod
         this.moduleRootScope = moduleRootScope;
     }
+}
+exports.ModuleResolve = ModuleResolve;
+/**
+ * Resolves to a module external to the workspace.
+ * Only contains scope resolutions, not any expression tree.
+ */
+class ExternalModuleResolve extends ModuleResolve {
+    constructor(fullModulePath, moduleRootScope) {
+        super(fullModulePath.split(".")[0], moduleRootScope);
+        this.fullModulePath = fullModulePath;
+    }
     resolvesInWorkspace() {
         return false;
     }
+    shallowCopy() {
+        return new ExternalModuleResolve(this.fullModulePath, this.moduleRootScope);
+    }
 }
-exports.ModuleResolve = ModuleResolve;
+exports.ExternalModuleResolve = ExternalModuleResolve;
 /**
  * Resolves to a module which has been read from files and parsed here.
  * Contains the parsed expression tree contents of the module.
  */
 class LocalModuleResolve extends ModuleResolve {
-    constructor(node, filePath, moduleRootScope) {
-        super(node.name.name, moduleRootScope);
+    constructor(moduleDefNode, filePath, moduleRootScope) {
+        super(moduleDefNode.name.name, moduleRootScope);
+        this.moduleDefNode = moduleDefNode;
         this.filePath = filePath;
-        this.moduleDefNode = node;
     }
     resolvesInWorkspace() {
         return true;
+    }
+    shallowCopy() {
+        return new LocalModuleResolve(this.moduleDefNode, this.filePath, this.moduleRootScope);
     }
 }
 exports.LocalModuleResolve = LocalModuleResolve;
@@ -119,6 +132,9 @@ class ImportedResolve extends Resolve {
         if (this.ref === null)
             return false;
         return this.ref.resolvesInWorkspace();
+    }
+    shallowCopy() {
+        return new ImportedResolve(this.ref, this.module);
     }
 }
 exports.ImportedResolve = ImportedResolve;

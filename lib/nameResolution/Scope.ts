@@ -1,5 +1,6 @@
 "use strict"
 
+import {PrefixTreeNode} from "./PrefixTree";
 import {initializeLibraryReference} from "../core/ModuleLibrary";
 import {ModuleResolve} from "./Resolve";
 import {ModuleLibrary} from "./../core/ModuleLibrary";
@@ -17,6 +18,8 @@ import {NameError} from "../utils/errors";
 import {getResolveInfoType} from "./Resolve";
 import {Resolve} from "./Resolve";
 import {tryAddNameFromSerializedState} from "../core/ModuleLibrary";
+import {reinitializePrefixTree} from "./PrefixTree";
+import {createPrefixTree} from "./PrefixTree";
 
 
 export type NameSet = {[name:string]: Resolve}
@@ -104,7 +107,15 @@ export class Scope {
     throw new AssertError("") // should not reach here
   }
 
-
+  getMatchingNames(prefix: string): string[] {
+    let matchingNames = []
+    for (let name in this.names) {
+      if (name.toLowerCase().startsWith(prefix)) {
+        matchingNames.push(name)
+      }
+    }
+    return matchingNames
+  }
 
 
 }
@@ -112,59 +123,66 @@ export class Scope {
 
 export class ModuleScope extends Scope {
 
-  _usingModules: [string, ModuleScope][]      // name string, only the used module's name, not path along parent modules
-  _importAllModules: [string, ModuleScope][]  // name string, only the included module's name, not path along parent modules
+  private _usingModules: ModuleScope[]
+  private _importAllModules: ModuleScope[]
   exportedNames: StringSet        // List of all explicitly exported names.
-  //isInitialized: boolean  // false until visited during scope recursing
+  prefixTree: PrefixTreeNode      // Stores all the names in the scope in an easily searchable manner. Doesn't include names in using/importall modules
+  moduleShortName: string         // Can be null if this is a file level scope. Just the short name, not the full path.
 
-  isLibraryReference: boolean // true if a module populated by querying julia rather than one based on workspace files
-  // below only populated if isLibraryReference
+
+  isExternal: boolean // true if a module not in the worksapce
+  // below only populated if isExternal
   moduleFullName: string
   moduleLibrary: ModuleLibrary
   initializedLibraryReference: boolean  // delayed init to save startup time
-
 
   constructor() {
     super(ScopeType.Module)
     this._usingModules = []
     this._importAllModules = []
     this.exportedNames = {}
+    this.prefixTree = createPrefixTree({})
+    this.moduleShortName = null
 
-
-    this.isLibraryReference = false
+    this.isExternal = false
     this.moduleFullName = null
     this.moduleLibrary = null
     this.initializedLibraryReference = false
   }
 
-  get usingModules(): [string, ModuleScope][] { return this._usingModules.slice() }
-  get importAllModules(): [string, ModuleScope][] { return this._importAllModules.slice() }
+  get usingModules(): ModuleScope[] { return this._usingModules.slice() }
+  get importAllModules(): ModuleScope[] { return this._importAllModules.slice() }
 
 
 
   reset(): void {
-    if (this.isLibraryReference) throw new AssertError("")
+    if (this.isExternal) throw new AssertError("")
 
     this.names = {}
     this._usingModules = []
     this._importAllModules = []
     this.exportedNames = {}
+    this.refreshPrefixTree()
   }
 
-  addUsingModule(moduleName: string, scope: ModuleScope): void {
-    if (this.isLibraryReference) throw new AssertError("")
+  addUsingModule(scope: ModuleScope): void {
+    if (this.isExternal) throw new AssertError("")
 
     // do not add duplicate
-    if (this._usingModules.findIndex((tup) => { return tup[0] === moduleName}) >= 0) return
-    this._usingModules.push([moduleName, scope])
+    if (this._usingModules.findIndex((iScope: ModuleScope) => { return iScope.moduleShortName === scope.moduleShortName}) >= 0) return
+    this._usingModules.push(scope)
   }
 
-  addImportAllModule(moduleName: string, scope: ModuleScope): void {
-    if (this.isLibraryReference) throw new AssertError("")
+  addImportAllModule(scope: ModuleScope): void {
+    if (this.isExternal) throw new AssertError("")
 
     // do not add duplicate
-    if (this._importAllModules.findIndex((tup) => { return tup[0] === moduleName}) >= 0) return
-    this._importAllModules.push([moduleName, scope])
+    if (this._importAllModules.findIndex((iScope: ModuleScope) => { return iScope.moduleShortName === scope.moduleShortName}) >= 0) return
+    this._importAllModules.push(scope)
+  }
+
+  refreshPrefixTree(): void {
+    reinitializePrefixTree(this.names, this.prefixTree)
   }
 
   /**
@@ -178,37 +196,34 @@ export class ModuleScope extends Scope {
    */
   searchUsedImportAlldModules(name: string): Resolve {
 
-    for (let tup of this._importAllModules) {
-      let scope: ModuleScope = tup[1]
+    for (let scope of this._importAllModules) {
       let resolve = scope.tryResolveExportedName(name)
       if (resolve !== null) return resolve
     }
 
-    let matchingUsings: [string, Scope, Resolve][] = []
-    for (let tup of this._usingModules) {
-      let modName: string = tup[0]
-      let usedScope: ModuleScope = tup[1]
-      let resolve = usedScope.tryResolveExportedName(name)
+    let matchingUsings: [ModuleScope, Resolve][] = []
+    for (let scope of this._usingModules) {
+      let resolve = scope.tryResolveExportedName(name)
       if (resolve !== null) {
-        matchingUsings.push([modName, usedScope, resolve])
+        matchingUsings.push([scope, resolve])
       }
     }
     if (matchingUsings.length === 0) {
       return null
     }
     if (matchingUsings.length === 1) {
-      return matchingUsings[0][2]
+      return matchingUsings[0][1]
     }
     // conflicts between multiple usings
     let msg = "Modules used ("
-    msg += matchingUsings.map((item) => { return item[0]}).join(", ")
+    msg += matchingUsings.map((item) => { return item[0].moduleShortName}).join(", ")
     msg += ") all export '" + name + "'. Must invoke qualify with module name."
     console.error(msg)
     return null
   }
 
   tryResolveExportedName(name: string): Resolve {
-    if (this.isLibraryReference && !this.initializedLibraryReference)
+    if (this.isExternal && !this.initializedLibraryReference)
       initializeLibraryReference(this.moduleFullName, this.moduleLibrary)
 
     if (!(name in this.exportedNames)) {
@@ -226,12 +241,12 @@ export class ModuleScope extends Scope {
    * @returns Matching resolve. Null if not found.
    */
   tryResolveNameThisLevel(name: string): Resolve {
-    if (this.isLibraryReference && !this.initializedLibraryReference)
+    if (this.isExternal && !this.initializedLibraryReference)
       initializeLibraryReference(this.moduleFullName, this.moduleLibrary)
 
     if (name in this.names) return this.names[name]
 
-    if (this.isLibraryReference) {
+    if (this.isExternal) {
       tryAddNameFromSerializedState(name, this.moduleFullName, this.moduleLibrary)
       if (name in this.names) return this.names[name]
     }
@@ -241,6 +256,9 @@ export class ModuleScope extends Scope {
     return result as Resolve
   }
 
+  getMatchingNames(prefix: string): string[] {
+    return this.prefixTree.getMatchingNames(prefix)
+  }
 
 }
 

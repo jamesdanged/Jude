@@ -1,5 +1,8 @@
 "use strict"
 
+import {MacroResolve} from "../nameResolution/Resolve";
+import {Node} from "../parseTree/nodes";
+import {FileIdentifiers} from "./SessionModel";
 import {getFromHash} from "../utils/arrayUtils";
 import {JumpController} from "./JumpController";
 import {SessionModel} from "./SessionModel";
@@ -17,14 +20,21 @@ import {Point} from "../tokens/Token";
 import {FunctionDefNode} from "../parseTree/nodes";
 import * as nodepath from "path"
 import {IdentifierNode} from "../parseTree/nodes";
+import {Scope} from "../nameResolution/Scope";
 
 
 // TODO need to warn/document that the file tree panel may interfere with autocomplete
 // and need to switch between tabs at least once to have popup show properly.
 export class Autocompleter {
+
+  // fields for Autocomplete+
   selector: string
   inclusionPriority: number
   excludeLowerPriority: boolean
+
+  // internal
+
+
 
   constructor(public sessionModel: SessionModel, public jumper: JumpController) {
     this.selector = ".source.julia"
@@ -55,7 +65,7 @@ export class Autocompleter {
         })
       }
     } else {
-      if (options.prefix === ".") return [] // TODO handle module names on left
+      console.log("prefix: " + options.prefix)
       return this.getSuggestionsRegularRequest(options)
     }
   }
@@ -73,18 +83,9 @@ export class Autocompleter {
     let path = options.editor.getPath()
     let identifiers = getFromHash(this.sessionModel.parseSet.identifiers, path)
 
-    let identNode: IdentifierNode = null
-    let resolve: Resolve = null
-    for (let kv of identifiers.map) {
-      let iIdentNode: IdentifierNode = kv[0]
-      let iResolve: Resolve = kv[1]
-      if (iIdentNode.token.range.pointWithin(point)) {
-        identNode = iIdentNode
-        resolve = iResolve
-        break
-      }
-    }
+    let identNode: IdentifierNode = identifiers.getIdentifierForPoint(point)
     if (identNode === null) return []
+    let resolve: Resolve = identifiers.map.get(identNode)
     if (!(resolve instanceof FunctionResolve)) return []
     let funcResolve = resolve as FunctionResolve
 
@@ -123,9 +124,46 @@ export class Autocompleter {
     let prefix = options.prefix
     if (!prefix) return []
     if (prefix.trim() === "") return []
-
+    let identifiers = getFromHash(parseSet.identifiers, path)
     let fileScopes = getFromHash(parseSet.scopes, path)
     let fileLevelNode = getFromHash(parseSet.fileLevelNodes, path)
+
+    // if this is immediately after a module name + '.' then return choices from that module
+    let isModuleDot = false
+    let moduleScope: ModuleScope = null
+    // immediately after '.' without any other letters
+    if (prefix === ".") {
+      point = new Point(point.row, point.column - 1) // before the dot
+
+      let identNode: IdentifierNode = identifiers.getIdentifierForPoint(point)
+      if (identNode === null) return []
+      let resolve: Resolve = identifiers.map.get(identNode)
+      if (!(resolve instanceof ModuleResolve)) return []
+
+      isModuleDot = true
+      moduleScope = (resolve as ModuleResolve).moduleRootScope
+      prefix = ""
+    } else {
+      // maybe after '.' with some letters typed
+      let rowText = editor.lineTextForBufferRow(point.row)
+      let dotCol = point.column - prefix.length - 1 // -1 because cursor at point i is after the i-1 character
+      if (dotCol > 0 && rowText[dotCol] === ".") {
+        point = new Point(point.row, dotCol - 1) // before the dot
+
+        let identNode: IdentifierNode = identifiers.getIdentifierForPoint(point)
+        if (identNode === null) return []
+        let resolve: Resolve = identifiers.map.get(identNode)
+        if (!(resolve instanceof ModuleResolve)) return []
+
+        isModuleDot = true
+        moduleScope = (resolve as ModuleResolve).moduleRootScope
+      }
+    }
+    if (isModuleDot) {
+      return this.getSuggestionsForScope(moduleScope, prefix)
+    }
+
+
 
     // find narrowest scope that contains the point
     let matchingScope = fileScopes.getScope(point)
@@ -147,67 +185,50 @@ export class Autocompleter {
       }
     }
 
+    return this.getSuggestionsForScope(matchingScope, prefix)
+  }
 
 
-    // all the top level names in the scope
+
+
+  getSuggestionsForScope(scope: Scope, prefix: string): any[] {
+    // get all names in the scope that start with the prefix
+    // and repeat through each parent scope
     let suggestions = []
-    let currScope = matchingScope
+    let currScope = scope
     prefix = prefix.toLowerCase()
     while (true) {
+
+      // get the module name if the scope is module level
       let moduleName = null
       if (currScope instanceof ModuleScope) {
-        let resolveRoot = this.sessionModel.parseSet.resolveRoots.find((o) => {return o.scope === currScope})
-        if (resolveRoot) {
-          if (resolveRoot.root instanceof ModuleDefNode) {
-            let node = resolveRoot.root as ModuleDefNode
-            moduleName = node.name.name
-          }
-        }
+        moduleName = currScope.moduleShortName // may be nulls
       }
 
-      for (let name in currScope.names) {
-        if (name.toLowerCase().startsWith(prefix)) {
-          let resolve = currScope.names[name]
-          suggestions.push(createSuggestion(name, moduleName, resolve))
-        }
-      }
+      // all names that match prefix
+      currScope.getMatchingNames(prefix).forEach((name) => {
+        let resolve = currScope.names[name]
+        suggestions.push(createSuggestion(name, moduleName, resolve))
+      })
+
       if (currScope.parent === null) break
       currScope = currScope.parent
     }
+
     // any names from using/importall modules
     if (currScope instanceof ModuleScope) {
-      let refModules = []
-      for (let tup of currScope.usingModules) {
-        refModules.push(tup)
-      }
-      for (let tup of currScope.importAllModules) {
-        refModules.push(tup)
-      }
-      for (let tup of refModules) {
-        let moduleName: string = tup[0]
-        let moduleScope: ModuleScope = tup[1]
-        if (moduleName in this.sessionModel.moduleLibrary.modules) {
-          let prefixTree = this.sessionModel.moduleLibrary.prefixTrees[moduleName]
-          if (!prefixTree) throw new AssertError("")
-          let names = prefixTree.getMatchingNames(prefix)
-          for (let name of names) {
-            suggestions.push(createSuggestion(name, moduleName, null))
-          }
-        } else {
-          // may be a locally defined module not accessible via load paths
-          for (let name in moduleScope.names) {
-            let resolve = moduleScope.names[name]
-            suggestions.push(createSuggestion(name, moduleName, resolve))
-          }
-
-          // TODO add the modules used by this module
-        }
+      let refModules = currScope.usingModules.concat(currScope.importAllModules)
+      for (let moduleScope of refModules) {
+        moduleScope.prefixTree.getMatchingNames(prefix).forEach((name) => {
+          suggestions.push(createSuggestion(name, moduleScope.moduleShortName, null))
+        })
+        // TODO add the modules used by this module
       }
     }
 
-
     return suggestions
   }
+
 
 
 }
@@ -222,6 +243,7 @@ export class Autocompleter {
 function createSuggestion(name: string, moduleName: string, resolve: Resolve) {
   let suggestionType = ""
   if (resolve instanceof FunctionResolve) suggestionType = "function"
+  if (resolve instanceof MacroResolve) suggestionType = "function"
   if (resolve instanceof VariableResolve) suggestionType = "variable"
   if (resolve instanceof TypeResolve) suggestionType = "class"
   if (resolve instanceof ModuleResolve) suggestionType = "import"

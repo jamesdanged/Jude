@@ -319,7 +319,9 @@ function joinBinaryOperands(nodes: Node[], opIndex: number): number {
     nodes.splice(opIndex, 1, tupleNode)
 
 
-  } else if (opNode.op === ".") {
+  }
+  // join dot qualified names into a new node
+  else if (opNode.op === ".") {
 
     let multiDotNode: MultiDotNode = null
     if (opNode.arg1 instanceof MultiDotNode) {  // '.' is a left to right associative operator, so only arg1 can also be a '.'
@@ -330,6 +332,7 @@ function joinBinaryOperands(nodes: Node[], opIndex: number): number {
       multiDotNode.nodes.push(opNode.arg1)
       multiDotNode.nodes.push(opNode.arg2)
     }
+
 
     opIndex -= 1
     nodes.splice(opIndex, 1, multiDotNode)

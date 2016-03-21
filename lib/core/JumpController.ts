@@ -2,8 +2,8 @@
 
 /// <reference path="./../defs/atom/atom.d.ts" />
 
+import {ExternalModuleResolve} from "../nameResolution/Resolve";
 import {AssertError} from "../utils/assert";
-import {ModuleResolve} from "../nameResolution/Resolve";
 import {getFromHash} from "../utils/arrayUtils";
 import {Point} from "../tokens/Token";
 import {SessionModel} from "./SessionModel";
@@ -123,7 +123,7 @@ export class JumpController {
     } else if (resolve instanceof LocalModuleResolve) {
       destPath = resolve.filePath
       destPoint = resolve.moduleDefNode.name.token.range.start
-    } else if (resolve instanceof ModuleResolve) {
+    } else if (resolve instanceof ExternalModuleResolve) {
       console.error("Not supported for modules outside workspace.")
       return []
     } else {

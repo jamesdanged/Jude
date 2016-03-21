@@ -160,7 +160,6 @@ class Controller {
             yield this.moduleLibrary.refreshLoadPathsAsync();
             this.moduleLibrary.serializedLines = {};
             this.moduleLibrary.modules = {};
-            this.moduleLibrary.prefixTrees = {};
             this.moduleLibrary.workspaceModulePaths = {};
             yield this.reparseAllFilesAsync();
         });

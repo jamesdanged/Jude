@@ -192,7 +192,7 @@ class ScopeRecurser {
         for (let itemNode of node.names) {
             let identNode = itemNode.name;
             if (node.declType === Resolve_1.NameDeclType.Const || node.declType === Resolve_1.NameDeclType.Local) {
-                this.builder.registerVariableName(identNode);
+                this.builder.registerVariable(identNode);
             }
             else if (node.declType === Resolve_1.NameDeclType.Global) {
                 // check the name exists only at the module scope. Skip intermediate levels.
@@ -318,7 +318,7 @@ class ScopeRecurser {
         this.resolveNode(node.prefixExpression);
         this.pushNewScope(Scope_1.ScopeType.Block, node.scopeStartToken, node.scopeEndToken);
         for (let arg of node.argList) {
-            this.builder.registerVariableName(arg.name);
+            this.builder.registerVariable(arg.name);
             if (arg.type !== null)
                 this.resolveNode(arg.type);
         }
@@ -334,7 +334,7 @@ class ScopeRecurser {
             if (itemNode.value !== null) {
                 this.resolveNode(itemNode.value);
             }
-            this.builder.registerVariableName(itemNode.name);
+            this.builder.registerVariable(itemNode.name);
             if (itemNode.type !== null) {
                 this.resolveNode(itemNode.type);
             }
@@ -367,7 +367,7 @@ class ScopeRecurser {
     }
     resolveFunctionDefNode(node) {
         // register the function name if there is one
-        this.builder.registerFunctionName(node);
+        this.builder.registerFunction(node);
         if (node.name.length > 0)
             this.resolveMultiPartName(node.name);
         if (!this.currFileIsOpen())
@@ -386,7 +386,7 @@ class ScopeRecurser {
         this.scopeStack.pop();
     }
     resolveTypeDefNode(node) {
-        this.builder.registerTypeName(node);
+        this.builder.registerType(node);
         if (!this.currFileIsOpen())
             return;
         // resolve the body of the type def
@@ -394,7 +394,7 @@ class ScopeRecurser {
         // register generic arg names
         if (node.genericArgs !== null) {
             for (let arg of node.genericArgs.args) {
-                this.builder.registerVariableName(arg.name);
+                this.builder.registerVariable(arg.name);
             }
         }
         if (node.parentType !== null) {
@@ -410,7 +410,7 @@ class ScopeRecurser {
         // TODO new() function inside typedef body
     }
     resolveMacroDefNode(node) {
-        this.builder.registerMacroName(node);
+        this.builder.registerMacro(node);
         let identNode = node.name;
         let resolve = this.currScope.tryResolveNameThisLevel("@" + identNode.name);
         if (resolve !== null) {
@@ -430,7 +430,7 @@ class ScopeRecurser {
         if (this.alreadyInitializedRoots.indexOf(resolveRoot.scope) < 0) {
             this.resolveRootScope(resolveRoot);
         }
-        this.builder.registerModuleName(node, resolveRoot.scope);
+        this.builder.registerModule(node, resolveRoot.scope);
     }
     resolveIncludeNode(node) {
         let path = nodepath.resolve(nodepath.dirname(this.currFile), node.relativePath);
@@ -445,19 +445,19 @@ class ScopeRecurser {
     }
     resolveImportNode(node) {
         for (let multiPartName of node.getNamesWithPrefix()) {
-            this.builder.registerImportedName(multiPartName);
+            this.builder.registerImport(multiPartName);
             this.resolveMultiPartName(multiPartName);
         }
     }
     resolveImportAllNode(node) {
         for (let multiPartName of node.getNamesWithPrefix()) {
-            this.builder.registerImportAllUsingHelper(multiPartName, false);
+            this.builder.registerImportAllOrUsing(multiPartName, false);
             this.resolveMultiPartName(multiPartName);
         }
     }
     resolveUsingNode(node) {
         for (let multiPartName of node.getNamesWithPrefix()) {
-            this.builder.registerImportAllUsingHelper(multiPartName, true);
+            this.builder.registerImportAllOrUsing(multiPartName, true);
             this.resolveMultiPartName(multiPartName);
         }
     }
@@ -493,14 +493,14 @@ class ScopeRecurser {
             // register generic arg names
             if (functionDefNode.genericArgs !== null) {
                 for (let arg of functionDefNode.genericArgs.args) {
-                    that.builder.registerVariableName(arg.name);
+                    that.builder.registerVariable(arg.name);
                 }
             }
             // register arg names
             // resolve arg types and default values
             for (let arg of functionDefNode.args.orderedArgs) {
                 if (arg.name !== null) {
-                    that.builder.registerVariableName(arg.name);
+                    that.builder.registerVariable(arg.name);
                     that.resolveNode(arg.name);
                 }
                 if (arg.type !== null)
@@ -511,7 +511,7 @@ class ScopeRecurser {
             for (let arg of functionDefNode.args.keywordArgs) {
                 if (arg.name === null)
                     throw new assert_1.AssertError("Cannot be null");
-                that.builder.registerVariableName(arg.name);
+                that.builder.registerVariable(arg.name);
                 that.resolveNode(arg.name);
                 if (arg.type !== null)
                     that.resolveNode(arg.type);

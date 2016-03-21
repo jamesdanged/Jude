@@ -7,27 +7,21 @@ import {resolveFullWorkspaceAsync} from "../nameResolution/resolveFullWorkspace"
 import {JumpController} from "./JumpController";
 import {Linter} from "./Linter";
 import {ModuleScope} from "../nameResolution/Scope";
-import {ModuleResolve} from "../nameResolution/Resolve";
 import {last} from "../utils/arrayUtils";
 import {AssertError} from "../utils/assert";
 import {runDelayed} from "../utils/taskUtils";
 import {ParseSet} from "./SessionModel";
 import {parseFullWorkspaceAsync} from "./parseWorkspace";
 import {FunctionDefNode} from "../parseTree/nodes";
-import {VariableResolve} from "../nameResolution/Resolve";
 import {toPoint} from "../utils/atomApi";
 import {toAtomRange} from "../utils/atomApi";
 import {toAtomPoint} from "../utils/atomApi";
-import {TypeResolve} from "../nameResolution/Resolve";
 import {throwErrorFromTimeout} from "../utils/assert";
 import {NameError} from "../utils/errors";
 import {InvalidParseError} from "../utils/errors";
 import {SessionModel} from "./SessionModel";
 import {Range} from "../tokens/Token";
-import {FunctionResolve} from "../nameResolution/Resolve";
 import {IdentifierNode} from "../parseTree/nodes";
-import {Resolve} from "../nameResolution/Resolve";
-import {LocalModuleResolve} from "../nameResolution/Resolve";
 import {ModuleLibrary} from "./ModuleLibrary";
 import * as nodepath from "path"
 import {ModuleDefNode} from "../parseTree/nodes";
@@ -196,7 +190,6 @@ export class Controller {
 
     this.moduleLibrary.serializedLines = {}
     this.moduleLibrary.modules = {}
-    this.moduleLibrary.prefixTrees = {}
     this.moduleLibrary.workspaceModulePaths = {}
 
     await this.reparseAllFilesAsync()

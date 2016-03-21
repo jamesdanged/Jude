@@ -105,6 +105,7 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
 
 
   await resolveRepeatedlyAsync(sessionModel)
+  parseSet.resolveRoots.forEach((o) => { o.scope.refreshPrefixTree() })
 
   sessionModel.partiallyResolved = false
 
@@ -159,6 +160,7 @@ async function resolveRepeatedlyAsync(sessionModel: SessionModel) {
 
     if (!needAnotherRound) break
   }
+
 }
 
 
@@ -242,6 +244,8 @@ function populateRoots(sessionModel: SessionModel): void {
     resolveRoot.scope = new ModuleScope()
     resolveRoot.scope.tokenStart = startNode.scopeStartToken
     resolveRoot.scope.tokenEnd = startNode.scopeEndToken
+    if (startNode instanceof ModuleDefNode) resolveRoot.scope.moduleShortName = startNode.name.name
+
     // leave resolving imports for later
     candidateRoots.push(resolveRoot)
   }
@@ -327,11 +331,13 @@ export async function resolveScopesInWorkspaceInvolvingFile(path: string, sessio
     if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) continue
     let recurser = new ScopeRecurser(parseSet, sessionModel.moduleLibrary, false, alreadyInitializedRoots, openFiles)
     recurser.resolveRecursively(resolveRoot)
+    resolveRoot.scope.refreshPrefixTree()
   }
 
   // if any inner modules newly need to be queried from julia, retrieve them
   if (stringSetToArray(sessionModel.moduleLibrary.toQueryFromJulia).length > 0) {
     await resolveRepeatedlyAsync(sessionModel)
+    parseSet.resolveRoots.forEach((o) => { o.scope.refreshPrefixTree() })
   }
 
   sessionModel.partiallyResolved = true

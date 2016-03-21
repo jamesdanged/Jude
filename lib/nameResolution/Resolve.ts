@@ -84,18 +84,27 @@ export class MacroResolve extends Resolve {
   }
 }
 
+export abstract class ModuleResolve extends Resolve {
+  constructor(moduleShortName: string, public moduleRootScope: ModuleScope) {
+    super(moduleShortName) // short name is just the module name, no prefixes. Such as 'InnerMod' in Mod1.Mod2.InnerMod
+  }
+}
+
+
 /**
- * Resolves to a module in the module library.
+ * Resolves to a module external to the workspace.
  * Only contains scope resolutions, not any expression tree.
  */
-export class ModuleResolve extends Resolve {
-  moduleRootScope: ModuleScope
-  constructor(moduleShortName: string, moduleRootScope: ModuleScope) {
-    super(moduleShortName) // short name is just the module name, no prefixes. Such as 'InnerMod' in Mod1.Mod2.InnerMod
-    this.moduleRootScope = moduleRootScope
+export class ExternalModuleResolve extends ModuleResolve {
+  constructor(public fullModulePath: string, moduleRootScope: ModuleScope) {
+    super(fullModulePath.split(".")[0], moduleRootScope)
   }
+
   resolvesInWorkspace(): boolean {
     return false
+  }
+  shallowCopy(): ExternalModuleResolve {
+    return new ExternalModuleResolve(this.fullModulePath, this.moduleRootScope)
   }
 }
 
@@ -106,15 +115,14 @@ export class ModuleResolve extends Resolve {
  * Contains the parsed expression tree contents of the module.
  */
 export class LocalModuleResolve extends ModuleResolve {
-  filePath: string
-  moduleDefNode: ModuleDefNode
-  constructor(node: ModuleDefNode, filePath: string, moduleRootScope: ModuleScope) {
-    super(node.name.name, moduleRootScope)
-    this.filePath = filePath
-    this.moduleDefNode = node
+  constructor(public moduleDefNode: ModuleDefNode, public filePath: string, moduleRootScope: ModuleScope) {
+    super(moduleDefNode.name.name, moduleRootScope)
   }
   resolvesInWorkspace(): boolean {
     return true
+  }
+  shallowCopy(): LocalModuleResolve {
+    return new LocalModuleResolve(this.moduleDefNode, this.filePath, this.moduleRootScope )
   }
 }
 
@@ -134,6 +142,10 @@ export class ImportedResolve extends Resolve {
     if (this.ref === null) return false
     return this.ref.resolvesInWorkspace()
   }
+  shallowCopy(): ImportedResolve {
+    return new ImportedResolve(this.ref, this.module)
+  }
+
 }
 
 export function getResolveInfoType(resolve: Resolve): string {

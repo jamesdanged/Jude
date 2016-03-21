@@ -1,5 +1,6 @@
 "use strict"
 
+import {ExternalModuleResolve} from "./Resolve";
 import {addToSet} from "../utils/StringSet";
 import {MacroDefNode} from "../parseTree/nodes";
 import {MultiPartName} from "../parseTree/nodes";
@@ -58,7 +59,32 @@ export class ScopeBuilder {
     }
   }
 
-  registerImportedName(multiPartName: IdentifierNode[]): void {
+
+
+  registerImportAllOrUsing(multiPartName: MultiPartName, isUsing: boolean): void {
+    if (!(this.currScope instanceof ModuleScope)) throw new AssertError("")
+    let scope = this.currScope as ModuleScope
+
+    // register the name itself
+    this.registerImport(multiPartName)
+
+    // if it refers to a module, add to list of used modules, so names can resolve against it
+    let result = scope.tryResolveMultiPartName(multiPartName)
+    if (result instanceof NameError) {
+      this.logNameError(result as NameError)
+      return
+    }
+    let resolve = result as Resolve
+    if (!(resolve instanceof ModuleResolve)) return
+    let referencedScope = (resolve as ModuleResolve).moduleRootScope
+    if (isUsing) {
+      scope.addUsingModule(referencedScope)
+    } else {
+      scope.addImportAllModule(referencedScope)
+    }
+  }
+
+  registerImport(multiPartName: IdentifierNode[]): void {
     if (!(this.currScope instanceof ModuleScope)) throw new AssertError("")
     if (multiPartName.length == 0) throw new AssertError("")
 
@@ -70,7 +96,7 @@ export class ScopeBuilder {
       return
     }
 
-    // if the first part is not already imported, must be imported
+    // If the first part is not already imported, must be imported.
     let firstPart = multiPartName[0]
     let firstName = firstPart.name
     this.logImport(firstName)
@@ -82,10 +108,21 @@ export class ScopeBuilder {
         this.logUnresolvedImport(firstName)
         return
       }
-      this.registerModuleNameFromLibrary(firstPart)
+
+      // register the imported module
+      // get corresponding node if in the workspace
+      let resolveRoot = this.parseSet.resolveRoots.find((o) => { return o.scope === rootScope})
+      if (resolveRoot) {
+        let rootNode = resolveRoot.root
+        if (!(rootNode instanceof ModuleDefNode)) throw new AssertError("")  // cannot be in the module library if it is a file level node
+        let moduleDefNode = rootNode as ModuleDefNode
+        this.currScope.names[firstName] = new LocalModuleResolve(moduleDefNode, resolveRoot.containingFile, rootScope)
+      } else {
+        this.currScope.names[firstName] = new ExternalModuleResolve(firstName, rootScope)
+      }
     }
 
-    // finally, try to search through modules for the name
+    // finally, try to search through modules for the full multi part name
     let resolveOrError = this.currScope.tryResolveMultiPartName(multiPartName)
     if (resolveOrError instanceof NameError) {
       this.logNameError(resolveOrError)
@@ -102,16 +139,16 @@ export class ScopeBuilder {
     }
 
     if (res instanceof LocalModuleResolve) {
-      this.currScope.names[name] = new LocalModuleResolve(res.moduleDefNode, res.filePath, res.moduleRootScope)
+      this.currScope.names[name] = res.shallowCopy()
       return
     }
-    if (res instanceof ModuleResolve) {
-      this.currScope.names[name] = new ModuleResolve(res.name, res.moduleRootScope)
+    if (res instanceof ExternalModuleResolve) {
+      this.currScope.names[name] = res.shallowCopy()
       return
     }
     if (res instanceof ImportedResolve) {
       // importing an import. Copy the structure.
-      this.currScope.names[name] = new ImportedResolve(res.ref, res.module)
+      this.currScope.names[name] = res.shallowCopy()
       return
     }
     if (res instanceof FunctionResolve || res instanceof TypeResolve || res instanceof VariableResolve || res instanceof MacroResolve) {
@@ -129,51 +166,12 @@ export class ScopeBuilder {
   }
 
 
-  registerImportAllUsingHelper(multiPartName: MultiPartName, isUsing: boolean): void {
-    if (!(this.currScope instanceof ModuleScope)) throw new AssertError("")
-    let moduleScope = this.currScope as ModuleScope
-
-    let lastIdent = last(multiPartName)
-
-    // register the name itself
-    this.registerImportedName(multiPartName)
-
-    // if it refers to a module, add to list of used modules, so names can resolve against it
-    let res = moduleScope.tryResolveMultiPartName(multiPartName)
-    if (res instanceof NameError) {
-      this.logNameError(res as NameError)
-      return
-    }
-    let moduleResolveInfo = res as Resolve
-    if (moduleResolveInfo instanceof LocalModuleResolve) {
-      let scopeToUse = this.parseSet.getResolveRoot(moduleResolveInfo.moduleDefNode).scope
-      if (isUsing) {
-        moduleScope.addUsingModule(lastIdent.name, scopeToUse)
-      } else {
-        moduleScope.addImportAllModule(lastIdent.name, scopeToUse)
-      }
-    } else if (moduleResolveInfo instanceof ModuleResolve) {
-      if (isUsing) {
-        moduleScope.addUsingModule(lastIdent.name, moduleResolveInfo.moduleRootScope)
-      } else {
-        moduleScope.addImportAllModule(lastIdent.name, moduleResolveInfo.moduleRootScope)
-      }
-    } else {
-      // do nothing
-    }
-  }
-
-
-
   /**
    * Assignment can create a name in the current scope.
    * But if the name already exists up to the outermost function, then it doesn't create the name, but just references
    * the existing name.
-   *
-   * Also resolves the identifier node.
    */
   createNameByAssignmentIfNecessary(identNode: IdentifierNode): void {
-    //if (identNode === null) return
     let name = identNode.name
 
     if (identNode.isEndIndex()) {
@@ -183,7 +181,7 @@ export class ScopeBuilder {
 
     let resolve = this.currScope.tryResolveNameThroughParentScopes(name, true)
     if (resolve === null) {
-      this.registerVariableName(identNode)
+      this.registerVariable(identNode)
     } else {
       if (!(resolve instanceof VariableResolve)) {
         this.logNameError(new NameError("'" + name + "' already declared as " +
@@ -195,7 +193,7 @@ export class ScopeBuilder {
     }
   }
 
-  registerVariableName(identifierNode: IdentifierNode): void {
+  registerVariable(identifierNode: IdentifierNode): void {
     let name = identifierNode.name
     let resolve = this.currScope.tryResolveNameThisLevel(name)
     if (resolve !== null) {
@@ -205,7 +203,7 @@ export class ScopeBuilder {
     this.currScope.names[name] = new VariableResolve(identifierNode.token, this.currFile)
   }
 
-  registerFunctionName(functionDefNode: FunctionDefNode): void {
+  registerFunction(functionDefNode: FunctionDefNode): void {
 
 
     if (functionDefNode.name.length === 1) {
@@ -250,7 +248,7 @@ export class ScopeBuilder {
     }
   }
 
-  registerTypeName(typeDefNode: TypeDefNode): void {
+  registerType(typeDefNode: TypeDefNode): void {
     let identifierNode = typeDefNode.name
     let name = identifierNode.name
     let resolve = this.currScope.tryResolveNameThisLevel(name)
@@ -261,7 +259,7 @@ export class ScopeBuilder {
     this.currScope.names[name] = new TypeResolve(typeDefNode, this.currFile)
   }
 
-  registerMacroName(macroDefNode: MacroDefNode): void {
+  registerMacro(macroDefNode: MacroDefNode): void {
     let nameTok = macroDefNode.name.token
     let name = macroDefNode.name.name
     if (name[0] === "@") throw new AssertError("")
@@ -280,7 +278,7 @@ export class ScopeBuilder {
   /**
    * Registers a module that is declared in the file itself, not found via module library.
    */
-  registerModuleName(moduleDefNode: ModuleDefNode, moduleRootScope: ModuleScope): void {
+  registerModule(moduleDefNode: ModuleDefNode, moduleRootScope: ModuleScope): void {
     let identifierNode = moduleDefNode.name
     let name = identifierNode.name
     let resolve = this.currScope.tryResolveNameThisLevel(name)
@@ -291,32 +289,6 @@ export class ScopeBuilder {
     this.currScope.names[name] = new LocalModuleResolve(moduleDefNode,this.currFile, moduleRootScope)
   }
 
-  /**
-   * Registers the module into this scope.
-   * Should not be called if the name already exists in the scope.
-   */
-  registerModuleNameFromLibrary(identifierNode: IdentifierNode): void {
-    let moduleName = identifierNode.name
-    let rootScope = this.moduleLibrary.modules[moduleName]
-    if (!rootScope) throw new AssertError("")
-
-    let resolve = this.currScope.tryResolveNameThisLevel(moduleName)
-    if (resolve !== null) {
-      this.logNameError(new NameError("'" + moduleName + "' already declared as " + getResolveInfoType(resolve) + " in this scope.", identifierNode.token))
-      return
-    }
-
-    // get corresponding node if in the workspace
-    let resolveRoot = this.parseSet.resolveRoots.find((o) => { return o.scope === rootScope})
-    if (resolveRoot) {
-      let rootNode = resolveRoot.root
-      if (!(rootNode instanceof ModuleDefNode)) throw new AssertError("")  // cannot be in the module library if it is a file level node
-      let moduleDefNode = rootNode as ModuleDefNode
-      this.currScope.names[moduleName] = new LocalModuleResolve(moduleDefNode, resolveRoot.containingFile, rootScope)
-    } else {
-      this.currScope.names[moduleName] = new ModuleResolve(moduleName, rootScope)
-    }
-  }
 
 
 }

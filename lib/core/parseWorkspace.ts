@@ -7,7 +7,6 @@ import {SessionModel} from "./SessionModel";
 import {runDelayed} from "../utils/taskUtils";
 import {parseFile} from "../parseTree/parseFile";
 import {resolveFullWorkspaceAsync} from "../nameResolution/resolveFullWorkspace";
-import {refreshPrefixTreesAsync} from "./ModuleLibrary";
 import {AssertError} from "../utils/assert";
 import {ModuleDefNode} from "../parseTree/nodes";
 
@@ -41,7 +40,7 @@ export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
   console.log("Parsed expression trees: " + (t1 - t0) + " ms")
 
   await resolveFullWorkspaceAsync(sessionModel)
-  await refreshPrefixTreesAsync(sessionModel.moduleLibrary, true)
+  //await refreshPrefixTreesAsync(sessionModel.moduleLibrary, true)
 
   // report parse errors to console
   for (let path in sessionModel.parseSet.errors) {
@@ -80,7 +79,7 @@ export async function refreshFileAsync(path: string, fileContents: string, sessi
     await resolveScopesInWorkspaceInvolvingFile(path, sessionModel)
   }
 
-  await refreshPrefixTreesAsync(sessionModel.moduleLibrary, false)
+  //await refreshPrefixTreesAsync(sessionModel.moduleLibrary, false)
 }
 
 

@@ -1,5 +1,6 @@
 "use strict"
 
+import {Node} from "./nodes";
 import {SessionModel} from "../core/SessionModel";
 import {Tokenizer} from "../tokens/Tokenizer";
 import {last} from "../utils/arrayUtils";
@@ -11,6 +12,7 @@ import {Indent} from "../tokens/Token";
 import {TokenStream} from "../tokens/TokenStream";
 import {BracketGrouper} from "./BracketGrouper";
 import {parseWholeFileContents} from "../fsas/general/ModuleContentsFsa";
+import {MultiDotNode} from "./nodes";
 
 export function parseFile(path: string, fileContents: string, sessionModel: SessionModel): void {
   let parseSet = sessionModel.parseSet
@@ -56,7 +58,3 @@ export function parseFile(path: string, fileContents: string, sessionModel: Sess
   }
 
 }
-
-
-
-
