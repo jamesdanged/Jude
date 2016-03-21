@@ -32,7 +32,7 @@ Julia is a very flexible language, but for Jude to provide these capabilities, s
 * `include("...")` can only be present at the module level, not inside a function.
 * Binary operators cannot be overridden to not be binary, eg: `+ = 5`
 * Anonymous functions have no signature information. 
-  * `foo = (a, b) => a + b` has no signature information because it is treated as a variable.
+  * `foo = (a, b) -> a + b` has no signature information because foo is treated as a variable.
   * `foo(a,b) = a + b` is recognized.
 
 Jude reparses some or all of your code as you type. This is done in <50 ms for small to medium sized codebases, especially if it is broken into modules. If you are editing a file that has no "module" declarations (maybe it is just included in another file that does), the reparse can be <5 ms. If the parsing starts to cause noticable slow down in the GUI, you can reduce the parsing intervals by changing the lint delay in the Linter package (`Lint As You Type Interval`, which defaults to 300 ms).
