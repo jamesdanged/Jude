@@ -12,14 +12,31 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
-var ModuleLibrary_1 = require("../core/ModuleLibrary");
-var Resolve_1 = require("./Resolve");
 var assert_1 = require("../utils/assert");
+var Resolve_1 = require("./Resolve");
+var assert_2 = require("../utils/assert");
+var Token_1 = require("../tokens/Token");
+var nodes_1 = require("../parseTree/nodes");
+var Token_2 = require("../tokens/Token");
+var Token_3 = require("../tokens/Token");
+var arrayUtils_1 = require("../utils/arrayUtils");
+var StringSet_1 = require("../utils/StringSet");
+var nodes_2 = require("../parseTree/nodes");
 var errors_1 = require("../utils/errors");
 var Resolve_2 = require("./Resolve");
-var ModuleLibrary_2 = require("../core/ModuleLibrary");
 var PrefixTree_1 = require("./PrefixTree");
 var PrefixTree_2 = require("./PrefixTree");
+var Resolve_3 = require("./Resolve");
+var Resolve_4 = require("./Resolve");
+var Resolve_5 = require("./Resolve");
+var Tokenizer_1 = require("../tokens/Tokenizer");
+var operatorsAndKeywords_1 = require("../tokens/operatorsAndKeywords");
+var BracketGrouper_1 = require("../parseTree/BracketGrouper");
+var ModuleContentsFsa_1 = require("../fsas/general/ModuleContentsFsa");
+var TypeDefFsa_1 = require("../fsas/declarations/TypeDefFsa");
+var Resolve_6 = require("./Resolve");
+var Resolve_7 = require("./Resolve");
+var FunctionDefFsa_1 = require("../fsas/declarations/FunctionDefFsa");
 class Scope {
     constructor(type) {
         this.type = type;
@@ -64,7 +81,7 @@ class Scope {
      */
     tryResolveMultiPartName(multiPartName) {
         if (multiPartName.length === 0)
-            throw new assert_1.AssertError("Zero length name");
+            throw new assert_2.AssertError("Zero length name");
         let currScope = this;
         for (let idx = 0; idx < multiPartName.length; idx++) {
             let identNode = multiPartName[idx];
@@ -86,7 +103,7 @@ class Scope {
                 return new errors_1.NameError("Could not find name: '" + namePart + "'.", identNode.token);
             }
         }
-        throw new assert_1.AssertError(""); // should not reach here
+        throw new assert_2.AssertError(""); // should not reach here
     }
     getMatchingNames(prefix) {
         let matchingNames = [];
@@ -107,16 +124,10 @@ class ModuleScope extends Scope {
         this.exportedNames = {};
         this.prefixTree = PrefixTree_2.createPrefixTree({});
         this.moduleShortName = null;
-        this.isExternal = false;
-        this.moduleFullName = null;
-        this.moduleLibrary = null;
-        this.initializedLibraryReference = false;
     }
     get usingModules() { return this._usingModules.slice(); }
     get importAllModules() { return this._importAllModules.slice(); }
     reset() {
-        if (this.isExternal)
-            throw new assert_1.AssertError("");
         this.names = {};
         this._usingModules = [];
         this._importAllModules = [];
@@ -124,16 +135,12 @@ class ModuleScope extends Scope {
         this.refreshPrefixTree();
     }
     addUsingModule(scope) {
-        if (this.isExternal)
-            throw new assert_1.AssertError("");
         // do not add duplicate
         if (this._usingModules.findIndex((iScope) => { return iScope.moduleShortName === scope.moduleShortName; }) >= 0)
             return;
         this._usingModules.push(scope);
     }
     addImportAllModule(scope) {
-        if (this.isExternal)
-            throw new assert_1.AssertError("");
         // do not add duplicate
         if (this._importAllModules.findIndex((iScope) => { return iScope.moduleShortName === scope.moduleShortName; }) >= 0)
             return;
@@ -178,8 +185,6 @@ class ModuleScope extends Scope {
         return null;
     }
     tryResolveExportedName(name) {
-        if (this.isExternal && !this.initializedLibraryReference)
-            ModuleLibrary_1.initializeLibraryReference(this.moduleFullName, this.moduleLibrary);
         if (!(name in this.exportedNames)) {
             return null;
         }
@@ -194,15 +199,8 @@ class ModuleScope extends Scope {
      * @returns Matching resolve. Null if not found.
      */
     tryResolveNameThisLevel(name) {
-        if (this.isExternal && !this.initializedLibraryReference)
-            ModuleLibrary_1.initializeLibraryReference(this.moduleFullName, this.moduleLibrary);
         if (name in this.names)
             return this.names[name];
-        if (this.isExternal) {
-            ModuleLibrary_2.tryAddNameFromSerializedState(name, this.moduleFullName, this.moduleLibrary);
-            if (name in this.names)
-                return this.names[name];
-        }
         let result = this.searchUsedImportAlldModules(name);
         if (result === null)
             return null;
@@ -213,6 +211,212 @@ class ModuleScope extends Scope {
     }
 }
 exports.ModuleScope = ModuleScope;
+/**
+ * For modules external to the project.
+ */
+class ExternalModuleScope extends ModuleScope {
+    constructor(moduleFullName, serializedLines, moduleLibrary) {
+        super();
+        this.moduleFullName = moduleFullName;
+        this.serializedLines = serializedLines;
+        this.initializedLibraryReference = false;
+        this.moduleShortName = arrayUtils_1.last(moduleFullName.split("."));
+        this.prefixTree = PrefixTree_2.createPrefixTree(serializedLines);
+        this.moduleLibrary = moduleLibrary;
+    }
+    reset() { throw new assert_2.AssertError(""); }
+    addUsingModule(scope) { throw new assert_2.AssertError(""); }
+    addImportAllModule(scope) { throw new assert_2.AssertError(""); }
+    tryResolveExportedName(name) {
+        if (!this.initializedLibraryReference)
+            this.initializeLibraryReference();
+        if (!(name in this.exportedNames)) {
+            return null;
+        }
+        return this.tryResolveNameThisLevel(name);
+    }
+    /**
+     * Resolves only at this scope, not a parent scope.
+     * Also resolves to used modules.
+     * For modules outside workspace, their scopes are lazy populated. This populates only the requested name.
+     *
+     * @param name
+     * @returns Matching resolve. Null if not found.
+     */
+    tryResolveNameThisLevel(name) {
+        if (!this.initializedLibraryReference)
+            this.initializeLibraryReference();
+        if (name in this.names)
+            return this.names[name];
+        this.tryAddNameFromSerializedState(name);
+        if (name in this.names)
+            return this.names[name];
+        let result = this.searchUsedImportAlldModules(name);
+        if (result === null)
+            return null;
+        return result;
+    }
+    /**
+     * simply loads exported names into the export list of the scope
+     *
+     */
+    initializeLibraryReference() {
+        for (let name in this.serializedLines) {
+            let arr = this.serializedLines[name];
+            for (let line of arr) {
+                if (line[2] === "exported") {
+                    StringSet_1.addToSet(this.exportedNames, name);
+                    break;
+                }
+                else if (line[2] === "hidden") {
+                }
+                else {
+                    throw new assert_2.AssertError("");
+                }
+            }
+        }
+        this.initializedLibraryReference = true;
+    }
+    tryAddNameFromSerializedState(name) {
+        let arr = this.serializedLines[name];
+        if (!arr)
+            return; // name not in module
+        for (let line of arr) {
+            if (line[0] === "function") {
+                this.addFunctionFromSerialized(line);
+            }
+            else if (line[0] === "type") {
+                this.addTypeFromSerialized(line);
+            }
+            else if (line[0] === "variable") {
+                this.addVariableFromSerialized(line);
+            }
+            else if (line[0] === "macro") {
+                this.addMacroFromSerialized(line);
+            }
+            else if (line[0] === "module") {
+                this.addModuleFromSerialized(line);
+            }
+        }
+    }
+    addModuleFromSerialized(parts) {
+        if (parts.length !== 4)
+            throw new assert_2.AssertError("");
+        let name = parts[1];
+        let fullModulePath = parts[3];
+        if (name in this.names) {
+            assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared multiple times in loaded Julia module??"));
+        }
+        if (fullModulePath in this.moduleLibrary.modules) {
+            let innerModuleScope = this.moduleLibrary.modules[fullModulePath];
+            this.names[name] = new Resolve_3.ExternalModuleResolve(fullModulePath, innerModuleScope);
+        }
+        else {
+            // module hasn't been retrieved from Julia yet
+            StringSet_1.addToSet(this.moduleLibrary.toQueryFromJulia, fullModulePath);
+        }
+    }
+    addVariableFromSerialized(parts) {
+        if (parts.length !== 3)
+            throw new assert_2.AssertError("");
+        let name = parts[1];
+        // store it
+        if (name in this.names) {
+            assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared multiple times in loaded Julia module??"));
+        }
+        this.names[name] = new Resolve_4.VariableResolve(Token_2.Token.createEmptyIdentifier(name), null);
+    }
+    addMacroFromSerialized(parts) {
+        if (parts.length !== 3)
+            throw new assert_2.AssertError("");
+        let name = parts[1];
+        // store it
+        if (name in this.names) {
+            assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared multiple times in loaded Julia module??"));
+        }
+        this.names[name] = new Resolve_5.MacroResolve(name);
+    }
+    addTypeFromSerialized(parts) {
+        if (parts.length !== 4)
+            throw new assert_2.AssertError("");
+        let name = parts[1];
+        // parse the type def block
+        let code = parts[3];
+        let tokens = Tokenizer_1.Tokenizer.tokenizeThrowIfError(code);
+        if (tokens[1].type !== operatorsAndKeywords_1.TokenType.Identifier) {
+            console.log("Skipping type due to name: " + code);
+            return;
+        }
+        let tree = BracketGrouper_1.BracketGrouper.groupIntoOneThrowIfError(tokens);
+        let wholeState = new ModuleContentsFsa_1.WholeFileParseState();
+        let node = TypeDefFsa_1.parseWholeTypeDef(tree, wholeState);
+        if (wholeState.parseErrors.length > 0) {
+        }
+        // store it
+        if (name in this.names) {
+            assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared multiple times in loaded Julia module??"));
+        }
+        this.names[name] = new Resolve_6.TypeResolve(node, null);
+    }
+    addFunctionFromSerialized(parts) {
+        if (parts.length !== 6)
+            throw new assert_2.AssertError("");
+        let name = parts[1];
+        let signature = parts[3];
+        let path = parts[4];
+        if (path === "")
+            path = null;
+        let lineNumber = 0;
+        if (parts[5] !== "")
+            lineNumber = parseInt(parts[5]);
+        let resolve = this.names[name];
+        if (resolve) {
+            if (!(resolve instanceof Resolve_7.FunctionResolve)) {
+                assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared both as function and as " +
+                    Resolve_2.getResolveInfoType(resolve) + " in module loaded from Julia??"));
+                return;
+            }
+        }
+        else {
+            resolve = new Resolve_7.FunctionResolve(name);
+            this.names[name] = resolve;
+        }
+        let functionResolve = resolve;
+        if (signature.length === 0) {
+            // no info on function signature. But we still want to recognize the name exists.
+            // Just put in an empty function.
+            let node = new nodes_1.FunctionDefNode();
+            node.name = [new nodes_2.IdentifierNode(Token_2.Token.createEmptyIdentifier(name))];
+            functionResolve.functionDefs.push([path, node]);
+        }
+        else {
+            // create parsable code, and simply parse as a function definition node
+            let code = "function " + signature + "\nend";
+            let tokens = Tokenizer_1.Tokenizer.tokenizeThrowIfError(code);
+            let tree = BracketGrouper_1.BracketGrouper.groupIntoOneThrowIfError(tokens);
+            let wholeState = new ModuleContentsFsa_1.WholeFileParseState();
+            let node = FunctionDefFsa_1.parseWholeFunctionDef(tree, wholeState);
+            if (wholeState.parseErrors.length > 0) {
+            }
+            // update where the name token points to
+            if (node.name.length > 0) {
+                let range = null;
+                if (lineNumber === 0) {
+                    range = Token_3.Range.createEmptyRange();
+                }
+                else {
+                    range = new Token_3.Range(new Token_1.Point(lineNumber - 1, 0), new Token_1.Point(lineNumber - 1, 1));
+                }
+                node.name[0].token.range = range;
+            }
+            else {
+                console.error("Operator need to handle: " + name);
+            }
+            functionResolve.functionDefs.push([path, node]);
+        }
+    }
+}
+exports.ExternalModuleScope = ExternalModuleScope;
 (function (ScopeType) {
     ScopeType[ScopeType["Module"] = 0] = "Module";
     ScopeType[ScopeType["Function"] = 1] = "Function";

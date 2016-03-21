@@ -41,12 +41,12 @@ Jude reparses some or all of your code as you type. This is done in <50 ms for s
 
 * The bodies of macro definitions are not parsed.
 * Code quotes are not parsed, eg `:(a + b)`, `quote ... end`
-* Autocomplete currently does not work after `.` even if the name to the left is a module.
 * Jump to definition for overloaded functions currently leverages Autocomplete+ for the GUI to select the overload. When you jump, Autocomplete+ will insert the function signature you selected, and Jude will then undo the change. This clears any redos on your undo stack. Eventually, a separate GUI will be created, along with a separate shortcut from `ctrl-space`. 
 
 ##### Roadmap
 * Configuration option for julia path.
 * Testing. 
+* Indicators to show when running julia in background or a running a long parse.
 * Fix gaps in syntax coverage.
 * Use own GUI for jump to function definitions.
 * Refactor capability for variable and type names.
