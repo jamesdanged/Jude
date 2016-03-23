@@ -29,13 +29,13 @@ function resolveFullWorkspaceAsync(sessionModel) {
         let parseSet = sessionModel.parseSet;
         let moduleLibrary = sessionModel.moduleLibrary;
         // map out the inclusion trees
-        let t0 = Date.now();
+        //let t0 = Date.now()
         populateRoots(sessionModel);
-        let t1 = Date.now();
-        console.log("Mapped inclusion trees: " + (t1 - t0) + " ms");
+        //let t1 = Date.now()
+        //console.log("Mapped inclusion trees: " + (t1 - t0) + " ms")
         // This pass will get a list of imports each module has.
         // Variable, function, type names are not resolved yet.
-        t0 = Date.now();
+        //t0 = Date.now()
         moduleLibrary.toQueryFromJulia = {};
         let openFiles = atomApi_1.atomGetOpenFiles();
         let alreadyInitializedRoots = [];
@@ -49,25 +49,23 @@ function resolveFullWorkspaceAsync(sessionModel) {
             let recurser = new ScopeRecurser_1.ScopeRecurser(parseSet, moduleLibrary, true, alreadyInitializedRoots, openFiles);
             recurser.resolveRecursively(resolveRoot);
         }
-        t1 = Date.now();
-        console.log("Gather import list: " + (t1 - t0) + " ms");
+        //t1 = Date.now()
+        //console.log("Gather import list: " + (t1 - t0) + " ms")
         // refresh julia load paths if necessary
         if (moduleLibrary.loadPaths.length === 0) {
-            t0 = Date.now();
+            //t0 = Date.now()
             yield moduleLibrary.refreshLoadPathsAsync();
-            t1 = Date.now();
-            console.log("Refreshed load paths from Julia: " + (t1 - t0) + " ms");
         }
         // load all top level modules that were imported but could not be found
-        t0 = Date.now();
+        //t0 = Date.now()
         for (let moduleName in moduleLibrary.toQueryFromJulia) {
             //console.log("loading unresolved module import: " + moduleName + "...")
             yield ModuleLibrary_1.resolveModuleForLibrary(moduleName, sessionModel);
         }
-        t1 = Date.now();
-        console.log("Loaded unresolved modules: " + (t1 - t0) + " ms");
+        //t1 = Date.now()
+        //console.log("Loaded unresolved modules: " + (t1 - t0) + " ms")
         // now resolve all the scopes
-        t0 = Date.now();
+        //t0 = Date.now()
         // determine sequence to resolve, starting with dependencies first
         let isDependencyOf = (mod1, mod2) => {
             for (let importName of mod2.imports) {
@@ -99,8 +97,8 @@ function resolveFullWorkspaceAsync(sessionModel) {
         yield resolveRepeatedlyAsync(sessionModel);
         parseSet.resolveRoots.forEach((o) => { o.scope.refreshPrefixTree(); });
         sessionModel.partiallyResolved = false;
-        t1 = Date.now();
-        console.log("Resolve names fully: " + (t1 - t0) + " ms");
+        //t1 = Date.now()
+        //console.log("Resolve names fully: " + (t1 - t0) + " ms")
     });
 }
 exports.resolveFullWorkspaceAsync = resolveFullWorkspaceAsync;
@@ -263,7 +261,7 @@ function populateRoots(sessionModel) {
  */
 function resolveScopesInWorkspaceInvolvingFile(path, sessionModel) {
     return __awaiter(this, void 0, Promise, function* () {
-        let t0 = Date.now();
+        //let t0 = Date.now()
         let parseSet = sessionModel.parseSet;
         let fileLevelNode = parseSet.fileLevelNodes[path];
         if (!fileLevelNode)
@@ -305,8 +303,8 @@ function resolveScopesInWorkspaceInvolvingFile(path, sessionModel) {
             parseSet.resolveRoots.forEach((o) => { o.scope.refreshPrefixTree(); });
         }
         sessionModel.partiallyResolved = true;
-        let t1 = Date.now();
-        console.log("Refreshed related scopes: " + (t1 - t0) + " ms");
+        //let t1 = Date.now()
+        //console.log("Refreshed related scopes: " + (t1 - t0) + " ms")
     });
 }
 exports.resolveScopesInWorkspaceInvolvingFile = resolveScopesInWorkspaceInvolvingFile;

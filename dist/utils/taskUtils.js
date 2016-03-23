@@ -28,7 +28,8 @@ function runDelayed(cb) {
 }
 exports.runDelayed = runDelayed;
 class TaskQueue {
-    constructor() {
+    constructor(catchErrors) {
+        this.catchErrors = catchErrors;
         this.tasks = [];
         this.running = false;
     }
@@ -54,7 +55,18 @@ class TaskQueue {
                 throw new assert_1.AssertError(""); // Should only be called if queue is not already flushing.
             this.running = true;
             while (this.tasks.length > 0) {
-                yield this.tasks.shift()();
+                let task = this.tasks.shift();
+                if (this.catchErrors) {
+                    try {
+                        task();
+                    }
+                    catch (err) {
+                        console.error(err);
+                    }
+                }
+                else {
+                    task();
+                }
             }
             this.running = false;
         });

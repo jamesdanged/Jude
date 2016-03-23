@@ -314,7 +314,7 @@ class ScopeRecurser {
         if (!this.currFileIsOpen())
             return;
         if (node.prefixExpression === null)
-            throw new assert_1.AssertError("");
+            return; // null if parse failure
         this.resolveNode(node.prefixExpression);
         this.pushNewScope(Scope_1.ScopeType.Block, node.scopeStartToken, node.scopeEndToken);
         for (let arg of node.argList) {

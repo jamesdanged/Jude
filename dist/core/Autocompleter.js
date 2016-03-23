@@ -59,7 +59,7 @@ class Autocompleter {
             }
         }
         else {
-            console.log("prefix: " + options.prefix);
+            //console.log("prefix: " + options.prefix)
             return this.getSuggestionsRegularRequest(options);
         }
     }
@@ -90,7 +90,7 @@ class Autocompleter {
             let argListString = funcDefNode.args.toSnippetString();
             if (argListString === "")
                 argListString = " "; // otherwise, a 0 arg signature will not be an option
-            console.log("snippet: " + argListString);
+            //console.log("snippet: " + argListString)
             suggestions.push({
                 snippet: argListString,
                 //displayText: sig,

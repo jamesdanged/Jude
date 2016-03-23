@@ -30,8 +30,23 @@ var atomModule = require("atom");
 //import {CompositeDisposable} from "atom"
 //import {File} from "atom"
 // TODO
+// catch all errors during failed full reparse to make more user friendly
 // ccall as an identifier
 // symbol quote blocks, eg ":( ... )", "quote ... end"
+// certain operators treated as identifiers in certain circumstances
+//   eg map(arr, +)
+//   [+, -]
+//   (+, -)
+// @everywhere include(...)
+// m == 0 && return x
+// for ii in 1:m, jj in 1:n
+// .0
+// jump to definition for includes
+// @Base.time vs Base.@time
+// macros in module in workspace, ie MyMod.@my_macro name not being resolved.
+// test make sure full reparse when project folder changes. Esp if no jl files loaded in session to begin with.
+// Jump to definition for function with module qualifier, eg Mod1.func(), should show definitions from that module, not from the current scope.
+// log identifier for target of an alias type
 /**
  * Handles interactions with the editor. Responds to user activity and file system changes.
  */
@@ -44,7 +59,7 @@ class Controller {
         this.subscriptions = new atomModule.CompositeDisposable();
         this.dirWatcher = null;
         this.workspaceLoaded = false;
-        this.taskQueue = new taskUtils_1.TaskQueue();
+        this.taskQueue = new taskUtils_1.TaskQueue(true);
         this.initialLintCalls = [];
     }
     get moduleLibrary() { return this.sessionModel.moduleLibrary; }
@@ -150,7 +165,7 @@ class Controller {
         return __awaiter(this, void 0, Promise, function* () {
             let sessionModel = this.sessionModel;
             yield this.taskQueue.addToQueueAndRun(() => __awaiter(this, void 0, Promise, function* () {
-                console.log("Reparsing file " + path);
+                //console.log("Reparsing file " + path)
                 yield parseWorkspace_2.refreshFileAsync(path, contents, sessionModel);
             }));
         });
