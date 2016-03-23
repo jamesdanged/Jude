@@ -12,6 +12,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+/// <reference path="./../defs/atom/atom.d.ts" />
 var assert_1 = require("./assert");
 var nodeChildProcess = require("child_process");
 function runJuliaToGetLoadPathsAsync() {
@@ -33,13 +34,17 @@ function runJuliaToGetDataAsync(scriptFileName, additionalArgs) {
         console.log("Starting julia child process");
         let errorMessages = "";
         let results = [];
-        // TODO resolve path
+        // julia path
+        let juliaPath = atom.config.get("Jude.juliaPath");
+        if (!juliaPath)
+            throw new Error("Must set Julia path in settings.");
+        // julia scripts dir
         let scriptDir = __dirname + "/../../scripts";
         let args = [scriptDir + "/" + scriptFileName];
         if (additionalArgs.length > 0) {
             args = args.concat(additionalArgs);
         }
-        let proc = nodeChildProcess.spawn("julia", args);
+        let proc = nodeChildProcess.spawn(juliaPath, args);
         proc.stdout.on('data', (data) => {
             let dataPrefix = "##DATA##\t";
             let lines = data.toString().split("\n"); // arrives as a byte array

@@ -12,10 +12,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+/// <reference path="./../defs/atom/atom.d.ts" />
+var ConfigSchema_1 = require("./ConfigSchema");
 var Controller_1 = require("./Controller");
 var gParseController = new Controller_1.Controller();
 class MainObject {
     constructor() {
+        this.config = new ConfigSchema_1.ConfigSchema();
     }
     activate(state) {
         let moduleLibrary = gParseController.sessionModel.moduleLibrary;

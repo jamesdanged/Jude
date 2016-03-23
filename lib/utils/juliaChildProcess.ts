@@ -1,5 +1,7 @@
 "use strict"
 
+/// <reference path="./../defs/atom/atom.d.ts" />
+
 import {throwErrorFromTimeout} from "./assert";
 import * as nodeChildProcess from "child_process"
 
@@ -23,13 +25,18 @@ function runJuliaToGetDataAsync(scriptFileName: string, additionalArgs: string[]
     let errorMessages = ""
     let results: string[][] = []
 
-    // TODO resolve path
+    // julia path
+    let juliaPath = atom.config.get("Jude.juliaPath")
+    if (!juliaPath) throw new Error("Must set Julia path in settings.")
+
+    // julia scripts dir
     let scriptDir = __dirname + "/../../scripts"
     let args = [scriptDir + "/" + scriptFileName]
     if (additionalArgs.length > 0) {
       args = args.concat(additionalArgs)
     }
-    let proc = nodeChildProcess.spawn("julia", args)
+
+    let proc = nodeChildProcess.spawn(juliaPath, args)
 
     proc.stdout.on('data', (data) => {
 

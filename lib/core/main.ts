@@ -2,6 +2,7 @@
 
 /// <reference path="./../defs/atom/atom.d.ts" />
 
+import {ConfigSchema} from "./ConfigSchema";
 import {ModuleLibrary} from "./ModuleLibrary";
 import {Controller} from "./Controller";
 import {SessionModel} from "./SessionModel";
@@ -11,7 +12,9 @@ var gParseController = new Controller()
 
 
 class MainObject {
+  config
   constructor() {
+    this.config = new ConfigSchema()
   }
 
   activate(state) {

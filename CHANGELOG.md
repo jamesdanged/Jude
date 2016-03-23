@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.2.0]
+Allow configuration of Julia path.
+
 ## [0.1.3]
 Fixed bug where stops refreshing because of uncaught exceptions.
 
