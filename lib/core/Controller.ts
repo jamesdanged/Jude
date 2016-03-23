@@ -39,8 +39,23 @@ import * as atomModule from "atom"
 
 
 // TODO
+// catch all errors during failed full reparse to make more user friendly
 // ccall as an identifier
 // symbol quote blocks, eg ":( ... )", "quote ... end"
+// certain operators treated as identifiers in certain circumstances
+//   eg map(arr, +)
+//   [+, -]
+//   (+, -)
+// @everywhere include(...)
+// m == 0 && return x
+// for ii in 1:m, jj in 1:n
+// .0
+// jump to definition for includes
+// @Base.time vs Base.@time
+// macros in module in workspace, ie MyMod.@my_macro name not being resolved.
+// test make sure full reparse when project folder changes. Esp if no jl files loaded in session to begin with.
+// Jump to definition for function with module qualifier, eg Mod1.func(), should show definitions from that module, not from the current scope.
+// log identifier for target of an alias type
 
 
 /**
@@ -70,7 +85,7 @@ export class Controller {
     this.subscriptions = new atomModule.CompositeDisposable()
     this.dirWatcher = null
     this.workspaceLoaded = false
-    this.taskQueue = new TaskQueue()
+    this.taskQueue = new TaskQueue(true)
     this.initialLintCalls = []
   }
 
@@ -179,7 +194,7 @@ export class Controller {
   async reparseFileAsync(path: string, contents: string) {
     let sessionModel = this.sessionModel
     await this.taskQueue.addToQueueAndRun(async () => {
-      console.log("Reparsing file " + path)
+      //console.log("Reparsing file " + path)
       await refreshFileAsync(path, contents, sessionModel)
     })
   }

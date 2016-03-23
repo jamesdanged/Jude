@@ -26,14 +26,14 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
   let moduleLibrary = sessionModel.moduleLibrary
 
   // map out the inclusion trees
-  let t0 = Date.now()
+  //let t0 = Date.now()
   populateRoots(sessionModel)
-  let t1 = Date.now()
-  console.log("Mapped inclusion trees: " + (t1 - t0) + " ms")
+  //let t1 = Date.now()
+  //console.log("Mapped inclusion trees: " + (t1 - t0) + " ms")
 
   // This pass will get a list of imports each module has.
   // Variable, function, type names are not resolved yet.
-  t0 = Date.now()
+  //t0 = Date.now()
   moduleLibrary.toQueryFromJulia = {}
   let openFiles = atomGetOpenFiles()
   let alreadyInitializedRoots: ModuleScope[] = []
@@ -47,32 +47,32 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
     let recurser = new ScopeRecurser(parseSet, moduleLibrary, true, alreadyInitializedRoots, openFiles)
     recurser.resolveRecursively(resolveRoot)
   }
-  t1 = Date.now()
-  console.log("Gather import list: " + (t1 - t0) + " ms")
+  //t1 = Date.now()
+  //console.log("Gather import list: " + (t1 - t0) + " ms")
 
 
   // refresh julia load paths if necessary
   if (moduleLibrary.loadPaths.length === 0) {
-    t0 = Date.now()
+    //t0 = Date.now()
     await moduleLibrary.refreshLoadPathsAsync()
-    t1 = Date.now()
-    console.log("Refreshed load paths from Julia: " + (t1 - t0) + " ms")
+    //t1 = Date.now()
+    //console.log("Refreshed load paths from Julia: " + (t1 - t0) + " ms")
   }
 
 
   // load all top level modules that were imported but could not be found
-  t0 = Date.now()
+  //t0 = Date.now()
   for (let moduleName in moduleLibrary.toQueryFromJulia) {
     //console.log("loading unresolved module import: " + moduleName + "...")
     await resolveModuleForLibrary(moduleName, sessionModel)
   }
-  t1 = Date.now()
-  console.log("Loaded unresolved modules: " + (t1 - t0) + " ms")
+  //t1 = Date.now()
+  //console.log("Loaded unresolved modules: " + (t1 - t0) + " ms")
 
 
 
   // now resolve all the scopes
-  t0 = Date.now()
+  //t0 = Date.now()
 
   // determine sequence to resolve, starting with dependencies first
   let isDependencyOf = (mod1: ResolveRoot, mod2: ResolveRoot): boolean => {
@@ -109,8 +109,8 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
 
   sessionModel.partiallyResolved = false
 
-  t1 = Date.now()
-  console.log("Resolve names fully: " + (t1 - t0) + " ms")
+  //t1 = Date.now()
+  //console.log("Resolve names fully: " + (t1 - t0) + " ms")
 }
 
 /**
@@ -296,7 +296,7 @@ function populateRoots(sessionModel: SessionModel): void {
  * to correct the inconsistencies. A good time to do that is when switching tabs.
  */
 export async function resolveScopesInWorkspaceInvolvingFile(path: string, sessionModel: SessionModel) {
-  let t0 = Date.now()
+  //let t0 = Date.now()
 
   let parseSet = sessionModel.parseSet
   let fileLevelNode = parseSet.fileLevelNodes[path]
@@ -342,8 +342,8 @@ export async function resolveScopesInWorkspaceInvolvingFile(path: string, sessio
 
   sessionModel.partiallyResolved = true
 
-  let t1 = Date.now()
-  console.log("Refreshed related scopes: " + (t1 - t0) + " ms")
+  //let t1 = Date.now()
+  //console.log("Refreshed related scopes: " + (t1 - t0) + " ms")
 }
 
 

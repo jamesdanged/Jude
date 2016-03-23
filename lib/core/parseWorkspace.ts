@@ -15,13 +15,13 @@ import {ModuleDefNode} from "../parseTree/nodes";
 export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
   sessionModel.parseSet.reset()
 
-  let t0 = Date.now()
+  //let t0 = Date.now()
   let multiDirsContents = await loadAllFilesInAllProjectDirs()
-  let t1 = Date.now()
-  console.log("Successfully read project files from disk: " + (t1 - t0) + " ms")
+  //let t1 = Date.now()
+  //console.log("Successfully read project files from disk: " + (t1 - t0) + " ms")
 
   // parse all the files into expression trees
-  t0 = Date.now()
+  //t0 = Date.now()
   for (let dirContents of multiDirsContents) {
 
     // create parse trees
@@ -36,8 +36,8 @@ export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
       })
     }
   }
-  t1 = Date.now()
-  console.log("Parsed expression trees: " + (t1 - t0) + " ms")
+  //t1 = Date.now()
+  //console.log("Parsed expression trees: " + (t1 - t0) + " ms")
 
   await resolveFullWorkspaceAsync(sessionModel)
   //await refreshPrefixTreesAsync(sessionModel.moduleLibrary, true)
@@ -50,7 +50,7 @@ export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
     }
   }
 
-  console.log("Done reparsing.")
+  //console.log("Reparsed whole workspace.")
 }
 
 
@@ -64,10 +64,10 @@ export async function refreshFileAsync(path: string, fileContents: string, sessi
   if (!fileLevelNode) throw new AssertError("")
   if (fileLevelNode.expressions.findIndex((o) => { return o instanceof ModuleDefNode}) >= 0) mustReparseFullWorkspace = true
 
-  let t0 = Date.now()
+  //let t0 = Date.now()
   parseFile(path, fileContents, sessionModel)
-  let t1 = Date.now()
-  console.log("Reparsed one file: " + (t1 - t0) + " ms")
+  //let t1 = Date.now()
+  //console.log("Reparsed one file: " + (t1 - t0) + " ms")
 
   // If module declaration involved after, also must reparse whole workspace.
   // The node object stays the same, just its contents changed.

@@ -65,7 +65,7 @@ export class Autocompleter {
         })
       }
     } else {
-      console.log("prefix: " + options.prefix)
+      //console.log("prefix: " + options.prefix)
       return this.getSuggestionsRegularRequest(options)
     }
   }
@@ -97,7 +97,7 @@ export class Autocompleter {
       if (iPath) sourceFile = nodepath.basename(iPath)
       let argListString = funcDefNode.args.toSnippetString()
       if (argListString === "") argListString = " "  // otherwise, a 0 arg signature will not be an option
-      console.log("snippet: " + argListString)
+      //console.log("snippet: " + argListString)
 
       suggestions.push({
         snippet: argListString,

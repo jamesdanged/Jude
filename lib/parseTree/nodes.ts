@@ -533,7 +533,7 @@ export class FunctionDefArgListNode extends MayBeUnparsedNode {
 }
 
 export class MacroDefNode extends MayBeUnparsedNode {
-  name: IdentifierNode  // without '@'
+  name: IdentifierNode  // without '@'  null only if parse failure
   scopeStartToken: Token
   scopeEndToken: Token
   constructor() {
@@ -573,7 +573,7 @@ export class CodeQuoteNode extends MayBeUnparsedNode {
  * Represents regular types, immutable types, abstract types, bits types, and type aliases.
  */
 export class TypeDefNode extends MayBeUnparsedNode {
-  name: IdentifierNode
+  name: IdentifierNode  // null only if parse failure
   genericArgs: GenericDefArgListNode  // can be null if no generic parameters
   parentType: Node // can be null
   fields: FieldNode[]
@@ -628,7 +628,7 @@ export class BeginBlockNode extends MayBeUnparsedNode {
 }
 
 export class IfBlockNode extends MayBeUnparsedNode {
-  ifCondition: Node
+  ifCondition: Node  // null only if parse failure
   elseIfConditions: Node[]
   ifBlock: MultiExpressionNode
   elseIfBlocks: MultiExpressionNode[]
@@ -644,8 +644,8 @@ export class IfBlockNode extends MayBeUnparsedNode {
 }
 
 export class ForBlockNode extends MayBeUnparsedNode {
-  iterVariable: IdentifierNode[] // one or more if given as a tuple: for (a, b) in arr ...
-  range: Node
+  iterVariable: IdentifierNode[] // one or more if given as a tuple: for (a, b) in arr ...    null only if parse failure
+  range: Node  // null only if parse failure
   expressions: Node[]
   scopeStartToken: Token
   scopeEndToken: Token
@@ -660,7 +660,7 @@ export class ForBlockNode extends MayBeUnparsedNode {
 }
 
 export class WhileBlockNode extends MayBeUnparsedNode {
-  condition: Node
+  condition: Node   // null only if parse failure
   expressions: Node[]
   scopeStartToken: Token
   scopeEndToken: Token
@@ -674,7 +674,7 @@ export class WhileBlockNode extends MayBeUnparsedNode {
 }
 
 export class DoBlockNode extends MayBeUnparsedNode {
-  prefixExpression: Node   // eg map([A, B, C]) do ... end
+  prefixExpression: Node   // eg map([A, B, C]) do ... end      null only if parse failure
   argList: DoBlockArgNode[]
   expressions: Node[]
   scopeStartToken: Token
@@ -753,7 +753,7 @@ export abstract class ModuleContentsNode extends MayBeUnparsedNode {
 
 
 export class ModuleDefNode extends ModuleContentsNode {
-  name: IdentifierNode
+  name: IdentifierNode    // null only if parse failure
   isBareModule: boolean
   constructor() {
     super()

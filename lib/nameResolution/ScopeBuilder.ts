@@ -250,6 +250,8 @@ export class ScopeBuilder {
 
   registerType(typeDefNode: TypeDefNode): void {
     let identifierNode = typeDefNode.name
+    if (!identifierNode) return  // parse failure
+
     let name = identifierNode.name
     let resolve = this.currScope.tryResolveNameThisLevel(name)
     if (resolve !== null) {
@@ -261,7 +263,9 @@ export class ScopeBuilder {
 
   registerMacro(macroDefNode: MacroDefNode): void {
     let nameTok = macroDefNode.name.token
-    let name = macroDefNode.name.name
+    let identifierNode = macroDefNode.name
+    if (!identifierNode) return // parse failure
+    let name = identifierNode.name
     if (name[0] === "@") throw new AssertError("")
     name = "@" + name
     let resolve = this.currScope.tryResolveNameThisLevel(name)
@@ -280,6 +284,7 @@ export class ScopeBuilder {
    */
   registerModule(moduleDefNode: ModuleDefNode, moduleRootScope: ModuleScope): void {
     let identifierNode = moduleDefNode.name
+    if (!identifierNode) return // parse failure
     let name = identifierNode.name
     let resolve = this.currScope.tryResolveNameThisLevel(name)
     if (resolve !== null) {

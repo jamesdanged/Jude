@@ -326,7 +326,7 @@ export class ScopeRecurser {
   resolveDoBlockNode(node: DoBlockNode): void {
     if (!this.currFileIsOpen()) return
 
-    if (node.prefixExpression === null) throw new AssertError("")
+    if (node.prefixExpression === null) return  // null if parse failure
     this.resolveNode(node.prefixExpression)
 
     this.pushNewScope(ScopeType.Block, node.scopeStartToken, node.scopeEndToken)

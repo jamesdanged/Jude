@@ -1,6 +1,7 @@
 "use strict"
 
 import {AssertError} from "./assert";
+import {throwErrorFromTimeout} from "./assert";
 
 export function runDelayed(cb) {
   return new Promise((resolve, reject) => {
@@ -19,8 +20,9 @@ export function runDelayed(cb) {
 export class TaskQueue {
   tasks: any[]
   running: boolean
-
-  constructor() {
+  catchErrors: boolean  // Catch all errors even assert errors. Prevents the task queue runner from dying.
+  constructor(catchErrors: boolean) {
+    this.catchErrors = catchErrors
     this.tasks = []
     this.running = false
   }
@@ -34,8 +36,8 @@ export class TaskQueue {
     let that = this
     return new Promise((resolve, reject) => {
       that.tasks.push(async () => {
-        let res = await asyncCallback()
-        resolve(res)
+          let res = await asyncCallback()
+          resolve(res)
       })
       if (!that.running) that._startFlush()
     })
@@ -46,7 +48,17 @@ export class TaskQueue {
 
     this.running = true
     while (this.tasks.length > 0) {
-      await this.tasks.shift()()
+      let task = this.tasks.shift()
+      if (this.catchErrors) {
+        try {
+          task()
+        } catch (err) {
+          console.error(err)
+          //throwErrorFromTimeout(err)
+        }
+      } else {
+        task()
+      }
     }
     this.running = false
   }
