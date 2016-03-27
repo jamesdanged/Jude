@@ -254,6 +254,14 @@ export class ExternalModuleScope extends ModuleScope {
   private serializedLines: ModuleLineSet
   private moduleLibrary: ModuleLibrary  // need to notify the library when unresolved inner module
 
+  /**
+   * The module scope is not fully populated initially. Names are lazily loaded from the serializedLines.
+   * The names are all immediately loaded into prefix trees.
+   *
+   * @param moduleFullName  Can have '.'
+   * @param serializedLines
+   * @param moduleLibrary
+   */
   constructor(moduleFullName: string, serializedLines: ModuleLineSet, moduleLibrary: ModuleLibrary) {
     super()
     this.moduleFullName = moduleFullName
@@ -265,6 +273,8 @@ export class ExternalModuleScope extends ModuleScope {
   }
 
   reset(): void { throw new AssertError("")}
+  getSerializedLines(): ModuleLineSet { return this.serializedLines }  // just for serialization
+
   addUsingModule(scope: ModuleScope): void { throw new AssertError("") }
   addImportAllModule(scope: ModuleScope): void { throw new AssertError("") }
 

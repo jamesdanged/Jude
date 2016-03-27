@@ -17,24 +17,11 @@ class MainObject {
     this.config = new ConfigSchema()
   }
 
-  activate(state) {
-
-    let moduleLibrary = gParseController.sessionModel.moduleLibrary
-    if (state !== null) {
-      if ("moduleLibrary" in state) {
-        let libState = state["moduleLibrary"]
-        if ("loadPaths" in libState) {
-          moduleLibrary.loadPaths = libState["loadPaths"]
-        }
-        if ("serializedLines" in libState) {
-          moduleLibrary.serializedLines = libState["serializedLines"]
-        }
-      }
-    }
+  activate(state: any) {
 
     // Allow window to load before performing main thread blocking operations
     window.setTimeout(() => {
-        gParseController.initalizeAsync()
+        gParseController.initalizeAsync(state)
     })
   }
 

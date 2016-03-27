@@ -15,7 +15,7 @@ import {runJuliaToGetModuleDataAsync} from "../utils/juliaChildProcess";
 import {throwErrorFromTimeout} from "../utils/assert";
 import {ModuleScope} from "../nameResolution/Scope";
 
-export type ModuleLineSet = {[name: string]: string[][]}
+export type ModuleLineSet = {[name: string]: string[][]}  // function/type/variable name -> all related lines, split by tab
 
 /**
  * Contains summary info for all modules registered in the system.
@@ -26,23 +26,27 @@ export type ModuleLineSet = {[name: string]: string[][]}
 export class ModuleLibrary {
 
   loadPaths: string[]
-  serializedLines: {[moduleFullName: string]: ModuleLineSet}  // module full name -> module member name -> lines, split by tab. Module name can be . delimited.
   modules: {[moduleFullName: string]: ModuleScope}   // module full name -> root scope of module
+
+  // facilitate fast reparses and name resolution
   workspaceModulePaths: {[filePath: string]: string} // file path -> module full name. Set of files that are recognized as modules.
   toQueryFromJulia: StringSet  // full module path of modules to query from julia
 
   constructor() {
     this.loadPaths = []
-    this.serializedLines = {}
     this.modules = {}
     this.workspaceModulePaths = {}
     this.toQueryFromJulia = {}
   }
 
-  initialize() {
-    // restore state, assuming the controller or main procedure already set this.serializedLines
-    for (let moduleFullName in this.serializedLines) {
-      this.modules[moduleFullName] = new ExternalModuleScope(moduleFullName, this.serializedLines[moduleFullName], this)
+  initializeFromSerialized(state: any) {
+    if ("loadPaths" in state) {
+      this.loadPaths = state["loadPaths"]
+    }
+    if ("serializedLines" in state) {
+      for (let moduleFullName in state.serializedLines) {
+        this.modules[moduleFullName] = new ExternalModuleScope(moduleFullName, state.serializedLines[moduleFullName], this)
+      }
     }
   }
 
@@ -55,11 +59,16 @@ export class ModuleLibrary {
    * Converts contents to a JSON object for storage when Atom is closed.
    * Avoid having to query Julia every startup.
    */
-  serialize() {
-    return {
-      loadPaths: this.loadPaths,
-      serializedLines: this.serializedLines
+  serialize(): LibrarySerialized {
+    let state = new LibrarySerialized()
+    state.loadPaths = this.loadPaths.slice()
+    for (let moduleName in this.modules) {
+      let scope = this.modules[moduleName]
+      if (scope instanceof ExternalModuleScope) {
+        state.serializedLines[moduleName] = scope.getSerializedLines()
+      }
     }
+    return state
     //let json = gLibrarySerializer.serialize(this)
     //return { moduleLibrary: json }
   }
@@ -77,6 +86,15 @@ export class ModuleLibrary {
 
 }
 
+
+export class LibrarySerialized {
+  serializedLines: {[name:string]: ModuleLineSet}
+  loadPaths: string[]
+  constructor() {
+    this.serializedLines = {}
+    this.loadPaths = []
+  }
+}
 
 
 
@@ -179,12 +197,7 @@ async function addExternalModuleAsync(moduleLibrary: ModuleLibrary, moduleFullNa
       moduleLinesByName[name].push(line)
     }
 
-    // The scope is lazily populated
-    // but the prefix tree is ready immediately
-    let scope = new ExternalModuleScope(moduleFullName, moduleLinesByName, moduleLibrary)
-    moduleLibrary.serializedLines[moduleFullName] = moduleLinesByName
-    moduleLibrary.modules[moduleFullName] = scope
-
+    moduleLibrary.modules[moduleFullName] = new ExternalModuleScope(moduleFullName, moduleLinesByName, moduleLibrary)
     console.log("Successfully retrieved '" + moduleFullName + "' from Julia process.")
   } catch (err) {
     throwErrorFromTimeout(err)

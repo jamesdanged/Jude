@@ -39,7 +39,6 @@ import * as atomModule from "atom"
 
 
 // TODO
-// catch all errors during failed full reparse to make more user friendly
 // ccall as an identifier
 // symbol quote blocks, eg ":( ... )", "quote ... end"
 // certain operators treated as identifiers in certain circumstances
@@ -89,7 +88,7 @@ export class Controller {
     this.initialLintCalls = []
   }
 
-  async initalizeAsync() {
+  async initalizeAsync(state: any) {
 
     let that = this
 
@@ -125,7 +124,11 @@ export class Controller {
     await this.refreshDirWatcher()
 
     try {
-      this.moduleLibrary.initialize()
+      if (state) {
+        if ("moduleLibrary" in state) {
+          this.moduleLibrary.initializeFromSerialized(state.moduleLibrary)
+        }
+      }
       await this.reparseAllFilesAsync()
       this.workspaceLoaded = true
       for (let cb of this.initialLintCalls) {
