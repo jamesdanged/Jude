@@ -10,6 +10,7 @@ export class StringStream {
   private _col: number   // 0 based
 
   constructor(str: string) {
+    if (str === null || str === undefined) throw new AssertError("Cannot be null or undefined")
     this._str = str
     this._pos = 0
     this._row = 0

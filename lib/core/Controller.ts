@@ -206,7 +206,6 @@ export class Controller {
   async reloadModulesFromJuliaAndReparseAsync() {
     await this.moduleLibrary.refreshLoadPathsAsync()
 
-    this.moduleLibrary.serializedLines = {}
     this.moduleLibrary.modules = {}
     this.moduleLibrary.workspaceModulePaths = {}
 

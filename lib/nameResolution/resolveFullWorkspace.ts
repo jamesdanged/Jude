@@ -35,7 +35,6 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
   // Variable, function, type names are not resolved yet.
   //t0 = Date.now()
   moduleLibrary.toQueryFromJulia = {}
-  let openFiles = atomGetOpenFiles()
   let alreadyInitializedRoots: ModuleScope[] = []
   for (let resolveRoot of parseSet.resolveRoots) {
     // already done in one of the previous recursive buildouts.
@@ -44,7 +43,7 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
     if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) {
       continue
     }
-    let recurser = new ScopeRecurser(parseSet, moduleLibrary, true, alreadyInitializedRoots, openFiles)
+    let recurser = new ScopeRecurser(parseSet, moduleLibrary, true, alreadyInitializedRoots, [])
     recurser.resolveRecursively(resolveRoot)
   }
   //t1 = Date.now()

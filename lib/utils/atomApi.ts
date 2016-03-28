@@ -22,7 +22,13 @@ export function toRange(range): tok.Range {
   return new tok.Range(toPoint(range.start), toPoint(range.end))
 }
 
+
+var mockOpenFiles: string[] = null
+export function setMockOpenFiles(openFiles: string[]) {
+  mockOpenFiles = openFiles
+}
 export function atomGetOpenFiles(): string[] {
+  if (mockOpenFiles !== null) return mockOpenFiles
   let paths = []
   let editors = atom.workspace.getTextEditors()
   for (let editor of editors) {
