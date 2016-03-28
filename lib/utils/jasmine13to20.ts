@@ -9,7 +9,10 @@ type FuncWithOptionalDone = (done?: () => void) => void
 export function jasmine13to20() {
   let o = new DescribeScope()
   o.beforeAll = o.beforeAll.bind(o)
+  o.beforeEach = o.beforeEach.bind(o)
   o.it = o.it.bind(o)
+  o.afterEach = o.afterEach.bind(o)
+  o.afterAll = o.afterAll.bind(o)
   return o
 }
 

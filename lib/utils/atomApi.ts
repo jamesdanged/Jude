@@ -27,6 +27,9 @@ var mockOpenFiles: string[] = null
 export function setMockOpenFiles(openFiles: string[]) {
   mockOpenFiles = openFiles
 }
+export function unsetMockOpenFiles() {
+  mockOpenFiles = null
+}
 export function atomGetOpenFiles(): string[] {
   if (mockOpenFiles !== null) return mockOpenFiles
   let paths = []

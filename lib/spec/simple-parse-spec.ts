@@ -13,6 +13,7 @@ import {resolveFullWorkspaceAsync} from "../nameResolution/resolveFullWorkspace"
 import {setMockOpenFiles} from "../utils/atomApi";
 import {jasmine13to20} from "../utils/jasmine13to20";
 import {createTestSessionModel} from "./utils/emptySession";
+import {unsetMockOpenFiles} from "../utils/atomApi";
 
 
 describe("basic function parsing", () => {
@@ -32,9 +33,9 @@ describe("basic function parsing", () => {
     done()
   })
 
-  //it("should be okie dokie", () => {
-  //  expect(true).toBe(false)
-  //})
+  afterAll(() => {
+    unsetMockOpenFiles()
+  })
 
   it("should not have any entries before parse", () => {
     expect(errors[path]).toBeUndefined()
