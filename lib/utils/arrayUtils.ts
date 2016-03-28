@@ -20,3 +20,13 @@ export function getAllFromHash<T>(obj: {[key:string]: T}): T[] {
   }
   return arr
 }
+
+export function resetHash<T>(obj: {[key:string]: T}): void {
+  let keys = []
+  for (let key in obj) {
+    keys.push(key)
+  }
+  for (let key of keys) {
+    delete obj[key]
+  }
+}

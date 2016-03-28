@@ -55,6 +55,7 @@ import * as atomModule from "atom"
 // test make sure full reparse when project folder changes. Esp if no jl files loaded in session to begin with.
 // Jump to definition for function with module qualifier, eg Mod1.func(), should show definitions from that module, not from the current scope.
 // log identifier for target of an alias type
+// Ignore field after indexing, eg arr[i].x
 
 
 /**

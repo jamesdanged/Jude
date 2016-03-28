@@ -205,7 +205,7 @@ function populateRoots(sessionModel: SessionModel): void {
           let inclFullPath = nodepath.resolve(nodepath.dirname(containingFilePath), inclNode.relativePath) // these nodepath calls do not fail regardless of string
           if (!(inclFullPath in fileLevelNodes)) {
             badIncludeNodes.push(inclNode)
-            parseSet.errors[containingFilePath].parseErrors.push(new InvalidParseError("File not found in workspace.", inclNode.includeString.token))
+            parseSet.errors[containingFilePath].parseErrors.push(new InvalidParseError("File not found in workspace: " + inclFullPath, inclNode.includeString.token))
             continue
           }
 

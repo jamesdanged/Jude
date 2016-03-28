@@ -7,44 +7,6 @@ import * as nodepath from "path"
 
 // these are atom API related file and dir objects
 
-/**
- * Loads all .jl files.
- * @returns array of arrays with tuples [path, contents]
- */
-export async function loadAllFilesInAllProjectDirs() {
-  let projectDirs = atom.project.getDirectories()
-
-  let projectDirsContents = []
-
-  for (let dir of projectDirs) {
-    // separate file set for each project dir
-    let pathsAndContents = await loadAllFilesInProjectDir(dir)
-    projectDirsContents.push(pathsAndContents)
-  }
-
-  return projectDirsContents
-}
-
-/**
- *
- * @returns Array with tuples: [path, contents] for all files
- */
-export async function loadAllFilesInProjectDir(dir) {
-  let fileSet = await getAllFilesInAllSubDirectories(dir)
-
-  // read all their contents
-  let filePathsAndContents = []
-  // node doesn't like too many files open simultaneously. Just read one by one.
-  for (let file of fileSet) {
-    let path = await file.getRealPath()
-    if (nodepath.extname(path) === ".jl") {
-      let contents = await file.read()
-      filePathsAndContents.push([path, contents])
-    }
-  }
-
-  return filePathsAndContents
-}
 
 
 

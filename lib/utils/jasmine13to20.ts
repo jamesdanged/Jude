@@ -34,6 +34,7 @@ class DescribeScope {
     this.afterAllAction = null
     this.lastItMarker = null
     this.afterAllActionCompleted = false
+
   }
 
   beforeAll(action: FuncWithOptionalDone): void {
@@ -61,34 +62,40 @@ class DescribeScope {
     let allDone = false
     let marker = {}
     this.lastItMarker = marker
+    let error = null
 
     it(expectation, () => {
 
       runs(async () => {
+        try {
 
-        if (!that.beforeAllActionCompleted) {
-          await that.beforeAllAction()
-          that.beforeAllActionCompleted = true
+          if (!that.beforeAllActionCompleted) {
+            await that.beforeAllAction()
+            that.beforeAllActionCompleted = true
+          }
+
+          if (that.beforeEachAction !== null) await that.beforeEachAction()
+
+          await itAction()
+
+          if (that.afterEachAction !== null) await that.afterEachAction()
+
+          if (that.afterAllAction !== null && marker === that.lastItMarker) {
+            if (that.afterAllActionCompleted) throw new AssertError("Ran after all twice!")
+            await that.afterAllAction()
+            that.afterAllActionCompleted = true
+          }
+
+          allDone = true
+        } catch (err) {
+          error = err
         }
-
-        if (that.beforeEachAction !== null) await that.beforeEachAction()
-
-        await itAction()
-
-        if (that.afterEachAction !== null) await that.afterEachAction()
-
-        if (that.afterAllAction !== null && marker === that.lastItMarker) {
-          if (that.afterAllActionCompleted) throw new AssertError("Ran after all twice!")
-          await that.afterAllAction()
-          that.afterAllActionCompleted = true
-        }
-
-        allDone = true
       })
 
       waitsFor(() => {
+        if (error) throw error
         return allDone
-      }, "async function failed to complete", 500)
+      }, "async function failed to complete", 5000)
 
     })
   }
@@ -100,14 +107,22 @@ function promisify(action: FuncWithOptionalDone): () => Promise<any> {
   if (action.length > 1) throw new AssertError("callback can only take up to 1 arg.")
 
   return () => {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (action.length === 0) {
-        action()
-        resolve()
-      } else {
-        action(() => {
+        try {
+          action()
           resolve()
-        })
+        } catch (err) {
+          reject(err)
+        }
+      } else {
+        try {
+          await action(() => {
+            resolve()
+          })
+        } catch (err) {
+          reject(err)
+        }
       }
     })
   }

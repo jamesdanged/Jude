@@ -9,7 +9,7 @@ Jude statically parses your codebase in javascript to provide IDE like capabilit
 * forward/back cursor history
 * highlights incorrect name errors and some parsing errors
 
-In the future, it may even perform some static type checking where possible.
+In the future, this may include tools to find usages of a function, and even perform limited static type checking.
 
 ![Jude demo gif](https://raw.githubusercontent.com/jamesdanged/Jude/master/img/JudeDemo.gif)
 

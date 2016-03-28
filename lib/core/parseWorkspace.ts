@@ -1,8 +1,8 @@
 "use strict"
 
+import {getAllFilesInAllSubDirectories} from "../utils/fileUtils";
 import {resolveScopesInWorkspaceInvolvingFile} from "../nameResolution/resolveFullWorkspace";
 import * as nodepath from "path"
-import {loadAllFilesInAllProjectDirs} from "../utils/fileUtils";
 import {SessionModel} from "./SessionModel";
 import {runDelayed} from "../utils/taskUtils";
 import {parseFile} from "../parseTree/parseFile";
@@ -11,36 +11,31 @@ import {AssertError} from "../utils/assert";
 import {ModuleDefNode} from "../parseTree/nodes";
 
 
+export type ProjectFilesHash = {[path:string]: string}
 
 export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
   sessionModel.parseSet.reset()
 
   //let t0 = Date.now()
-  let multiDirsContents = await loadAllFilesInAllProjectDirs()
+  let allContents = await loadProjectFiles()
   //let t1 = Date.now()
   //console.log("Successfully read project files from disk: " + (t1 - t0) + " ms")
 
   // parse all the files into expression trees
   //t0 = Date.now()
-  for (let dirContents of multiDirsContents) {
+  for (let path in allContents) {
+    let fileContents = allContents[path]
 
-    // create parse trees
-    for (let tup of dirContents) {
-      let path = tup[0]
-      let fileContents = tup[1]
-
-      // break into smaller tasks to allow smooth GUI interaction
-      await runDelayed(() => {
-        sessionModel.parseSet.createEntriesForFile(path)
-        parseFile(path, fileContents, sessionModel)
-      })
-    }
+    // break into smaller tasks to allow smooth GUI interaction
+    await runDelayed(() => {
+      sessionModel.parseSet.createEntriesForFile(path)
+      parseFile(path, fileContents, sessionModel)
+    })
   }
   //t1 = Date.now()
   //console.log("Parsed expression trees: " + (t1 - t0) + " ms")
 
   await resolveFullWorkspaceAsync(sessionModel)
-  //await refreshPrefixTreesAsync(sessionModel.moduleLibrary, true)
 
   // report parse errors to console
   for (let path in sessionModel.parseSet.errors) {
@@ -78,13 +73,42 @@ export async function refreshFileAsync(path: string, fileContents: string, sessi
   } else {
     await resolveScopesInWorkspaceInvolvingFile(path, sessionModel)
   }
-
-  //await refreshPrefixTreesAsync(sessionModel.moduleLibrary, false)
 }
 
 
 
 
+/**
+ * Loads all .jl files in project.
+ * @returns Hash path -> contents
+ */
+async function loadProjectFiles() {
+  if (mockedProjectFiles !== null) return mockedProjectFiles
 
+  let projectDirs = atom.project.getDirectories()
 
+  let allContents = {}
 
+  for (let dir of projectDirs) {
+    let fileSet = await getAllFilesInAllSubDirectories(dir)
+
+    // read all their contents
+    // node doesn't like too many files open simultaneously. Just read one by one.
+    for (let file of fileSet) {
+      let path = await file.getRealPath()
+      if (nodepath.extname(path) === ".jl") {
+        allContents[path] = await file.read()
+      }
+    }
+  }
+
+  return allContents
+}
+
+var mockedProjectFiles: ProjectFilesHash = null
+export function mockProjectFiles(mock: ProjectFilesHash): void {
+  mockedProjectFiles = mock
+}
+export function unmockProjectFiles(): void {
+  mockedProjectFiles = null
+}

@@ -1,5 +1,6 @@
 "use strict"
 
+import {resetHash} from "../utils/arrayUtils";
 import {Node} from "../parseTree/nodes";
 import {ModuleScope} from "../nameResolution/Scope";
 import {ModuleContentsNode} from "../parseTree/nodes";
@@ -61,7 +62,11 @@ export class ParseSet {
   resolveRoots: ResolveRoot[]
 
   constructor() {
-    this.reset()
+    this.fileLevelNodes = {}
+    this.scopes = {}
+    this.identifiers = {}
+    this.errors = {}
+    this.resolveRoots = []
   }
 
   createEntriesForFile(path: string): void {
@@ -72,11 +77,11 @@ export class ParseSet {
   }
 
   reset(): void {
-    this.fileLevelNodes = {}
-    this.scopes = {}
-    this.identifiers = {}
-    this.errors = {}
-    this.resolveRoots = []
+    resetHash(this.fileLevelNodes)
+    resetHash(this.scopes)
+    resetHash(this.identifiers)
+    resetHash(this.errors)
+    resetHash(this.resolveRoots)
   }
 
   /**

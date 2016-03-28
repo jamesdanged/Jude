@@ -23,15 +23,15 @@ export function toRange(range): tok.Range {
 }
 
 
-var mockOpenFiles: string[] = null
-export function setMockOpenFiles(openFiles: string[]) {
-  mockOpenFiles = openFiles
+var mockedOpenFiles: string[] = null
+export function mockOpenFiles(openFiles: string[]) {
+  mockedOpenFiles = openFiles
 }
-export function unsetMockOpenFiles() {
-  mockOpenFiles = null
+export function unmockOpenFiles() {
+  mockedOpenFiles = null
 }
 export function atomGetOpenFiles(): string[] {
-  if (mockOpenFiles !== null) return mockOpenFiles
+  if (mockedOpenFiles !== null) return mockedOpenFiles
   let paths = []
   let editors = atom.workspace.getTextEditors()
   for (let editor of editors) {

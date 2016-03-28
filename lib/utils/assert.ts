@@ -1,11 +1,6 @@
 "use strict"
 
-//class AssertError {
-//  message: string
-//  constructor() {
-//    this.message = "Assertion Failed"
-//  }
-//}
+import {runDelayed} from "./taskUtils";
 
 /**
  * Denotes an error that should not happen unless programmer error.
@@ -23,7 +18,7 @@ export function assert(condition: boolean): void {
 }
 
 export function throwErrorFromTimeout(err: Error): void {
-  window.setTimeout(() => {
+  runDelayed(() => {
     throw err
   })
 }

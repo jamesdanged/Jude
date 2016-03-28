@@ -3,9 +3,17 @@
 import {AssertError} from "./assert";
 import {throwErrorFromTimeout} from "./assert";
 
+
+var runDelayedSynchronously = false
+export function mockRunDelayed() { // for testing. Jasmine on atom has a broken spied setTimeout during test runs.
+  runDelayedSynchronously = true
+}
+export function unmockRunDelayed() {
+  runDelayedSynchronously = false
+}
 export function runDelayed(cb) {
-  return new Promise((resolve, reject) => {
-    window.setTimeout(() => {
+  if (runDelayedSynchronously) {
+    return new Promise((resolve, reject) => {
       try {
         let res = cb()
         resolve(res)
@@ -13,7 +21,19 @@ export function runDelayed(cb) {
         reject(err)
       }
     })
-  })
+
+  } else {
+    return new Promise((resolve, reject) => {
+      window.setTimeout(() => {
+        try {
+          let res = cb()
+          resolve(res)
+        } catch (err) {
+          reject(err)
+        }
+      })
+    })
+  }
 }
 
 

@@ -6,6 +6,7 @@ import {ConfigSchema} from "./ConfigSchema";
 import {ModuleLibrary} from "./ModuleLibrary";
 import {Controller} from "./Controller";
 import {SessionModel} from "./SessionModel";
+import {runDelayed} from "../utils/taskUtils";
 
 
 var gParseController = new Controller()
@@ -20,7 +21,7 @@ class MainObject {
   activate(state: any) {
 
     // Allow window to load before performing main thread blocking operations
-    window.setTimeout(() => {
+    runDelayed(() => {
         gParseController.initalizeAsync(state)
     })
   }
