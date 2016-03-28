@@ -16,7 +16,7 @@ import {createTestSessionModel} from "./utils/emptySession";
 
 
 describe("basic function parsing", () => {
-  let j13to20 = jasmine13to20(); let beforeAll = j13to20.newBeforeAll; let it = j13to20.newIt
+  let j13to20 = jasmine13to20(); let beforeAll = j13to20.beforeAll; let beforeEach = j13to20.beforeEach; let it = j13to20.it; let afterEach = j13to20.afterEach; let afterAll = j13to20.afterAll
 
   let file = new atomModule.File(jlFilesDir + "/functions.jl", false)
   let path: string = null
@@ -31,6 +31,10 @@ describe("basic function parsing", () => {
     contents = await file.read()
     done()
   })
+
+  //it("should be okie dokie", () => {
+  //  expect(true).toBe(false)
+  //})
 
   it("should not have any entries before parse", () => {
     expect(errors[path]).toBeUndefined()

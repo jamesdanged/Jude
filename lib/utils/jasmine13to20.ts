@@ -7,78 +7,109 @@ import {AssertError} from "./assert";
 type FuncWithOptionalDone = (done?: () => void) => void
 
 export function jasmine13to20() {
-  return new DescribeScope()
+  let o = new DescribeScope()
+  o.beforeAll = o.beforeAll.bind(o)
+  o.it = o.it.bind(o)
+  return o
 }
 
 class DescribeScope {
 
-  beforeAllActionCompleted: boolean
-  beforeAllAction: FuncWithOptionalDone
-  newBeforeAll: (BeforeAllAction) => void
-  newIt: (string, FuncWithOptionalDone) => void
+  private beforeAllActionCompleted: boolean
+  private beforeAllAction: FuncWithOptionalDone
+  private beforeEachAction: FuncWithOptionalDone
+  private afterEachAction: FuncWithOptionalDone
+  private afterAllAction: FuncWithOptionalDone
+  private lastItMarker: any
+  private afterAllActionCompleted: boolean
 
   constructor() {
-    this.beforeAllActionCompleted = false
+    this.beforeAllActionCompleted = true
     this.beforeAllAction = null
-    this.newBeforeAll = newBeforeAll.bind(this)
-    this.newIt = newIt.bind(this)
+    this.beforeEachAction = null
+    this.afterEachAction = null
+    this.afterAllAction = null
+    this.lastItMarker = null
+    this.afterAllActionCompleted = false
+  }
+
+  beforeAll(action: FuncWithOptionalDone): void {
+    this.beforeAllActionCompleted = false
+    this.beforeAllAction = promisify(action)
+  }
+
+  beforeEach(action: FuncWithOptionalDone): void {
+    this.beforeEachAction = promisify(action)
+  }
+
+  afterEach(action: FuncWithOptionalDone): void {
+    this.afterEachAction = promisify(action)
+  }
+
+  afterAll(action: FuncWithOptionalDone): void {
+    this.afterAllAction = promisify(action)
+  }
+
+  it(expectation: string, assertion: FuncWithOptionalDone): void {
+    let that = this
+    if (assertion.length > 1) throw new AssertError("'it' callback can only take up to 1 parameter.")
+    let itAction = promisify(assertion)
+
+    let allDone = false
+    let marker = {}
+    this.lastItMarker = marker
+
+    it(expectation, () => {
+
+      runs(async () => {
+
+        if (!that.beforeAllActionCompleted) {
+          await that.beforeAllAction()
+          that.beforeAllActionCompleted = true
+        }
+
+        if (that.beforeEachAction !== null) await that.beforeEachAction()
+
+        await itAction()
+
+        if (that.afterEachAction !== null) await that.afterEachAction()
+
+        if (that.afterAllAction !== null && marker === that.lastItMarker) {
+          if (that.afterAllActionCompleted) throw new AssertError("Ran after all twice!")
+          await that.afterAllAction()
+          that.afterAllActionCompleted = true
+        }
+
+        allDone = true
+      })
+
+      waitsFor(() => {
+        return allDone
+      }, "async function failed to complete", 500)
+
+    })
+  }
+
+}
+
+
+function promisify(action: FuncWithOptionalDone): () => Promise<any> {
+  if (action.length > 1) throw new AssertError("callback can only take up to 1 arg.")
+
+  return () => {
+    return new Promise((resolve, reject) => {
+      if (action.length === 0) {
+        action()
+        resolve()
+      } else {
+        action(() => {
+          resolve()
+        })
+      }
+    })
   }
 }
 
 
-function newBeforeAll(action: FuncWithOptionalDone): void {
-  this.beforeAllAction = action
-}
 
-function newIt(expectation: string, assertion: FuncWithOptionalDone): void {
-  let that = this
-  let itTakesDoneArg = assertion.length === 1
-  if (assertion.length > 1) throw new AssertError("'it' callback can only take up to 1 parameter.")
-
-
-  it(expectation, () => {
-    let itDone = false
-    let itDoneCallback = (): void => {
-      itDone = true
-    }
-
-    if (that.beforeAllAction !== null && !that.beforeAllActionCompleted) {
-      runs(() => {
-        let beforeAllDoneCb = () => {
-          that.beforeAllActionCompleted = true
-          if (itTakesDoneArg) {
-            assertion(itDoneCallback)
-          } else {
-            assertion()
-            itDone = true
-          }
-        }
-
-        that.beforeAllAction(beforeAllDoneCb)
-      })
-      waitsFor(() => {
-        return that.beforeAllActionCompleted && itDone
-      }, "'beforeAll' or 'it' failed to complete", 500)
-      runs(() => {
-      })
-
-    } else if (itTakesDoneArg) {
-      runs(() => {
-        assertion(itDoneCallback)
-      })
-      waitsFor(() => {
-        return itDone
-      }, "'it' async callback failed to complete", 500)
-      runs(() => {
-      })
-
-    } else {
-      runs(() => {
-        assertion()
-      })
-    }
-
-
-  })
-}
 
