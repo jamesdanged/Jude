@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.2.1]
+Allow configuration of autocomplete priority.
+
 ## [0.2.0]
 Allow configuration of Julia path.
 

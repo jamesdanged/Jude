@@ -37,7 +37,6 @@ function resolveFullWorkspaceAsync(sessionModel) {
         // Variable, function, type names are not resolved yet.
         //t0 = Date.now()
         moduleLibrary.toQueryFromJulia = {};
-        let openFiles = atomApi_1.atomGetOpenFiles();
         let alreadyInitializedRoots = [];
         for (let resolveRoot of parseSet.resolveRoots) {
             // already done in one of the previous recursive buildouts.
@@ -46,7 +45,7 @@ function resolveFullWorkspaceAsync(sessionModel) {
             if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) {
                 continue;
             }
-            let recurser = new ScopeRecurser_1.ScopeRecurser(parseSet, moduleLibrary, true, alreadyInitializedRoots, openFiles);
+            let recurser = new ScopeRecurser_1.ScopeRecurser(parseSet, moduleLibrary, true, alreadyInitializedRoots, []);
             recurser.resolveRecursively(resolveRoot);
         }
         //t1 = Date.now()
@@ -181,7 +180,7 @@ function populateRoots(sessionModel) {
                     let inclFullPath = nodepath.resolve(nodepath.dirname(containingFilePath), inclNode.relativePath); // these nodepath calls do not fail regardless of string
                     if (!(inclFullPath in fileLevelNodes)) {
                         badIncludeNodes.push(inclNode);
-                        parseSet.errors[containingFilePath].parseErrors.push(new errors_1.InvalidParseError("File not found in workspace.", inclNode.includeString.token));
+                        parseSet.errors[containingFilePath].parseErrors.push(new errors_1.InvalidParseError("File not found in workspace: " + inclFullPath, inclNode.includeString.token));
                         continue;
                     }
                     let inclFileNode = fileLevelNodes[inclFullPath];

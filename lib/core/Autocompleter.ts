@@ -1,5 +1,7 @@
 "use strict"
 
+/// <reference path="./../defs/atom/atom.d.ts" />
+
 import {MacroResolve} from "../nameResolution/Resolve";
 import {Node} from "../parseTree/nodes";
 import {FileIdentifiers} from "./SessionModel";
@@ -29,18 +31,19 @@ export class Autocompleter {
 
   // fields for Autocomplete+
   selector: string
-  inclusionPriority: number
-  excludeLowerPriority: boolean
-
-  // internal
-
-
 
   constructor(public sessionModel: SessionModel, public jumper: JumpController) {
     this.selector = ".source.julia"
-    this.inclusionPriority = 2
-    this.excludeLowerPriority = true
   }
+
+  get excludeLowerPriority(): boolean {
+    return atom.config.get("Jude.onlyShowAutocompleteSuggestionsFromJude")
+  }
+
+  get inclusionPriority(): number {
+    return atom.config.get("Jude.autocompletePriority")
+  }
+
 
   getSuggestions(options: AutoCompleteRequestOptions): (Promise<any[]> | any[]) {
     let path = options.editor.getPath()

@@ -494,6 +494,8 @@ class ScopeRecurser {
             if (functionDefNode.genericArgs !== null) {
                 for (let arg of functionDefNode.genericArgs.args) {
                     that.builder.registerVariable(arg.name);
+                    if (arg.restriction !== null)
+                        that.resolveNode(arg.restriction);
                 }
             }
             // register arg names

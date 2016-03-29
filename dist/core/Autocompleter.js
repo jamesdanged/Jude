@@ -12,6 +12,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+/// <reference path="./../defs/atom/atom.d.ts" />
 var Resolve_1 = require("../nameResolution/Resolve");
 var arrayUtils_1 = require("../utils/arrayUtils");
 var assert_1 = require("../utils/assert");
@@ -27,13 +28,16 @@ var nodepath = require("path");
 // TODO need to warn/document that the file tree panel may interfere with autocomplete
 // and need to switch between tabs at least once to have popup show properly.
 class Autocompleter {
-    // internal
     constructor(sessionModel, jumper) {
         this.sessionModel = sessionModel;
         this.jumper = jumper;
         this.selector = ".source.julia";
-        this.inclusionPriority = 2;
-        this.excludeLowerPriority = true;
+    }
+    get excludeLowerPriority() {
+        return atom.config.get("Jude.onlyShowAutocompleteSuggestionsFromJude");
+    }
+    get inclusionPriority() {
+        return atom.config.get("Jude.autocompletePriority");
     }
     getSuggestions(options) {
         let path = options.editor.getPath();

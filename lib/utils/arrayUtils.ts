@@ -8,6 +8,11 @@ export function last<T>(array: T[]): T {
   return array[array.length - 1]
 }
 
+export function clearArray<T>(array: T[]): void {
+  array.splice(0, array.length)
+}
+
+
 export function getFromHash<T>(obj: {[key:string]: T}, key: string): T {
   if (!(key in obj)) throw new AssertError("Key '" + key + "' not found in object.")
   return obj[key]

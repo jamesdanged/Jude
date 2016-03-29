@@ -1,5 +1,6 @@
 "use strict"
 
+import {clearArray} from "../utils/arrayUtils";
 import {resetHash} from "../utils/arrayUtils";
 import {Node} from "../parseTree/nodes";
 import {ModuleScope} from "../nameResolution/Scope";
@@ -81,7 +82,7 @@ export class ParseSet {
     resetHash(this.scopes)
     resetHash(this.identifiers)
     resetHash(this.errors)
-    resetHash(this.resolveRoots)
+    clearArray(this.resolveRoots)
   }
 
   /**

@@ -215,6 +215,14 @@ exports.ModuleScope = ModuleScope;
  * For modules external to the project.
  */
 class ExternalModuleScope extends ModuleScope {
+    /**
+     * The module scope is not fully populated initially. Names are lazily loaded from the serializedLines.
+     * The names are all immediately loaded into prefix trees.
+     *
+     * @param moduleFullName  Can have '.'
+     * @param serializedLines
+     * @param moduleLibrary
+     */
     constructor(moduleFullName, serializedLines, moduleLibrary) {
         super();
         this.moduleFullName = moduleFullName;
@@ -225,6 +233,7 @@ class ExternalModuleScope extends ModuleScope {
         this.moduleLibrary = moduleLibrary;
     }
     reset() { throw new assert_2.AssertError(""); }
+    getSerializedLines() { return this.serializedLines; } // just for serialization
     addUsingModule(scope) { throw new assert_2.AssertError(""); }
     addImportAllModule(scope) { throw new assert_2.AssertError(""); }
     tryResolveExportedName(name) {

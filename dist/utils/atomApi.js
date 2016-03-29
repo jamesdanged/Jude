@@ -31,7 +31,18 @@ function toRange(range) {
     return new tok.Range(toPoint(range.start), toPoint(range.end));
 }
 exports.toRange = toRange;
+var mockedOpenFiles = null;
+function mockOpenFiles(openFiles) {
+    mockedOpenFiles = openFiles;
+}
+exports.mockOpenFiles = mockOpenFiles;
+function unmockOpenFiles() {
+    mockedOpenFiles = null;
+}
+exports.unmockOpenFiles = unmockOpenFiles;
 function atomGetOpenFiles() {
+    if (mockedOpenFiles !== null)
+        return mockedOpenFiles;
     let paths = [];
     let editors = atom.workspace.getTextEditors();
     for (let editor of editors) {

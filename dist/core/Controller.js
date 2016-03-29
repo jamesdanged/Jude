@@ -30,7 +30,6 @@ var atomModule = require("atom");
 //import {CompositeDisposable} from "atom"
 //import {File} from "atom"
 // TODO
-// catch all errors during failed full reparse to make more user friendly
 // ccall as an identifier
 // symbol quote blocks, eg ":( ... )", "quote ... end"
 // certain operators treated as identifiers in certain circumstances
@@ -47,6 +46,7 @@ var atomModule = require("atom");
 // test make sure full reparse when project folder changes. Esp if no jl files loaded in session to begin with.
 // Jump to definition for function with module qualifier, eg Mod1.func(), should show definitions from that module, not from the current scope.
 // log identifier for target of an alias type
+// Ignore field after indexing, eg arr[i].x
 /**
  * Handles interactions with the editor. Responds to user activity and file system changes.
  */
@@ -63,7 +63,7 @@ class Controller {
         this.initialLintCalls = [];
     }
     get moduleLibrary() { return this.sessionModel.moduleLibrary; }
-    initalizeAsync() {
+    initalizeAsync(state) {
         return __awaiter(this, void 0, Promise, function* () {
             let that = this;
             let commandHandler = atom.commands.add("atom-workspace", "jude:reparse-all", this.reparseAllFilesAsync.bind(this));
@@ -90,7 +90,11 @@ class Controller {
             // watch project folders for changes
             yield this.refreshDirWatcher();
             try {
-                this.moduleLibrary.initialize();
+                if (state) {
+                    if ("moduleLibrary" in state) {
+                        this.moduleLibrary.initializeFromSerialized(state.moduleLibrary);
+                    }
+                }
                 yield this.reparseAllFilesAsync();
                 this.workspaceLoaded = true;
                 for (let cb of this.initialLintCalls) {
@@ -173,7 +177,6 @@ class Controller {
     reloadModulesFromJuliaAndReparseAsync() {
         return __awaiter(this, void 0, Promise, function* () {
             yield this.moduleLibrary.refreshLoadPathsAsync();
-            this.moduleLibrary.serializedLines = {};
             this.moduleLibrary.modules = {};
             this.moduleLibrary.workspaceModulePaths = {};
             yield this.reparseAllFilesAsync();

@@ -12,9 +12,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+var fileUtils_1 = require("../utils/fileUtils");
 var resolveFullWorkspace_1 = require("../nameResolution/resolveFullWorkspace");
 var nodepath = require("path");
-var fileUtils_1 = require("../utils/fileUtils");
 var taskUtils_1 = require("../utils/taskUtils");
 var parseFile_1 = require("../parseTree/parseFile");
 var resolveFullWorkspace_2 = require("../nameResolution/resolveFullWorkspace");
@@ -24,27 +24,22 @@ function parseFullWorkspaceAsync(sessionModel) {
     return __awaiter(this, void 0, Promise, function* () {
         sessionModel.parseSet.reset();
         //let t0 = Date.now()
-        let multiDirsContents = yield fileUtils_1.loadAllFilesInAllProjectDirs();
+        let allContents = yield loadProjectFiles();
         //let t1 = Date.now()
         //console.log("Successfully read project files from disk: " + (t1 - t0) + " ms")
         // parse all the files into expression trees
         //t0 = Date.now()
-        for (let dirContents of multiDirsContents) {
-            // create parse trees
-            for (let tup of dirContents) {
-                let path = tup[0];
-                let fileContents = tup[1];
-                // break into smaller tasks to allow smooth GUI interaction
-                yield taskUtils_1.runDelayed(() => {
-                    sessionModel.parseSet.createEntriesForFile(path);
-                    parseFile_1.parseFile(path, fileContents, sessionModel);
-                });
-            }
+        for (let path in allContents) {
+            let fileContents = allContents[path];
+            // break into smaller tasks to allow smooth GUI interaction
+            yield taskUtils_1.runDelayed(() => {
+                sessionModel.parseSet.createEntriesForFile(path);
+                parseFile_1.parseFile(path, fileContents, sessionModel);
+            });
         }
         //t1 = Date.now()
         //console.log("Parsed expression trees: " + (t1 - t0) + " ms")
         yield resolveFullWorkspace_2.resolveFullWorkspaceAsync(sessionModel);
-        //await refreshPrefixTreesAsync(sessionModel.moduleLibrary, true)
         // report parse errors to console
         for (let path in sessionModel.parseSet.errors) {
             let errorSet = sessionModel.parseSet.errors[path];
@@ -81,8 +76,40 @@ function refreshFileAsync(path, fileContents, sessionModel) {
         else {
             yield resolveFullWorkspace_1.resolveScopesInWorkspaceInvolvingFile(path, sessionModel);
         }
-        //await refreshPrefixTreesAsync(sessionModel.moduleLibrary, false)
     });
 }
 exports.refreshFileAsync = refreshFileAsync;
+/**
+ * Loads all .jl files in project.
+ * @returns Hash path -> contents
+ */
+function loadProjectFiles() {
+    return __awaiter(this, void 0, Promise, function* () {
+        if (mockedProjectFiles !== null)
+            return mockedProjectFiles;
+        let projectDirs = atom.project.getDirectories();
+        let allContents = {};
+        for (let dir of projectDirs) {
+            let fileSet = yield fileUtils_1.getAllFilesInAllSubDirectories(dir);
+            // read all their contents
+            // node doesn't like too many files open simultaneously. Just read one by one.
+            for (let file of fileSet) {
+                let path = yield file.getRealPath();
+                if (nodepath.extname(path) === ".jl") {
+                    allContents[path] = yield file.read();
+                }
+            }
+        }
+        return allContents;
+    });
+}
+var mockedProjectFiles = null;
+function mockProjectFiles(mock) {
+    mockedProjectFiles = mock;
+}
+exports.mockProjectFiles = mockProjectFiles;
+function unmockProjectFiles() {
+    mockedProjectFiles = null;
+}
+exports.unmockProjectFiles = unmockProjectFiles;
 //# sourceMappingURL=parseWorkspace.js.map

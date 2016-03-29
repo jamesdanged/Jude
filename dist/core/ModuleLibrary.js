@@ -30,15 +30,18 @@ var assert_2 = require("../utils/assert");
 class ModuleLibrary {
     constructor() {
         this.loadPaths = [];
-        this.serializedLines = {};
         this.modules = {};
         this.workspaceModulePaths = {};
         this.toQueryFromJulia = {};
     }
-    initialize() {
-        // restore state, assuming the controller or main procedure already set this.serializedLines
-        for (let moduleFullName in this.serializedLines) {
-            this.modules[moduleFullName] = new Scope_1.ExternalModuleScope(moduleFullName, this.serializedLines[moduleFullName], this);
+    initializeFromSerialized(state) {
+        if ("loadPaths" in state) {
+            this.loadPaths = state["loadPaths"];
+        }
+        if ("serializedLines" in state) {
+            for (let moduleFullName in state.serializedLines) {
+                this.modules[moduleFullName] = new Scope_1.ExternalModuleScope(moduleFullName, state.serializedLines[moduleFullName], this);
+            }
         }
     }
     refreshLoadPathsAsync() {
@@ -52,15 +55,27 @@ class ModuleLibrary {
      * Avoid having to query Julia every startup.
      */
     serialize() {
-        return {
-            loadPaths: this.loadPaths,
-            serializedLines: this.serializedLines
-        };
+        let state = new LibrarySerialized();
+        state.loadPaths = this.loadPaths.slice();
+        for (let moduleName in this.modules) {
+            let scope = this.modules[moduleName];
+            if (scope instanceof Scope_1.ExternalModuleScope) {
+                state.serializedLines[moduleName] = scope.getSerializedLines();
+            }
+        }
+        return state;
         //let json = gLibrarySerializer.serialize(this)
         //return { moduleLibrary: json }
     }
 }
 exports.ModuleLibrary = ModuleLibrary;
+class LibrarySerialized {
+    constructor() {
+        this.serializedLines = {};
+        this.loadPaths = [];
+    }
+}
+exports.LibrarySerialized = LibrarySerialized;
 /**
  * Searches for the module through the julia LOAD_PATH and installs it into the library.
  * If the module exists in the workspace, will reference the parse.
@@ -153,11 +168,7 @@ function addExternalModuleAsync(moduleLibrary, moduleFullName) {
                 }
                 moduleLinesByName[name].push(line);
             }
-            // The scope is lazily populated
-            // but the prefix tree is ready immediately
-            let scope = new Scope_1.ExternalModuleScope(moduleFullName, moduleLinesByName, moduleLibrary);
-            moduleLibrary.serializedLines[moduleFullName] = moduleLinesByName;
-            moduleLibrary.modules[moduleFullName] = scope;
+            moduleLibrary.modules[moduleFullName] = new Scope_1.ExternalModuleScope(moduleFullName, moduleLinesByName, moduleLibrary);
             console.log("Successfully retrieved '" + moduleFullName + "' from Julia process.");
         }
         catch (err) {

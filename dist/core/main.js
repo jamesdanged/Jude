@@ -15,27 +15,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 /// <reference path="./../defs/atom/atom.d.ts" />
 var ConfigSchema_1 = require("./ConfigSchema");
 var Controller_1 = require("./Controller");
+var taskUtils_1 = require("../utils/taskUtils");
 var gParseController = new Controller_1.Controller();
 class MainObject {
     constructor() {
         this.config = new ConfigSchema_1.ConfigSchema();
     }
     activate(state) {
-        let moduleLibrary = gParseController.sessionModel.moduleLibrary;
-        if (state !== null) {
-            if ("moduleLibrary" in state) {
-                let libState = state["moduleLibrary"];
-                if ("loadPaths" in libState) {
-                    moduleLibrary.loadPaths = libState["loadPaths"];
-                }
-                if ("serializedLines" in libState) {
-                    moduleLibrary.serializedLines = libState["serializedLines"];
-                }
-            }
-        }
         // Allow window to load before performing main thread blocking operations
-        window.setTimeout(() => {
-            gParseController.initalizeAsync();
+        taskUtils_1.runDelayed(() => {
+            gParseController.initalizeAsync(state);
         });
     }
     serialize() {

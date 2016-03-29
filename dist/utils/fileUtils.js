@@ -14,46 +14,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 };
 /// <reference path="./../defs/atom/atom.d.ts" />
 var assert_1 = require("./assert");
-var nodepath = require("path");
 // these are atom API related file and dir objects
-/**
- * Loads all .jl files.
- * @returns array of arrays with tuples [path, contents]
- */
-function loadAllFilesInAllProjectDirs() {
-    return __awaiter(this, void 0, Promise, function* () {
-        let projectDirs = atom.project.getDirectories();
-        let projectDirsContents = [];
-        for (let dir of projectDirs) {
-            // separate file set for each project dir
-            let pathsAndContents = yield loadAllFilesInProjectDir(dir);
-            projectDirsContents.push(pathsAndContents);
-        }
-        return projectDirsContents;
-    });
-}
-exports.loadAllFilesInAllProjectDirs = loadAllFilesInAllProjectDirs;
-/**
- *
- * @returns Array with tuples: [path, contents] for all files
- */
-function loadAllFilesInProjectDir(dir) {
-    return __awaiter(this, void 0, Promise, function* () {
-        let fileSet = yield getAllFilesInAllSubDirectories(dir);
-        // read all their contents
-        let filePathsAndContents = [];
-        // node doesn't like too many files open simultaneously. Just read one by one.
-        for (let file of fileSet) {
-            let path = yield file.getRealPath();
-            if (nodepath.extname(path) === ".jl") {
-                let contents = yield file.read();
-                filePathsAndContents.push([path, contents]);
-            }
-        }
-        return filePathsAndContents;
-    });
-}
-exports.loadAllFilesInProjectDir = loadAllFilesInProjectDir;
 function getEntriesInDir(dir) {
     return __awaiter(this, void 0, Promise, function* () {
         return yield new Promise((resolve, reject) => {

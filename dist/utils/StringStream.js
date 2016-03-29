@@ -16,6 +16,8 @@ var assert_1 = require("./assert");
 var Token_1 = require("./../tokens/Token");
 class StringStream {
     constructor(str) {
+        if (str === null || str === undefined)
+            throw new assert_1.AssertError("Cannot be null or undefined");
         this._str = str;
         this._pos = 0;
         this._row = 0;

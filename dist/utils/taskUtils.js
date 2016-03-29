@@ -13,9 +13,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
     });
 };
 var assert_1 = require("./assert");
+var runDelayedSynchronously = false;
+function mockRunDelayed() {
+    runDelayedSynchronously = true;
+}
+exports.mockRunDelayed = mockRunDelayed;
+function unmockRunDelayed() {
+    runDelayedSynchronously = false;
+}
+exports.unmockRunDelayed = unmockRunDelayed;
 function runDelayed(cb) {
-    return new Promise((resolve, reject) => {
-        window.setTimeout(() => {
+    if (runDelayedSynchronously) {
+        return new Promise((resolve, reject) => {
             try {
                 let res = cb();
                 resolve(res);
@@ -24,7 +33,20 @@ function runDelayed(cb) {
                 reject(err);
             }
         });
-    });
+    }
+    else {
+        return new Promise((resolve, reject) => {
+            window.setTimeout(() => {
+                try {
+                    let res = cb();
+                    resolve(res);
+                }
+                catch (err) {
+                    reject(err);
+                }
+            });
+        });
+    }
 }
 exports.runDelayed = runDelayed;
 class TaskQueue {

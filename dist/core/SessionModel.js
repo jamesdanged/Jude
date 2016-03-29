@@ -12,6 +12,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+var arrayUtils_1 = require("../utils/arrayUtils");
+var arrayUtils_2 = require("../utils/arrayUtils");
 var ModuleLibrary_1 = require("./ModuleLibrary");
 var assert_1 = require("../utils/assert");
 var nodes_1 = require("../parseTree/nodes");
@@ -33,7 +35,11 @@ exports.SessionModel = SessionModel;
  */
 class ParseSet {
     constructor() {
-        this.reset();
+        this.fileLevelNodes = {};
+        this.scopes = {};
+        this.identifiers = {};
+        this.errors = {};
+        this.resolveRoots = [];
     }
     createEntriesForFile(path) {
         this.fileLevelNodes[path] = new nodes_1.FileLevelNode(path);
@@ -42,11 +48,11 @@ class ParseSet {
         this.errors[path] = new FileErrors();
     }
     reset() {
-        this.fileLevelNodes = {};
-        this.scopes = {};
-        this.identifiers = {};
-        this.errors = {};
-        this.resolveRoots = [];
+        arrayUtils_2.resetHash(this.fileLevelNodes);
+        arrayUtils_2.resetHash(this.scopes);
+        arrayUtils_2.resetHash(this.identifiers);
+        arrayUtils_2.resetHash(this.errors);
+        arrayUtils_1.clearArray(this.resolveRoots);
     }
     /**
      * Clears node contents, and all logged scopes, logged identifiers, and logged errors related to a file.
