@@ -4,9 +4,6 @@
   "version": "0.2.1",
   "description": "Autocomplete and jump to definition for Julia",
   "keywords": [],
-  "activationHooks": [
-    "language-julia:grammar-used"
-  ],
   "repository": "https://github.com/jamesdanged/Jude",
   "license": "MIT",
   "engines": {
@@ -25,11 +22,11 @@
     }
   },
   "dependencies": {
-    "chokidar": "^1.4.3"
+    "chokidar": "^1.4.3",
+    "atom-package-deps": "^4.0.1"
   },
   "package-deps": [
     "language-julia",
-    "linter",
-    "autocomplete-plus"
+    "linter"
   ]
 }

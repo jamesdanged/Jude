@@ -13,19 +13,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
     });
 };
 /// <reference path="./../defs/atom/atom.d.ts" />
+/// <reference path="./../defs/atom_package_deps/atom-package-deps.d.ts" />
 var ConfigSchema_1 = require("./ConfigSchema");
 var Controller_1 = require("./Controller");
 var taskUtils_1 = require("../utils/taskUtils");
-var gParseController = new Controller_1.Controller();
+var atomPackageDeps = require("atom-package-deps");
+var gParseController = null;
 class MainObject {
     constructor() {
         this.config = new ConfigSchema_1.ConfigSchema();
     }
     activate(state) {
+        gParseController = new Controller_1.Controller(state);
         // Allow window to load before performing main thread blocking operations
-        taskUtils_1.runDelayed(() => {
-            gParseController.initalizeAsync(state);
-        });
+        taskUtils_1.runDelayed(() => __awaiter(this, void 0, Promise, function* () {
+            yield atomPackageDeps.install("Jude");
+        }));
     }
     serialize() {
         let libState = gParseController.sessionModel.moduleLibrary.serialize();

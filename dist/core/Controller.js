@@ -27,8 +27,6 @@ var Autocompleter_1 = require("./Autocompleter");
 var chokidar = require("chokidar");
 var taskUtils_1 = require("../utils/taskUtils");
 var atomModule = require("atom");
-//import {CompositeDisposable} from "atom"
-//import {File} from "atom"
 // TODO
 // ccall as an identifier
 // symbol quote blocks, eg ":( ... )", "quote ... end"
@@ -47,23 +45,26 @@ var atomModule = require("atom");
 // Jump to definition for function with module qualifier, eg Mod1.func(), should show definitions from that module, not from the current scope.
 // log identifier for target of an alias type
 // Ignore field after indexing, eg arr[i].x
+// Autocomplete by matching alignments, maybe ignoring underscore
+// Do not autocomplete during comments
+// Handle situation where an external library was added into workspace, but still treated as external
 /**
  * Handles interactions with the editor. Responds to user activity and file system changes.
  */
 class Controller {
-    constructor() {
+    constructor(state) {
         this.sessionModel = new SessionModel_1.SessionModel();
         this.linter = new Linter_1.Linter(this.sessionModel);
         this.jumper = new JumpController_1.JumpController(this.sessionModel);
         this.autocompleter = new Autocompleter_1.Autocompleter(this.sessionModel, this.jumper);
         this.subscriptions = new atomModule.CompositeDisposable();
         this.dirWatcher = null;
-        this.workspaceLoaded = false;
         this.taskQueue = new taskUtils_1.TaskQueue(true);
-        this.initialLintCalls = [];
+        this.serializedState = state;
+        this.initializedPromise = false; // the first lint call will trigger initialization of controller
     }
     get moduleLibrary() { return this.sessionModel.moduleLibrary; }
-    initalizeAsync(state) {
+    initalizeAsync() {
         return __awaiter(this, void 0, Promise, function* () {
             let that = this;
             let commandHandler = atom.commands.add("atom-workspace", "jude:reparse-all", this.reparseAllFilesAsync.bind(this));
@@ -90,20 +91,15 @@ class Controller {
             // watch project folders for changes
             yield this.refreshDirWatcher();
             try {
-                if (state) {
-                    if ("moduleLibrary" in state) {
-                        this.moduleLibrary.initializeFromSerialized(state.moduleLibrary);
+                if (this.serializedState) {
+                    if ("moduleLibrary" in this.serializedState) {
+                        this.moduleLibrary.initializeFromSerialized(this.serializedState.moduleLibrary);
                     }
                 }
                 yield this.reparseAllFilesAsync();
-                this.workspaceLoaded = true;
-                for (let cb of this.initialLintCalls) {
-                    this.taskQueue.addToQueueAndRun(cb);
-                }
-                this.initialLintCalls = null; // should not be used anymore
             }
             catch (err) {
-                assert_2.throwErrorFromTimeout(err); // better error reporting
+                assert_2.throwErrorFromTimeout(err); // better error reporting than just outputting to console hidden away
             }
         });
     }
@@ -224,32 +220,18 @@ class Controller {
         }
         let that = this;
         return new Promise((resolve, reject) => __awaiter(this, void 0, Promise, function* () {
-            // delay the check until workspace is loaded
-            let fileInWorkspace = () => {
-                if (!(path in that.sessionModel.parseSet.fileLevelNodes)) {
-                    console.log("File " + path + " not in workspace.");
-                    resolve([]);
-                    return false;
-                }
-                return true;
-            };
-            if (!that.workspaceLoaded) {
-                // lint called upon first startup
-                // simply return errors when ready
-                that.initialLintCalls.push(() => {
-                    if (!fileInWorkspace())
-                        return;
-                    resolve(that.linter.lint(path));
-                });
+            if (that.initializedPromise === false) {
+                that.initializedPromise = that.initalizeAsync();
             }
-            else {
-                // lint was called because of a change
-                // so must reparse
-                if (!fileInWorkspace())
-                    return;
-                yield that.reparseFileAsync(path, editor.getText());
-                resolve(that.linter.lint(path));
+            yield that.initializedPromise;
+            if (!(path in that.sessionModel.parseSet.fileLevelNodes)) {
+                console.log("File " + path + " not in workspace.");
+                resolve([]);
+                return;
             }
+            // lint was called because of a change, so must reparse
+            yield that.reparseFileAsync(path, editor.getText());
+            resolve(that.linter.lint(path));
         }));
     }
 }

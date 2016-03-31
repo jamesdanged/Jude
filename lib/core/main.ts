@@ -1,15 +1,16 @@
 "use strict"
 
 /// <reference path="./../defs/atom/atom.d.ts" />
+/// <reference path="./../defs/atom_package_deps/atom-package-deps.d.ts" />
 
 import {ConfigSchema} from "./ConfigSchema";
 import {ModuleLibrary} from "./ModuleLibrary";
 import {Controller} from "./Controller";
 import {SessionModel} from "./SessionModel";
 import {runDelayed} from "../utils/taskUtils";
+import * as atomPackageDeps from "atom-package-deps"
 
-
-var gParseController = new Controller()
+var gParseController: Controller = null
 
 
 class MainObject {
@@ -19,10 +20,11 @@ class MainObject {
   }
 
   activate(state: any) {
+    gParseController = new Controller(state)
 
     // Allow window to load before performing main thread blocking operations
-    runDelayed(() => {
-        gParseController.initalizeAsync(state)
+    runDelayed(async () => {
+      await atomPackageDeps.install("Jude")
     })
   }
 

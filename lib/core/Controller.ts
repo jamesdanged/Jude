@@ -31,8 +31,6 @@ import chokidar = require("chokidar")
 import fs = require("fs")
 import {TaskQueue} from "../utils/taskUtils";
 import * as atomModule from "atom"
-//import {CompositeDisposable} from "atom"
-//import {File} from "atom"
 
 
 
@@ -56,7 +54,9 @@ import * as atomModule from "atom"
 // Jump to definition for function with module qualifier, eg Mod1.func(), should show definitions from that module, not from the current scope.
 // log identifier for target of an alias type
 // Ignore field after indexing, eg arr[i].x
-
+// Autocomplete by matching alignments, maybe ignoring underscore
+// Do not autocomplete during comments
+// Handle situation where an external library was added into workspace, but still treated as external
 
 /**
  * Handles interactions with the editor. Responds to user activity and file system changes.
@@ -69,27 +69,25 @@ export class Controller {
   jumper: JumpController
   subscriptions // CompositeDisposable
   dirWatcher: fs.FSWatcher
-  workspaceLoaded: boolean
-
   taskQueue: TaskQueue     // coordinates resolves so that they never run two at the same time. All reparses/resolves must be run through the queue.
-  initialLintCalls: any[]  // these need to be separately handled from tasks
-
+  serializedState: any
+  initializedPromise: Promise<void> | boolean
 
   get moduleLibrary(): ModuleLibrary { return this.sessionModel.moduleLibrary }
 
-  constructor() {
+  constructor(state: any) {
     this.sessionModel = new SessionModel()
     this.linter = new Linter(this.sessionModel)
     this.jumper = new JumpController(this.sessionModel)
     this.autocompleter = new Autocompleter(this.sessionModel, this.jumper)
     this.subscriptions = new atomModule.CompositeDisposable()
     this.dirWatcher = null
-    this.workspaceLoaded = false
     this.taskQueue = new TaskQueue(true)
-    this.initialLintCalls = []
+    this.serializedState = state
+    this.initializedPromise = false  // the first lint call will trigger initialization of controller
   }
 
-  async initalizeAsync(state: any) {
+  async initalizeAsync() {
 
     let that = this
 
@@ -125,19 +123,14 @@ export class Controller {
     await this.refreshDirWatcher()
 
     try {
-      if (state) {
-        if ("moduleLibrary" in state) {
-          this.moduleLibrary.initializeFromSerialized(state.moduleLibrary)
+      if (this.serializedState) {
+        if ("moduleLibrary" in this.serializedState) {
+          this.moduleLibrary.initializeFromSerialized(this.serializedState.moduleLibrary)
         }
       }
       await this.reparseAllFilesAsync()
-      this.workspaceLoaded = true
-      for (let cb of this.initialLintCalls) {
-        this.taskQueue.addToQueueAndRun(cb)
-      }
-      this.initialLintCalls = null // should not be used anymore
     } catch (err) {
-      throwErrorFromTimeout(err)  // better error reporting
+      throwErrorFromTimeout(err)  // better error reporting than just outputting to console hidden away
     }
   }
 
@@ -255,30 +248,19 @@ export class Controller {
     let that = this
     return new Promise<any[]>(async (resolve, reject) => {
 
-      // delay the check until workspace is loaded
-      let fileInWorkspace = (): boolean => {
-        if (!(path in that.sessionModel.parseSet.fileLevelNodes)) {
-          console.log("File " + path + " not in workspace.")
-          resolve([])
-          return false
-        }
-        return true
+      if (that.initializedPromise === false) {
+        that.initializedPromise = that.initalizeAsync()
       }
+      await that.initializedPromise
 
-      if (!that.workspaceLoaded) {
-        // lint called upon first startup
-        // simply return errors when ready
-        that.initialLintCalls.push(() => {
-          if (!fileInWorkspace()) return
-          resolve(that.linter.lint(path))
-        })
-      } else {
-        // lint was called because of a change
-        // so must reparse
-        if (!fileInWorkspace()) return
-        await that.reparseFileAsync(path, editor.getText())
-        resolve(that.linter.lint(path))
+      if (!(path in that.sessionModel.parseSet.fileLevelNodes)) {
+        console.log("File " + path + " not in workspace.")
+        resolve([])
+        return
       }
+      // lint was called because of a change, so must reparse
+      await that.reparseFileAsync(path, editor.getText())
+      resolve(that.linter.lint(path))
     })
   }
 

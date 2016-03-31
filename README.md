@@ -9,7 +9,7 @@ Jude statically parses your codebase in javascript to provide IDE like capabilit
 * forward/back cursor history
 * highlights incorrect name errors and some parsing errors
 
-In the future, this may include tools to find usages of a function, and even perform limited static type checking.
+In the future, this may include tools to find usages of a function, limited static type checking, and some refactoring/renaming.
 
 ![Jude demo gif](https://raw.githubusercontent.com/jamesdanged/Jude/master/img/JudeDemo.gif)
 
@@ -48,7 +48,7 @@ Parsing should be very fast, but if it starts to cause noticable slow down in th
 
 Julia is a dynamic language, so autocomplete currently only works for functions/types/variables, not for fields on types. This is because the type of the object often cannot be determined statically, so the fields are unknown. There is no fuzzy matching currently for fields. In the future, there may be some flow analysis that allows types to be inferred such as from function arg list signatures or type assertions. If Julia eventually allows return type declarations, these can be leveraged too.
 
-###Known issues
+### Known issues
 
 * The bodies of macro definitions are not parsed.
 * Code quotes are not parsed, eg `:(a + b)`, `quote ... end`

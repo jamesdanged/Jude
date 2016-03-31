@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.2.2]
+Automatically install linter and language-julia package dependencies.
+
 ## [0.2.1]
 Allow configuration of autocomplete priority.
 
