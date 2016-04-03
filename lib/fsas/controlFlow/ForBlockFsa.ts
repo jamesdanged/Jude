@@ -14,7 +14,7 @@ import {alwaysPasses} from "./../../tokens/streamConditions";
 import {streamAtEof} from "./../../tokens/streamConditions";
 import {streamAtSemicolon} from "./../../tokens/streamConditions";
 import {streamAtNewLineOrSemicolon} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -27,17 +27,11 @@ import {parseGeneralBlockExpression} from "../general/ExpressionFsa";
 import {TokenType} from "../../tokens/operatorsAndKeywords";
 import {InvalidParseError} from "../../utils/errors";
 
-class ForBlockFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class ForBlockFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let iterVariable = new FsaState("iter variable")
     let equals = new FsaState("equals")

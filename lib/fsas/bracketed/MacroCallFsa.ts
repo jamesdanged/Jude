@@ -1,5 +1,7 @@
 "use strict"
 
+import {AssertError} from "../../utils/assert";
+import {streamAtNewLine} from "../../tokens/streamConditions";
 import {streamAtMacroWithSpace} from "../../tokens/streamConditions";
 import {ExpressionFsaOptions} from "../general/ExpressionFsa";
 import {WholeFileParseState} from "./../general/ModuleContentsFsa";
@@ -9,7 +11,7 @@ import {TokenStream} from "./../../tokens/TokenStream";
 import {alwaysPasses} from "./../../tokens/streamConditions";
 import {streamAtNewLineOrSemicolon} from "./../../tokens/streamConditions";
 import {streamAtEof} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -17,11 +19,12 @@ import {streamAtOpenParenthesis} from "../../tokens/streamConditions";
 import {MacroInvocationNode} from "../../parseTree/nodes";
 import {IdentifierNode} from "../../parseTree/nodes";
 import {TreeToken} from "../../tokens/Token";
-import {FunctionCallNode} from "../../parseTree/nodes";
 import {streamAtComma} from "../../tokens/streamConditions";
 import {parseGeneralBlockExpression} from "./../general/ExpressionFsa";
 import {ExpressionFsa} from "../general/ExpressionFsa";
 import {streamAtMacroWithoutSpace} from "../../tokens/streamConditions";
+import {expectNoMoreExpressions} from "../general/fsaUtils";
+import {handleParseErrorOnly} from "../general/fsaUtils";
 
 
 /**
@@ -36,27 +39,18 @@ import {streamAtMacroWithoutSpace} from "../../tokens/streamConditions";
  * But without redoing everything to handle whitespace everywhere, we can just ignore this rare issue for now.
  * People rarely will use the space delimited form with multiple arguments with the first argument in parentheses.
  */
-class MacroCallFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
+class MacroCallFsa extends BaseFsa {
 
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let macroNameWithSpace = new FsaState("macro name with space")
     let macroNameWithoutSpace = new FsaState("macro name without space")
 
     let spaceDelimitedArgList  = new FsaState("space delimited arg list")
-
     let commaDelimitedArgList = new FsaState("comma delimited arg list")
-    let commaDelimitedArg = new FsaState("comma delimited arg")
-
-    let comma = new FsaState("comma")
 
     // space delimited
     startState.addArc(macroNameWithSpace, streamAtMacroWithSpace, readMacroName)
@@ -68,16 +62,8 @@ class MacroCallFsa implements IFsa {
 
     // comma delimited
     startState.addArc(macroNameWithoutSpace, streamAtMacroWithoutSpace, readMacroName)
-    macroNameWithoutSpace.addArc(commaDelimitedArgList, streamAtOpenParenthesis, switchToParenStream)
-    // 0 or more args
-    commaDelimitedArgList.addArc(stopState, streamAtEof, doNothing)
-    commaDelimitedArgList.addArc(commaDelimitedArg, alwaysPasses, readCommaDelimitedArg)
-    // must have comma to continue list
-    commaDelimitedArg.addArc(stopState, streamAtEof, doNothing)
-    commaDelimitedArg.addArc(comma, streamAtComma, skipOneToken)
-    // must have arg after a comma
-    comma.addArc(commaDelimitedArg, alwaysPasses, readCommaDelimitedArg)
-
+    macroNameWithoutSpace.addArc(commaDelimitedArgList, streamAtOpenParenthesis, readCommaArgList)
+    commaDelimitedArgList.addArc(stopState, alwaysPasses, doNothing)
 
   }
 
@@ -86,6 +72,35 @@ class MacroCallFsa implements IFsa {
     runFsaStartToStop(this, parseState)
   }
 
+}
+
+class MacroCommaArgListFsa extends BaseFsa {
+  constructor() {
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
+
+    let commaDelimitedArg = new FsaState("comma delimited arg")
+    let comma = new FsaState("comma")
+
+    for (let state of [comma, commaDelimitedArg]) {
+      state.addArc(state, streamAtNewLine, skipOneToken)
+    }
+
+    // 0 or more args
+    startState.addArc(stopState, streamAtEof, doNothing)
+    startState.addArc(commaDelimitedArg, alwaysPasses, readCommaDelimitedArg)
+    // must have comma to continue list
+    commaDelimitedArg.addArc(stopState, streamAtEof, doNothing)
+    commaDelimitedArg.addArc(comma, streamAtComma, skipOneToken)
+    // must have arg after a comma
+    comma.addArc(commaDelimitedArg, alwaysPasses, readCommaDelimitedArg)
+  }
+
+  runStartToStop(ts:TokenStream, nodeToFill: MacroInvocationNode, wholeState: WholeFileParseState): void {
+    let state = new ParseState(ts, nodeToFill, wholeState)
+    runFsaStartToStop(this, state)
+  }
 }
 
 
@@ -106,9 +121,9 @@ function readMacroName(state: ParseState) {
   state.nodeToFill.name = new IdentifierNode(tok)
 }
 
-function switchToParenStream(state: ParseState) {
+function readCommaArgList(state: ParseState) {
   let tokenTree = state.ts.read() as TreeToken
-  state.ts = new TokenStream(tokenTree.contents, tokenTree.openToken)
+  parseCommaArgList(tokenTree, state.nodeToFill, state.wholeState)
 }
 
 var fsaMacroCallExpressions = null // build on first usage. Constructors may not be exported yet upon global scope evaluation.
@@ -153,4 +168,19 @@ export function parseMacroCall(ts: TokenStream, wholeState: WholeFileParseState)
   let node = new MacroInvocationNode()
   fsaMacroCall.runStartToStop(ts, node, wholeState)
   return node
+}
+
+
+
+var fsaMacroCommaArgList = new MacroCommaArgListFsa()
+export function parseCommaArgList(bracketTree: TreeToken, node: MacroInvocationNode, wholeState: WholeFileParseState): void {
+  if (bracketTree.openToken.str !== "(") throw new AssertError("")
+  let ts = new TokenStream(bracketTree.contents, bracketTree.openToken)
+
+  try {
+    fsaMacroCommaArgList.runStartToStop(ts, node, wholeState)
+    expectNoMoreExpressions(ts)
+  } catch (err) {
+    handleParseErrorOnly(err, node, bracketTree.contents, wholeState)
+  }
 }

@@ -21,7 +21,7 @@ import {FunctionDefArgNode} from "./../../parseTree/nodes";
 import {GenericArgListNode} from "./../../parseTree/nodes";
 import {streamAtNewLine} from "./../../tokens/streamConditions";
 import {streamAtComment} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -35,17 +35,11 @@ import {ExpressionFsaOptions} from "../general/ExpressionFsa";
 /**
  * An automaton that recognizes the entire contents within the parentheses of a function's arg list declaration.
  */
-class FunctionDefArgListFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class FunctionDefArgListFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let orderedArgName = new FsaState("ordered arg name")
     let orderedArgType = new FsaState("ordered arg type")

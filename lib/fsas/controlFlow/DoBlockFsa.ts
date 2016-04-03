@@ -17,7 +17,7 @@ import {DoBlockNode} from "./../../parseTree/nodes";
 import {DoBlockArgNode} from "./../../parseTree/nodes";
 import {streamAtDoubleColon} from "./../../tokens/streamConditions";
 import {streamAtComma} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -29,17 +29,11 @@ import {ExpressionFsaOptions} from "../general/ExpressionFsa";
 
 
 
-class DoBlockFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class DoBlockFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     // similar to function definition's arg list, but cannot have default values or keyword args
     let argList = new FsaState("arg list")

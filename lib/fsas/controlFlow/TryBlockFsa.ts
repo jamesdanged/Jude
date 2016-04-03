@@ -12,7 +12,7 @@ import {streamAtCatch} from "./../../tokens/streamConditions";
 import {streamAtFinally} from "./../../tokens/streamConditions";
 import {streamAtEof} from "./../../tokens/streamConditions";
 import {streamAtIdentifier} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -23,17 +23,11 @@ import {AssertError} from "../../utils/assert";
 import {TreeToken} from "../../tokens/Token";
 import {parseGeneralBlockExpression} from "../general/ExpressionFsa";
 
-class TryBlockFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class TryBlockFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stio")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let tryBody = new FsaState("try body")
     let tryBetweenExpressions = new FsaState("try between expressions")
@@ -79,7 +73,7 @@ class TryBlockFsa implements IFsa {
     // if no error variable, must insert a semicolon or advance to a new line
     catchKeyword.addArc(catchBody, streamAtNewLineOrSemicolon, skipOneToken)
 
-    catchBody.addArc(finallyKeyword, streamAtFinally, skipOneToken)
+    catchBody.addArc(finallyKeyword, streamAtFinally, newFinallyBlock)
     catchBody.addArc(stopState, streamAtEof, doNothing)
     catchBody.addArc(catchBetweenExpressions, alwaysPasses, readCatchBodyExpression) // otherwise must be an expression
 

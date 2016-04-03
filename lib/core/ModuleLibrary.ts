@@ -14,6 +14,8 @@ import {ModuleDefNode} from "../parseTree/nodes";
 import {runJuliaToGetModuleDataAsync} from "../utils/juliaChildProcess";
 import {throwErrorFromTimeout} from "../utils/assert";
 import {ModuleScope} from "../nameResolution/Scope";
+import {Token} from "../tokens/Token";
+import {VariableResolve} from "../nameResolution/Resolve";
 
 export type ModuleLineSet = {[name: string]: string[][]}  // function/type/variable name -> all related lines, split by tab
 
@@ -129,7 +131,7 @@ export async function resolveModuleForLibrary(fullModuleName: string, sessionMod
     }
     if (foundPath === null) {
       // this can happen eg import LinAlg, which is actually an inner module of Base
-      console.error("Module '" + outerModuleName + "' was not found in the file system.")
+      console.log("Module '" + outerModuleName + "' was not found in the file system.")
       return
     }
 
@@ -154,7 +156,7 @@ export async function resolveModuleForLibrary(fullModuleName: string, sessionMod
         }
       }
       // if reached here, no matching module, even though there should be one
-      console.error("Module '" + outerModuleName + "' should be in the workspace at " + foundPath +
+      console.log("Module '" + outerModuleName + "' should be in the workspace at " + foundPath +
         " but the file did not declare a module with name '" + outerModuleName + "'.")
       return
     }
@@ -178,6 +180,7 @@ async function addExternalModuleAsync(moduleLibrary: ModuleLibrary, moduleFullNa
 
     // convert array into a hash indexed by the name
     let moduleLinesByName: ModuleLineSet = {}
+
     for (let line of linesList) {
       if (line.length < 2) throw new AssertError("")
       if (line[0] === "cancel") {
@@ -191,13 +194,19 @@ async function addExternalModuleAsync(moduleLibrary: ModuleLibrary, moduleFullNa
 
       if (line.length < 3) throw new AssertError("")
       let name = line[1]
-      if (!(name in moduleLinesByName)) {
-        moduleLinesByName[name] = []
-      }
+
+      if (!(name in moduleLinesByName)) moduleLinesByName[name] = []
+
+      // ccall is a special 'intrinsic' function which is defined in Core but not exported.
+      // To allow name resolution, we can just label it as exported.
+      if (moduleFullName === "Core" && name === "ccall") line[2] = "exported"
+
       moduleLinesByName[name].push(line)
     }
 
     moduleLibrary.modules[moduleFullName] = new ExternalModuleScope(moduleFullName, moduleLinesByName, moduleLibrary)
+
+
     console.log("Successfully retrieved '" + moduleFullName + "' from Julia process.")
   } catch (err) {
     throwErrorFromTimeout(err)

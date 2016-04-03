@@ -11,7 +11,7 @@ import {streamAtComment} from "./../../tokens/streamConditions";
 import {alwaysPasses} from "./../../tokens/streamConditions";
 import {streamAtEof} from "./../../tokens/streamConditions";
 import {streamAtComma} from "./../../tokens/streamConditions";
-import {IFsa} from "./../general/fsaUtils";
+import {BaseFsa} from "./../general/fsaUtils";
 import {FsaState} from "./../general/fsaUtils";
 import {runFsaStartToStop} from "./../general/fsaUtils";
 import {IFsaParseState} from "./../general/fsaUtils";
@@ -25,16 +25,11 @@ import {ExpressionFsaOptions} from "../general/ExpressionFsa";
  * for invocations of a generic function or for instantiations of a generic type,
  * not for a declaration of either.
  */
-class GenericArgListFsa implements IFsa {
-  startState: FsaState
-  stopState: FsaState
-
+class GenericArgListFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let typeExpression = new FsaState("type expression")
     let comma = new FsaState("comma")

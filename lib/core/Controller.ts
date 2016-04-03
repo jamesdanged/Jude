@@ -37,7 +37,6 @@ import * as atomModule from "atom"
 
 
 // TODO
-// ccall as an identifier
 // symbol quote blocks, eg ":( ... )", "quote ... end"
 // certain operators treated as identifiers in certain circumstances
 //   eg map(arr, +)
@@ -57,6 +56,12 @@ import * as atomModule from "atom"
 // Autocomplete by matching alignments, maybe ignoring underscore
 // Do not autocomplete during comments
 // Handle situation where an external library was added into workspace, but still treated as external
+// Ctrl space should display signature information for functions that have info in methods(...), but don't have a file location, eg mmap
+// Ensure Base.Mmap.mmap shows popup
+// Seems to not be running reparse until save, eg type a little, then try to jump to definition of word just typed. Make sure lint on fly is always on.
+// Type one char after module name, does not show autocomplete results?
+// handle docstrings
+// display docstrings in autocomplete and jump to definition
 
 /**
  * Handles interactions with the editor. Responds to user activity and file system changes.

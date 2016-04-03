@@ -18,7 +18,7 @@ import {parseIntoTreeByOrderOfOperations} from "./../../parseTree/orderOfOperati
 import {Node} from "./../../parseTree/nodes"
 import {FunctionCallNode} from "./../../parseTree/nodes";
 import {streamAtComment} from "./../../tokens/streamConditions";
-import {IFsa} from "./../general/fsaUtils";
+import {BaseFsa} from "./../general/fsaUtils";
 import {FsaState} from "./../general/fsaUtils";
 import {runFsaStartToStop} from "./../general/fsaUtils";
 import {IFsaParseState} from "./../general/fsaUtils";
@@ -31,17 +31,11 @@ import {ExpressionFsaOptions} from "../general/ExpressionFsa";
  * A automaton that recognizes the contents within the parentheses of a function invocation,
  * eg  foo(param1, param2, ...)
  */
-class FunctionCallFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class FunctionCallFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let orderedArgExpression = new FsaState("ordered arg")
     let orderedArgComma = new FsaState("ordered arg comma")

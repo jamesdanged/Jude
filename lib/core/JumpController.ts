@@ -88,7 +88,7 @@ export class JumpController {
         }
       }
       if (paths.length === 0) {
-        console.error(identNode.name + " is not in project.")
+        console.log(identNode.name + " is not in project.")
         return []
       } else if (paths.length === 1) {
         destPath = paths[0]
@@ -124,7 +124,7 @@ export class JumpController {
       destPath = resolve.filePath
       destPoint = resolve.moduleDefNode.name.token.range.start
     } else if (resolve instanceof ExternalModuleResolve) {
-      console.error("Not supported for modules outside workspace.")
+      console.log("Not supported for modules outside workspace.")
       return []
     } else {
       throw new AssertError("")

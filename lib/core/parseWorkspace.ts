@@ -41,7 +41,7 @@ export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
   for (let path in sessionModel.parseSet.errors) {
     let errorSet = sessionModel.parseSet.errors[path]
     for (let err of errorSet.parseErrors) {
-      console.error(path, err)
+      console.log(path, err)
     }
   }
 

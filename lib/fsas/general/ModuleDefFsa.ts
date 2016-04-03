@@ -4,7 +4,7 @@ import {expectNoMoreExpressions} from "./fsaUtils";
 import {WholeFileParseState} from "./ModuleContentsFsa";
 import {parseModuleContents} from "./ModuleContentsFsa";
 import {handleParseErrorOnly} from "./fsaUtils";
-import {IFsa} from "./fsaUtils";
+import {BaseFsa} from "./fsaUtils";
 import {FsaState} from "./fsaUtils";
 import {TokenStream} from "../../tokens/TokenStream";
 import {ModuleDefNode} from "../../parseTree/nodes";
@@ -19,17 +19,11 @@ import {AssertError} from "../../utils/assert";
 import {TreeToken} from "../../tokens/Token";
 import {InvalidParseError} from "../../utils/errors";
 
-class ModuleDefFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class ModuleDefFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let nameState = new FsaState("name")
     let bodyState = new FsaState("body")

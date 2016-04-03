@@ -15,7 +15,7 @@ import {streamAtElse} from "./../../tokens/streamConditions";
 import {streamAtNewLineOrSemicolon} from "./../../tokens/streamConditions";
 import {MultiExpressionNode} from "./../../parseTree/nodes";
 import {last} from "../../utils/arrayUtils";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -24,17 +24,11 @@ import {TreeToken} from "../../tokens/Token";
 import {WholeFileParseState} from "../general/ModuleContentsFsa";
 
 
-class IfBlockFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class IfBlockFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start state")
-    let stopState = new FsaState("stop state")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let ifCondition = new FsaState("if condition")
     let ifTrueBlock = new FsaState("if true block")

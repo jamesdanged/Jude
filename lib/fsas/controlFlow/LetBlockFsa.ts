@@ -15,7 +15,7 @@ import {alwaysPasses} from "./../../tokens/streamConditions";
 import {streamAtEof} from "./../../tokens/streamConditions";
 import {streamAtSemicolon} from "./../../tokens/streamConditions";
 import {streamAtNewLineOrSemicolon} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -32,17 +32,11 @@ import {VarDeclItemNode} from "../../parseTree/nodes";
 import {ExpressionFsaOptions} from "../general/ExpressionFsa";
 import {ExpressionFsa} from "../general/ExpressionFsa";
 
-class LetBlockFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class LetBlockFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let name = new FsaState("name")
     let doubleColon = new FsaState("::")

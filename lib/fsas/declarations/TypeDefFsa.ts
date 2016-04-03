@@ -18,7 +18,7 @@ import {FieldNode} from "./../../parseTree/nodes";
 import {streamAtDoubleColon} from "./../../tokens/streamConditions";
 import {streamAtSemicolon} from "./../../tokens/streamConditions";
 import {streamAtNewLineOrSemicolon} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -30,16 +30,11 @@ import {parseGeneralBlockExpression} from "../general/ExpressionFsa";
 /**
  * Recognizes the body of a type...end declaration.
  */
-class TypeDefFsa implements IFsa {
-  startState: FsaState
-  stopState: FsaState
-
+class TypeDefFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let typeDefName = new FsaState("type def name")
     let genericParams = new FsaState("generic params")

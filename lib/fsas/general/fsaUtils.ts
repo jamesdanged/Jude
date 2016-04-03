@@ -9,10 +9,19 @@ import {MayBeUnparsedNode} from "../../parseTree/nodes";
 
 
 
-export interface IFsa {
+export abstract class BaseFsa {
   startState: FsaState
   stopState: FsaState
+
+  constructor() {
+    let startState = new FsaState("start")
+    let stopState = new FsaState("stop")
+    this.startState = startState
+    this.stopState = stopState
+  }
 }
+
+
 
 export interface IFsaParseState {
   ts: TokenStream
@@ -68,15 +77,15 @@ export class Arc {
  *
  * This separates the algorithm for traversing the FSA from the FSA.
  */
-export function runFsaStartToStop(fsa: IFsa, parseState: IFsaParseState): void {
+export function runFsaStartToStop(fsa: BaseFsa, parseState: IFsaParseState): void {
   runFsaHelper(fsa, parseState, null)
 }
 
-export function runFsaStartToEarlyExit(fsa: IFsa, parseState: IFsaParseState, earlyStopStates: FsaState[]): void {
+export function runFsaStartToEarlyExit(fsa: BaseFsa, parseState: IFsaParseState, earlyStopStates: FsaState[]): void {
   runFsaHelper(fsa, parseState, earlyStopStates)
 }
 
-function runFsaHelper(fsa: IFsa, parseState: IFsaParseState, earlyStopStates: FsaState[]): void {
+function runFsaHelper(fsa: BaseFsa, parseState: IFsaParseState, earlyStopStates: FsaState[]): void {
   let currState = fsa.startState
   //let streamStartIndex = parseState.ts.index
 

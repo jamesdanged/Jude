@@ -18,7 +18,7 @@ import {FieldNode} from "./../../parseTree/nodes";
 import {streamAtDoubleColon} from "./../../tokens/streamConditions";
 import {streamAtSemicolon} from "./../../tokens/streamConditions";
 import {streamAtNewLineOrSemicolon} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -33,16 +33,11 @@ import {InvalidParseError} from "../../utils/errors";
  *
  * Not fully implemented. Just stores everything inside the node.
  */
-class MacroDefFsa implements IFsa {
-  startState: FsaState
-  stopState: FsaState
-
+class MacroDefFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let macroName = new FsaState("macro name")
     let argList = new FsaState("arg list")

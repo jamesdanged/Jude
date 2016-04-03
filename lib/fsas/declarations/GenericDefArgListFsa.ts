@@ -15,7 +15,7 @@ import {streamAtEof} from "./../../tokens/streamConditions";
 import {streamAtComma} from "./../../tokens/streamConditions";
 import {streamAtLessThanColon} from "./../../tokens/streamConditions";
 import {alwaysPasses} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -30,17 +30,11 @@ import {ExpressionFsaOptions} from "../general/ExpressionFsa";
  * An automaton that recognizes the entire contents within {...} of a type parameter list declaration
  * of a generic function or a generic type.
  */
-class GenericDefArgListFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class GenericDefArgListFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let argName = new FsaState("arg name")
     let lessThanColon = new FsaState("<:")

@@ -197,6 +197,7 @@ export class TokenStream {
   toOrigString(fromIndex: number, toIndex: number): string {
     if (fromIndex < 0) throw new AssertError("")
     if (this._tokens.length < toIndex) throw new AssertError("")
+
     //if (fromIndex > toIndex) throw new AssertError("")
 
     let s = ""

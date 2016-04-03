@@ -65,7 +65,7 @@ import {streamAtOpenCurlyBraces} from "./../../tokens/streamConditions";
 import {GenericArgListNode} from "./../../parseTree/nodes";
 import {streamAtComment} from "./../../tokens/streamConditions";
 import {streamAtAnyQuote} from "./../../tokens/streamConditions";
-import {IFsa} from "./fsaUtils";
+import {BaseFsa} from "./fsaUtils";
 import {FsaState} from "./fsaUtils";
 import {runFsaStartToStop} from "./fsaUtils";
 import {IFsaParseState} from "./fsaUtils";
@@ -120,19 +120,14 @@ import {streamAtRegex} from "../../tokens/streamConditions";
  * Even though +- can be unary or binary ops, they will only be unary if they are the
  * first token encountered or they are immediately after a binary op.
  */
-export class ExpressionFsa implements IFsa {
-  startState: FsaState
-  stopState: FsaState
-
+export class ExpressionFsa extends BaseFsa {
   binaryOpsRequireArg2: StringSet
   binaryOpsMayOmitArg2: StringSet
 
-
   constructor(options: ExpressionFsaOptions) {
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let unaryState = new FsaState("unary")  // prefix unary operators
     let binaryState = new FsaState("binary")

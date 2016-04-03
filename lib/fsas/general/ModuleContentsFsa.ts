@@ -32,7 +32,7 @@ import {TokenType} from "../../tokens/operatorsAndKeywords";
 import {InvalidParseError} from "../../utils/errors";
 import {streamAtColon} from "./../../tokens/streamConditions";
 import {streamAtIdentifier} from "./../../tokens/streamConditions";
-import {IFsa} from "./fsaUtils";
+import {BaseFsa} from "./fsaUtils";
 import {FsaState} from "./fsaUtils";
 import {runFsaStartToStop} from "./fsaUtils";
 import {IFsaParseState} from "./fsaUtils";
@@ -68,17 +68,11 @@ import {overridableBinaryOperators} from "../../tokens/operatorsAndKeywords";
  * (both of which aren't surrounded by module...end).
  * This is the only FSA allowed to recognize import, importall, export, and using statements.
  */
-class ModuleContentsFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class ModuleContentsFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let body = new FsaState("body")
     let betweenExpressions = new FsaState("between expressions")

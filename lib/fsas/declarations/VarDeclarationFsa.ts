@@ -12,7 +12,7 @@ import {BeginBlockNode} from "./../../parseTree/nodes";
 import {alwaysPasses} from "./../../tokens/streamConditions";
 import {streamAtNewLineOrSemicolon} from "./../../tokens/streamConditions";
 import {streamAtEof} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -39,19 +39,13 @@ import {ExpressionFsaOptions} from "../general/ExpressionFsa";
  *
  * Doesn't consume \n or any token after the variable declaration.
  */
-class VarDeclarationFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class VarDeclarationFsa extends BaseFsa {
   constructor(public varType: NameDeclType) {
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     if (varType === NameDeclType.ImpliedByAssignment || varType === NameDeclType.ArgList) throw new AssertError("")
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
 
     let name = new FsaState("name")
     let doubleColon = new FsaState("::")

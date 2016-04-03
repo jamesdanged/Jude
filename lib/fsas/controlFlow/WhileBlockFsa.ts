@@ -13,7 +13,7 @@ import {alwaysPasses} from "./../../tokens/streamConditions";
 import {streamAtEof} from "./../../tokens/streamConditions";
 import {streamAtSemicolon} from "./../../tokens/streamConditions";
 import {streamAtNewLineOrSemicolon} from "./../../tokens/streamConditions";
-import {IFsa} from "../general/fsaUtils";
+import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
@@ -22,17 +22,11 @@ import {AssertError} from "../../utils/assert";
 import {TreeToken} from "../../tokens/Token";
 import {parseGeneralBlockExpression} from "../general/ExpressionFsa";
 
-class WhileBlockFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class WhileBlockFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let condition = new FsaState("condition")
     let body = new FsaState("body")

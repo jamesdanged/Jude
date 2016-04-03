@@ -13,7 +13,7 @@ import {streamAtComment} from "./../../tokens/streamConditions";
 import {alwaysPasses} from "./../../tokens/streamConditions";
 import {streamAtEof} from "./../../tokens/streamConditions";
 import {streamAtComma} from "./../../tokens/streamConditions";
-import {IFsa} from "./../general/fsaUtils";
+import {BaseFsa} from "./../general/fsaUtils";
 import {FsaState} from "./../general/fsaUtils";
 import {runFsaStartToStop} from "./../general/fsaUtils";
 import {IFsaParseState} from "./../general/fsaUtils";
@@ -49,16 +49,11 @@ import {parseGeneralBlockExpression} from "../general/ExpressionFsa";
  * Doesn't bother distinguishing whether result is a row vector, col vector, 2d array, etc
  * nor validates the dimensions.
  */
-class SquareBracketFsa implements IFsa {
-  startState: FsaState
-  stopState: FsaState
-
+class SquareBracketFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let firstExpr = new FsaState("first expression")
     let expr = new FsaState("expression")

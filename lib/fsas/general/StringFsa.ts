@@ -4,7 +4,7 @@ import {expectNoMoreExpressions} from "./fsaUtils";
 import {WholeFileParseState} from "./ModuleContentsFsa";
 import {handleParseErrorOnly} from "./fsaUtils";
 import {FsaState} from "./fsaUtils";
-import {IFsa} from "./fsaUtils";
+import {BaseFsa} from "./fsaUtils";
 import {streamAtComment} from "../../tokens/streamConditions";
 import {streamAtNewLine} from "../../tokens/streamConditions";
 import {alwaysPasses} from "../../tokens/streamConditions";
@@ -27,17 +27,11 @@ import {parseGroupingParenthesisExpression} from "./ExpressionFsa";
  * Handles interpolated strings and simple strings.
  * Works for double quoted string and backtick (`) strings.
  */
-class StringFsa implements IFsa {
-
-  startState: FsaState
-  stopState: FsaState
-
+class StringFsa extends BaseFsa {
   constructor() {
-
-    let startState = new FsaState("start")
-    let stopState = new FsaState("stop")
-    this.startState = startState
-    this.stopState = stopState
+    super()
+    let startState = this.startState
+    let stopState = this.stopState
 
     let stringLiteral = new FsaState("string literal")
     let dollarSign = new FsaState("$ sign")
