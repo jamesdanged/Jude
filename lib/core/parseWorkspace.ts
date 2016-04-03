@@ -1,5 +1,6 @@
 "use strict"
 
+import {log_elapsed} from "../utils/taskUtils";
 import {getAllFilesInAllSubDirectories} from "../utils/fileUtils";
 import {resolveScopesInWorkspaceInvolvingFile} from "../nameResolution/resolveFullWorkspace";
 import * as nodepath from "path"
@@ -16,13 +17,13 @@ export type ProjectFilesHash = {[path:string]: string}
 export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
   sessionModel.parseSet.reset()
 
-  //let t0 = Date.now()
+  let t0 = Date.now()
   let allContents = await loadProjectFiles()
-  //let t1 = Date.now()
-  //console.log("Successfully read project files from disk: " + (t1 - t0) + " ms")
+  let t1 = Date.now()
+  log_elapsed("Successfully read project files from disk: " + (t1 - t0) + " ms")
 
   // parse all the files into expression trees
-  //t0 = Date.now()
+  t0 = Date.now()
   for (let path in allContents) {
     let fileContents = allContents[path]
 
@@ -32,8 +33,8 @@ export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
       parseFile(path, fileContents, sessionModel)
     })
   }
-  //t1 = Date.now()
-  //console.log("Parsed expression trees: " + (t1 - t0) + " ms")
+  t1 = Date.now()
+  log_elapsed("Parsed expression trees: " + (t1 - t0) + " ms")
 
   await resolveFullWorkspaceAsync(sessionModel)
 
@@ -59,10 +60,10 @@ export async function refreshFileAsync(path: string, fileContents: string, sessi
   if (!fileLevelNode) throw new AssertError("")
   if (fileLevelNode.expressions.findIndex((o) => { return o instanceof ModuleDefNode}) >= 0) mustReparseFullWorkspace = true
 
-  //let t0 = Date.now()
+  let t0 = Date.now()
   parseFile(path, fileContents, sessionModel)
-  //let t1 = Date.now()
-  //console.log("Reparsed one file: " + (t1 - t0) + " ms")
+  let t1 = Date.now()
+  log_elapsed("Reparsed one file: " + (t1 - t0) + " ms")
 
   // If module declaration involved after, also must reparse whole workspace.
   // The node object stays the same, just its contents changed.

@@ -1,5 +1,6 @@
 "use strict"
 
+import {TreeToken} from "./Token";
 import {overridableUnaryOperators} from "./operatorsAndKeywords";
 import {overridableBinaryOperators} from "./operatorsAndKeywords";
 import {postFixOperators} from "./operatorsAndKeywords";
@@ -117,10 +118,11 @@ export function streamAtOpenBlockKeyword(ts: TokenStream): boolean {
   let tok = ts.peek()
   return tok.type === TokenType.Keyword && (tok.str in keywordsNeedEnd)
 }
-export function streamAtKeywordFunctionQuoteBeginIfForWhileLetTry(ts: TokenStream): boolean {
+export function streamAtKeywordBlock(ts: TokenStream): boolean {
   if (ts.eof()) return false
   let tok = ts.peek()
   if (tok.type !== TokenType.Keyword) return false
+  if (!(tok instanceof TreeToken)) return false
   return tok.str === "function" || tok.str === "quote" || tok.str === "begin" || tok.str === "if" ||
     tok.str === "for" || tok.str === "while" || tok.str === "let" || tok.str === "try"
 }

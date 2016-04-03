@@ -16,17 +16,14 @@ export class Linter {
 
   lint(path: string): any[] {
 
-    let sessionModel = this.sessionModel
-    let parseSet = sessionModel.parseSet
+    let parseSet = this.sessionModel.parseSet
 
     if (!(path in parseSet.fileLevelNodes)) throw new AssertError("")
     let errors = parseSet.errors[path]
     if (!errors) throw new AssertError("")
-    //console.log("There are " + errors.nameErrors.length + " name errors and " + errors.parseErrors.length + " parse errors")
 
     let lintMessages = []
     for (let err of errors.parseErrors) {
-      //throwErrorFromTimeout(err)
       lintMessages.push({
         type: "Error",
         text: err.message,

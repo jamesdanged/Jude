@@ -87,7 +87,7 @@ export class Controller {
     this.autocompleter = new Autocompleter(this.sessionModel, this.jumper)
     this.subscriptions = new atomModule.CompositeDisposable()
     this.dirWatcher = null
-    this.taskQueue = new TaskQueue(true)
+    this.taskQueue = new TaskQueue()
     this.serializedState = state
     this.initializedPromise = false  // the first lint call will trigger initialization of controller
   }
@@ -252,20 +252,26 @@ export class Controller {
 
     let that = this
     return new Promise<any[]>(async (resolve, reject) => {
+      try {
 
-      if (that.initializedPromise === false) {
-        that.initializedPromise = that.initalizeAsync()
-      }
-      await that.initializedPromise
+        if (that.initializedPromise === false) {
+          that.initializedPromise = that.initalizeAsync()
+        }
+        await that.initializedPromise
 
-      if (!(path in that.sessionModel.parseSet.fileLevelNodes)) {
-        console.log("File " + path + " not in workspace.")
+        if (!(path in that.sessionModel.parseSet.fileLevelNodes)) {
+          console.log("File " + path + " not in workspace.")
+          resolve([])
+          return
+        }
+        // lint was called because of a change, so must reparse
+        await that.reparseFileAsync(path, editor.getText())
+        resolve(that.linter.lint(path))
+
+      } catch (err) {
+        console.error("unexpected error caught while linting: ", err)
         resolve([])
-        return
       }
-      // lint was called because of a change, so must reparse
-      await that.reparseFileAsync(path, editor.getText())
-      resolve(that.linter.lint(path))
     })
   }
 

@@ -480,7 +480,11 @@ export function parseWholeFileContents(nodeToFill: FileLevelNode, fileContents: 
     fsaModuleContents.runStartToStop(ts, nodeToFill, wholeState)
     expectNoMoreExpressions(ts)
   } catch (err) {
-    handleParseErrorOnly(err, nodeToFill, fileContents, wholeState)
+    if (err instanceof InvalidParseError) {
+      handleParseErrorOnly(err, nodeToFill, fileContents, wholeState)
+    } else {
+      console.error("Unexpected error while parsing file " + nodeToFill.path, err)
+    }
   }
   return wholeState
 }

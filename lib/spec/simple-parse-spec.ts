@@ -27,6 +27,8 @@ import {unmockOpenFiles} from "../utils/atomApi";
 
 // TODO
 // test for ccall
+// should not throw error in promise when
+//   resolve recursing a macro/type/function node with no name
 
 
 describe("basic function parsing", () => {

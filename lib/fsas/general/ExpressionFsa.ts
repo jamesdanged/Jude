@@ -2,7 +2,7 @@
 
 import {parseWholeLetBlock} from "../controlFlow/LetBlockFsa";
 import {streamAtDo} from "../../tokens/streamConditions";
-import {streamAtKeywordFunctionQuoteBeginIfForWhileLetTry} from "../../tokens/streamConditions";
+import {streamAtKeywordBlock} from "../../tokens/streamConditions";
 import {parseGenericDefArgList} from "../declarations/GenericDefArgListFsa";
 import {StringLiteralNode} from "../../parseTree/nodes";
 import {streamAtSymbol} from "../../tokens/streamConditions";
@@ -313,7 +313,7 @@ export class ExpressionFsa extends BaseFsa {
       //state.addArc(arrayLiteralState, streamAtOpenSquareBracket, readArrayLiteral )
       state.addArc(squareBracketState, streamAtOpenSquareBracket, readSquareBracket)
       state.addArc(anyArrayLiteralState, streamAtOpenCurlyBraces, readAnyArrayLiteral)
-      state.addArc(keywordBlockState, streamAtKeywordFunctionQuoteBeginIfForWhileLetTry, readKeywordBlock)
+      state.addArc(keywordBlockState, streamAtKeywordBlock, readKeywordBlock)
       state.addArc(quoteState, streamAtAnyQuote, readAnyQuote)
       state.addArc(regexState, streamAtRegex, readRegex)
       state.addArc(macroCallState, streamAtMacroIdentifier, readMacroInvocation)
@@ -692,6 +692,9 @@ function readDoBlock(state: ParseState): void {
 function readKeywordBlock(state: ParseState): void {
   let unparsedTree = state.ts.read() as TreeToken
   var node
+  if (!unparsedTree.openToken) {
+    console.log("undefined is")
+  }
   switch (unparsedTree.openToken.str) {
     case "function":
       node = parseWholeFunctionDef(unparsedTree, state.wholeState)

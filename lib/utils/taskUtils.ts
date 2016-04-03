@@ -38,11 +38,9 @@ export function runDelayed(cb) {
 
 
 export class TaskQueue {
-  tasks: any[]
-  running: boolean
-  catchErrors: boolean  // Catch all errors even assert errors. Prevents the task queue runner from dying.
-  constructor(catchErrors: boolean) {
-    this.catchErrors = catchErrors
+  private tasks: any[]
+  private running: boolean
+  constructor() {
     this.tasks = []
     this.running = false
   }
@@ -56,8 +54,14 @@ export class TaskQueue {
     let that = this
     return new Promise((resolve, reject) => {
       that.tasks.push(async () => {
+        try {
           let res = await asyncCallback()
           resolve(res)
+        } catch(err) {
+          // Even if the task threw an error, it doesn't cause the flush to be interrupted.
+          // The error is sent back to the original caller.
+          reject(err)
+        }
       })
       if (!that.running) that._startFlush()
     })
@@ -68,17 +72,7 @@ export class TaskQueue {
 
     this.running = true
     while (this.tasks.length > 0) {
-      let task = this.tasks.shift()
-      if (this.catchErrors) {
-        try {
-          task()
-        } catch (err) {
-          console.error(err)
-          //throwErrorFromTimeout(err)
-        }
-      } else {
-        task()
-      }
+      await this.tasks.shift()()
     }
     this.running = false
   }
@@ -87,3 +81,10 @@ export class TaskQueue {
 
 
 
+
+var show_timings = false
+export function log_elapsed(msg: string): void{
+  if (show_timings) {
+    console.log(msg)
+  }
+}
