@@ -21,21 +21,21 @@ var streamConditions_3 = require("./../../tokens/streamConditions");
 var streamConditions_4 = require("./../../tokens/streamConditions");
 var fsaUtils_2 = require("../general/fsaUtils");
 var fsaUtils_3 = require("../general/fsaUtils");
+var fsaUtils_4 = require("../general/fsaUtils");
 var nodes_2 = require("../../parseTree/nodes");
 /**
  * Recognizes the body of a macro...end declaration.
  *
  * Not fully implemented. Just stores everything inside the node.
  */
-class MacroDefFsa {
+class MacroDefFsa extends fsaUtils_2.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_2.FsaState("start");
-        let stopState = new fsaUtils_2.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let macroName = new fsaUtils_2.FsaState("macro name");
-        let argList = new fsaUtils_2.FsaState("arg list");
-        let body = new fsaUtils_2.FsaState("body");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let macroName = new fsaUtils_3.FsaState("macro name");
+        let argList = new fsaUtils_3.FsaState("arg list");
+        let body = new fsaUtils_3.FsaState("body");
         let allStatesExceptStop = [startState, macroName, argList, body];
         // ignore comments everywhere
         for (let state of allStatesExceptStop) {
@@ -74,7 +74,7 @@ function parseWholeMacroDef(tree, wholeState) {
     node.scopeEndToken = tree.closeToken;
     let parseState = new ParseState(ts, node, wholeState);
     try {
-        fsaUtils_3.runFsaStartToStop(fsaMacroDef, parseState);
+        fsaUtils_4.runFsaStartToStop(fsaMacroDef, parseState);
     }
     catch (err) {
         fsaUtils_1.handleParseErrorOnly(err, node, tree.contents, wholeState);

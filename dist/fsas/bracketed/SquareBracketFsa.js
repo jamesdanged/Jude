@@ -24,8 +24,9 @@ var streamConditions_5 = require("./../../tokens/streamConditions");
 var streamConditions_6 = require("./../../tokens/streamConditions");
 var fsaUtils_2 = require("./../general/fsaUtils");
 var fsaUtils_3 = require("./../general/fsaUtils");
+var fsaUtils_4 = require("./../general/fsaUtils");
 var assert_1 = require("../../utils/assert");
-var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var ExpressionFsa_2 = require("../general/ExpressionFsa");
 var streamConditions_7 = require("../../tokens/streamConditions");
 var nodes_2 = require("../../parseTree/nodes");
@@ -55,21 +56,20 @@ var ExpressionFsa_3 = require("../general/ExpressionFsa");
  * Doesn't bother distinguishing whether result is a row vector, col vector, 2d array, etc
  * nor validates the dimensions.
  */
-class SquareBracketFsa {
+class SquareBracketFsa extends fsaUtils_2.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_2.FsaState("start");
-        let stopState = new fsaUtils_2.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let firstExpr = new fsaUtils_2.FsaState("first expression");
-        let expr = new fsaUtils_2.FsaState("expression");
-        let delimiter = new fsaUtils_2.FsaState("between expressions");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let firstExpr = new fsaUtils_3.FsaState("first expression");
+        let expr = new fsaUtils_3.FsaState("expression");
+        let delimiter = new fsaUtils_3.FsaState("between expressions");
         // for list comprehensions
-        let forState = new fsaUtils_2.FsaState("for");
-        let iterVariable = new fsaUtils_2.FsaState("iter variable");
-        let equals = new fsaUtils_2.FsaState("equals");
-        let inKeyword = new fsaUtils_2.FsaState("in keyword");
-        let iterRange = new fsaUtils_2.FsaState("iter range");
+        let forState = new fsaUtils_3.FsaState("for");
+        let iterVariable = new fsaUtils_3.FsaState("iter variable");
+        let equals = new fsaUtils_3.FsaState("equals");
+        let inKeyword = new fsaUtils_3.FsaState("in keyword");
+        let iterRange = new fsaUtils_3.FsaState("iter range");
         let allStatesExceptStop = [startState, firstExpr, expr, delimiter, forState, iterVariable, equals, inKeyword, iterRange];
         // ignore comments everywhere
         for (let state of allStatesExceptStop) {
@@ -111,7 +111,7 @@ class SquareBracketFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_3.runFsaStartToStop(this, parseState);
+        fsaUtils_4.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {
@@ -190,7 +190,7 @@ function parseSquareBracket(bracketTree, wholeState) {
         fsaUtils_1.expectNoMoreExpressions(ts);
     }
     catch (err) {
-        fsaUtils_4.handleParseErrorOnly(err, node, bracketTree.contents, wholeState);
+        fsaUtils_5.handleParseErrorOnly(err, node, bracketTree.contents, wholeState);
     }
     return node;
 }
@@ -206,7 +206,7 @@ function parseAnyArrayLiteral(bracketTree, wholeState) {
         fsaUtils_1.expectNoMoreExpressions(ts);
     }
     catch (err) {
-        fsaUtils_4.handleParseErrorOnly(err, node, bracketTree.contents, wholeState);
+        fsaUtils_5.handleParseErrorOnly(err, node, bracketTree.contents, wholeState);
     }
     return node;
 }

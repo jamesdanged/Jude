@@ -27,6 +27,7 @@ var streamConditions_8 = require("./../../tokens/streamConditions");
 var streamConditions_9 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("../general/fsaUtils");
 var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var nodes_2 = require("../../parseTree/nodes");
 var assert_1 = require("../../utils/assert");
 var ExpressionFsa_1 = require("../general/ExpressionFsa");
@@ -34,20 +35,19 @@ var streamConditions_10 = require("../../tokens/streamConditions");
 var nodes_3 = require("../../parseTree/nodes");
 var ExpressionFsa_2 = require("../general/ExpressionFsa");
 var ExpressionFsa_3 = require("../general/ExpressionFsa");
-class LetBlockFsa {
+class LetBlockFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let name = new fsaUtils_3.FsaState("name");
-        let doubleColon = new fsaUtils_3.FsaState("::");
-        let typeState = new fsaUtils_3.FsaState("type");
-        let equals = new fsaUtils_3.FsaState("equals");
-        let value = new fsaUtils_3.FsaState("value");
-        let comma = new fsaUtils_3.FsaState("comma");
-        let body = new fsaUtils_3.FsaState("body");
-        let betweenExpressions = new fsaUtils_3.FsaState("between expressions");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let name = new fsaUtils_4.FsaState("name");
+        let doubleColon = new fsaUtils_4.FsaState("::");
+        let typeState = new fsaUtils_4.FsaState("type");
+        let equals = new fsaUtils_4.FsaState("equals");
+        let value = new fsaUtils_4.FsaState("value");
+        let comma = new fsaUtils_4.FsaState("comma");
+        let body = new fsaUtils_4.FsaState("body");
+        let betweenExpressions = new fsaUtils_4.FsaState("between expressions");
         let allStatesExceptStop = [startState, name, doubleColon, typeState, equals, value, comma, body, betweenExpressions];
         // allow comments everywhere
         for (let state of allStatesExceptStop) {
@@ -81,7 +81,7 @@ class LetBlockFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

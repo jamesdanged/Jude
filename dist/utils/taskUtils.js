@@ -50,8 +50,7 @@ function runDelayed(cb) {
 }
 exports.runDelayed = runDelayed;
 class TaskQueue {
-    constructor(catchErrors) {
-        this.catchErrors = catchErrors;
+    constructor() {
         this.tasks = [];
         this.running = false;
     }
@@ -64,8 +63,15 @@ class TaskQueue {
         let that = this;
         return new Promise((resolve, reject) => {
             that.tasks.push(() => __awaiter(this, void 0, Promise, function* () {
-                let res = yield asyncCallback();
-                resolve(res);
+                try {
+                    let res = yield asyncCallback();
+                    resolve(res);
+                }
+                catch (err) {
+                    // Even if the task threw an error, it doesn't cause the flush to be interrupted.
+                    // The error is sent back to the original caller.
+                    reject(err);
+                }
             }));
             if (!that.running)
                 that._startFlush();
@@ -77,22 +83,18 @@ class TaskQueue {
                 throw new assert_1.AssertError(""); // Should only be called if queue is not already flushing.
             this.running = true;
             while (this.tasks.length > 0) {
-                let task = this.tasks.shift();
-                if (this.catchErrors) {
-                    try {
-                        task();
-                    }
-                    catch (err) {
-                        console.error(err);
-                    }
-                }
-                else {
-                    task();
-                }
+                yield this.tasks.shift()();
             }
             this.running = false;
         });
     }
 }
 exports.TaskQueue = TaskQueue;
+var show_timings = false;
+function log_elapsed(msg) {
+    if (show_timings) {
+        console.log(msg);
+    }
+}
+exports.log_elapsed = log_elapsed;
 //# sourceMappingURL=taskUtils.js.map

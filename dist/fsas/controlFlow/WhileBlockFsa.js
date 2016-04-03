@@ -24,17 +24,17 @@ var streamConditions_5 = require("./../../tokens/streamConditions");
 var streamConditions_6 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("../general/fsaUtils");
 var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var assert_1 = require("../../utils/assert");
 var ExpressionFsa_1 = require("../general/ExpressionFsa");
-class WhileBlockFsa {
+class WhileBlockFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let condition = new fsaUtils_3.FsaState("condition");
-        let body = new fsaUtils_3.FsaState("body");
-        let betweenExpressions = new fsaUtils_3.FsaState("between expressions");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let condition = new fsaUtils_4.FsaState("condition");
+        let body = new fsaUtils_4.FsaState("body");
+        let betweenExpressions = new fsaUtils_4.FsaState("between expressions");
         let allStatesExceptStop = [startState, condition, body, betweenExpressions];
         // allow comments everywhere
         for (let state of allStatesExceptStop) {
@@ -54,7 +54,7 @@ class WhileBlockFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

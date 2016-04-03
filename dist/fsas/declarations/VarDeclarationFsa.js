@@ -19,6 +19,7 @@ var streamConditions_2 = require("./../../tokens/streamConditions");
 var streamConditions_3 = require("./../../tokens/streamConditions");
 var fsaUtils_1 = require("../general/fsaUtils");
 var fsaUtils_2 = require("../general/fsaUtils");
+var fsaUtils_3 = require("../general/fsaUtils");
 var assert_1 = require("../../utils/assert");
 var ExpressionFsa_2 = require("../general/ExpressionFsa");
 var streamConditions_4 = require("../../tokens/streamConditions");
@@ -39,21 +40,20 @@ var ExpressionFsa_3 = require("../general/ExpressionFsa");
  *
  * Doesn't consume \n or any token after the variable declaration.
  */
-class VarDeclarationFsa {
+class VarDeclarationFsa extends fsaUtils_1.BaseFsa {
     constructor(varType) {
+        super();
         this.varType = varType;
+        let startState = this.startState;
+        let stopState = this.stopState;
         if (varType === Resolve_1.NameDeclType.ImpliedByAssignment || varType === Resolve_1.NameDeclType.ArgList)
             throw new assert_1.AssertError("");
-        let startState = new fsaUtils_1.FsaState("start");
-        let stopState = new fsaUtils_1.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let name = new fsaUtils_1.FsaState("name");
-        let doubleColon = new fsaUtils_1.FsaState("::");
-        let typeState = new fsaUtils_1.FsaState("type");
-        let equals = new fsaUtils_1.FsaState("equals");
-        let value = new fsaUtils_1.FsaState("value");
-        let comma = new fsaUtils_1.FsaState("comma");
+        let name = new fsaUtils_2.FsaState("name");
+        let doubleColon = new fsaUtils_2.FsaState("::");
+        let typeState = new fsaUtils_2.FsaState("type");
+        let equals = new fsaUtils_2.FsaState("equals");
+        let value = new fsaUtils_2.FsaState("value");
+        let comma = new fsaUtils_2.FsaState("comma");
         let allowMoreThanOneVar = true;
         let requireAssignment = false;
         if (varType === Resolve_1.NameDeclType.Const) {
@@ -101,7 +101,7 @@ class VarDeclarationFsa {
     runStartToStop(ts, wholeState) {
         let nodeToFill = new nodes_1.VarDeclarationNode(this.varType);
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_2.runFsaStartToStop(this, parseState);
+        fsaUtils_3.runFsaStartToStop(this, parseState);
         return parseState.nodeToFill;
     }
 }

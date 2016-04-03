@@ -105,7 +105,7 @@ function resolveModuleForLibrary(fullModuleName, sessionModel) {
             }
             if (foundPath === null) {
                 // this can happen eg import LinAlg, which is actually an inner module of Base
-                console.error("Module '" + outerModuleName + "' was not found in the file system.");
+                console.log("Module '" + outerModuleName + "' was not found in the file system.");
                 return;
             }
             // see if the file is one in the workspace
@@ -128,7 +128,7 @@ function resolveModuleForLibrary(fullModuleName, sessionModel) {
                     }
                 }
                 // if reached here, no matching module, even though there should be one
-                console.error("Module '" + outerModuleName + "' should be in the workspace at " + foundPath +
+                console.log("Module '" + outerModuleName + "' should be in the workspace at " + foundPath +
                     " but the file did not declare a module with name '" + outerModuleName + "'.");
                 return;
             }
@@ -163,9 +163,12 @@ function addExternalModuleAsync(moduleLibrary, moduleFullName) {
                 if (line.length < 3)
                     throw new assert_1.AssertError("");
                 let name = line[1];
-                if (!(name in moduleLinesByName)) {
+                if (!(name in moduleLinesByName))
                     moduleLinesByName[name] = [];
-                }
+                // ccall is a special 'intrinsic' function which is defined in Core but not exported.
+                // To allow name resolution, we can just label it as exported.
+                if (moduleFullName === "Core" && name === "ccall")
+                    line[2] = "exported";
                 moduleLinesByName[name].push(line);
             }
             moduleLibrary.modules[moduleFullName] = new Scope_1.ExternalModuleScope(moduleFullName, moduleLinesByName, moduleLibrary);

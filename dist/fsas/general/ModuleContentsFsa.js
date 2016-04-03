@@ -42,6 +42,7 @@ var streamConditions_16 = require("./../../tokens/streamConditions");
 var streamConditions_17 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("./fsaUtils");
 var fsaUtils_4 = require("./fsaUtils");
+var fsaUtils_5 = require("./fsaUtils");
 var streamConditions_18 = require("../../tokens/streamConditions");
 var streamConditions_19 = require("../../tokens/streamConditions");
 var nodes_6 = require("../../parseTree/nodes");
@@ -72,38 +73,37 @@ var operatorsAndKeywords_2 = require("../../tokens/operatorsAndKeywords");
  * (both of which aren't surrounded by module...end).
  * This is the only FSA allowed to recognize import, importall, export, and using statements.
  */
-class ModuleContentsFsa {
+class ModuleContentsFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let body = new fsaUtils_3.FsaState("body");
-        let betweenExpressions = new fsaUtils_3.FsaState("between expressions");
-        let abstractKeyword = new fsaUtils_3.FsaState("abstract");
-        let abstractTypeName = new fsaUtils_3.FsaState("abstract type name");
-        let abstractGenericParams = new fsaUtils_3.FsaState("abstract generic params");
-        let abstractLessThanColon = new fsaUtils_3.FsaState("abstract <:");
-        let abstractParentType = new fsaUtils_3.FsaState("abstract parent type");
-        let bitsTypeKeyword = new fsaUtils_3.FsaState("bitstype keyword");
-        let bitsTypeNumBits = new fsaUtils_3.FsaState("bitstype num bits");
-        let bitsTypeName = new fsaUtils_3.FsaState("bitstype name");
-        let bitsTypeLessThanColon = new fsaUtils_3.FsaState("bitstype <:");
-        let bitsTypeParentType = new fsaUtils_3.FsaState("bitstype parent type");
-        let macro = new fsaUtils_3.FsaState("macro");
-        let moduleDef = new fsaUtils_3.FsaState("module def");
-        let typeDefState = new fsaUtils_3.FsaState("type def");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let body = new fsaUtils_4.FsaState("body");
+        let betweenExpressions = new fsaUtils_4.FsaState("between expressions");
+        let abstractKeyword = new fsaUtils_4.FsaState("abstract");
+        let abstractTypeName = new fsaUtils_4.FsaState("abstract type name");
+        let abstractGenericParams = new fsaUtils_4.FsaState("abstract generic params");
+        let abstractLessThanColon = new fsaUtils_4.FsaState("abstract <:");
+        let abstractParentType = new fsaUtils_4.FsaState("abstract parent type");
+        let bitsTypeKeyword = new fsaUtils_4.FsaState("bitstype keyword");
+        let bitsTypeNumBits = new fsaUtils_4.FsaState("bitstype num bits");
+        let bitsTypeName = new fsaUtils_4.FsaState("bitstype name");
+        let bitsTypeLessThanColon = new fsaUtils_4.FsaState("bitstype <:");
+        let bitsTypeParentType = new fsaUtils_4.FsaState("bitstype parent type");
+        let macro = new fsaUtils_4.FsaState("macro");
+        let moduleDef = new fsaUtils_4.FsaState("module def");
+        let typeDefState = new fsaUtils_4.FsaState("type def");
         // imp == [import | importall | using]
-        let impStart = new fsaUtils_3.FsaState("imp start");
-        let impFirstName = new fsaUtils_3.FsaState("imp first name");
-        let impColon = new fsaUtils_3.FsaState("imp colon");
-        let impNamesList = new fsaUtils_3.FsaState("imp names list");
-        let impComma = new fsaUtils_3.FsaState("imp comma");
-        let exportStart = new fsaUtils_3.FsaState("export start");
-        let exportNamesList = new fsaUtils_3.FsaState("export names list");
-        let exportComma = new fsaUtils_3.FsaState("export comma");
-        let includeWord = new fsaUtils_3.FsaState("include word");
-        let includeParen = new fsaUtils_3.FsaState("include paren");
+        let impStart = new fsaUtils_4.FsaState("imp start");
+        let impFirstName = new fsaUtils_4.FsaState("imp first name");
+        let impColon = new fsaUtils_4.FsaState("imp colon");
+        let impNamesList = new fsaUtils_4.FsaState("imp names list");
+        let impComma = new fsaUtils_4.FsaState("imp comma");
+        let exportStart = new fsaUtils_4.FsaState("export start");
+        let exportNamesList = new fsaUtils_4.FsaState("export names list");
+        let exportComma = new fsaUtils_4.FsaState("export comma");
+        let includeWord = new fsaUtils_4.FsaState("include word");
+        let includeParen = new fsaUtils_4.FsaState("include paren");
         // used to skip comments
         let allStatesExceptStop = [startState, body, betweenExpressions,
             abstractKeyword, abstractTypeName, abstractGenericParams, abstractLessThanColon, abstractParentType,
@@ -189,7 +189,7 @@ class ModuleContentsFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {
@@ -402,7 +402,12 @@ function parseWholeFileContents(nodeToFill, fileContents) {
         fsaUtils_1.expectNoMoreExpressions(ts);
     }
     catch (err) {
-        fsaUtils_2.handleParseErrorOnly(err, nodeToFill, fileContents, wholeState);
+        if (err instanceof errors_1.InvalidParseError) {
+            fsaUtils_2.handleParseErrorOnly(err, nodeToFill, fileContents, wholeState);
+        }
+        else {
+            console.error("Unexpected error while parsing file " + nodeToFill.path, err);
+        }
     }
     return wholeState;
 }

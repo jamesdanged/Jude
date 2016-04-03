@@ -12,10 +12,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+var taskUtils_1 = require("../utils/taskUtils");
 var fileUtils_1 = require("../utils/fileUtils");
 var resolveFullWorkspace_1 = require("../nameResolution/resolveFullWorkspace");
 var nodepath = require("path");
-var taskUtils_1 = require("../utils/taskUtils");
+var taskUtils_2 = require("../utils/taskUtils");
 var parseFile_1 = require("../parseTree/parseFile");
 var resolveFullWorkspace_2 = require("../nameResolution/resolveFullWorkspace");
 var assert_1 = require("../utils/assert");
@@ -23,28 +24,28 @@ var nodes_1 = require("../parseTree/nodes");
 function parseFullWorkspaceAsync(sessionModel) {
     return __awaiter(this, void 0, Promise, function* () {
         sessionModel.parseSet.reset();
-        //let t0 = Date.now()
+        let t0 = Date.now();
         let allContents = yield loadProjectFiles();
-        //let t1 = Date.now()
-        //console.log("Successfully read project files from disk: " + (t1 - t0) + " ms")
+        let t1 = Date.now();
+        taskUtils_1.log_elapsed("Successfully read project files from disk: " + (t1 - t0) + " ms");
         // parse all the files into expression trees
-        //t0 = Date.now()
+        t0 = Date.now();
         for (let path in allContents) {
             let fileContents = allContents[path];
             // break into smaller tasks to allow smooth GUI interaction
-            yield taskUtils_1.runDelayed(() => {
+            yield taskUtils_2.runDelayed(() => {
                 sessionModel.parseSet.createEntriesForFile(path);
                 parseFile_1.parseFile(path, fileContents, sessionModel);
             });
         }
-        //t1 = Date.now()
-        //console.log("Parsed expression trees: " + (t1 - t0) + " ms")
+        t1 = Date.now();
+        taskUtils_1.log_elapsed("Parsed expression trees: " + (t1 - t0) + " ms");
         yield resolveFullWorkspace_2.resolveFullWorkspaceAsync(sessionModel);
         // report parse errors to console
         for (let path in sessionModel.parseSet.errors) {
             let errorSet = sessionModel.parseSet.errors[path];
             for (let err of errorSet.parseErrors) {
-                console.error(path, err);
+                console.log(path, err);
             }
         }
         //console.log("Reparsed whole workspace.")
@@ -62,10 +63,10 @@ function refreshFileAsync(path, fileContents, sessionModel) {
             throw new assert_1.AssertError("");
         if (fileLevelNode.expressions.findIndex((o) => { return o instanceof nodes_1.ModuleDefNode; }) >= 0)
             mustReparseFullWorkspace = true;
-        //let t0 = Date.now()
+        let t0 = Date.now();
         parseFile_1.parseFile(path, fileContents, sessionModel);
-        //let t1 = Date.now()
-        //console.log("Reparsed one file: " + (t1 - t0) + " ms")
+        let t1 = Date.now();
+        taskUtils_1.log_elapsed("Reparsed one file: " + (t1 - t0) + " ms");
         // If module declaration involved after, also must reparse whole workspace.
         // The node object stays the same, just its contents changed.
         if (fileLevelNode.expressions.findIndex((o) => { return o instanceof nodes_1.ModuleDefNode; }) >= 0)

@@ -60,6 +60,7 @@ var streamConditions_21 = require("./../../tokens/streamConditions");
 var streamConditions_22 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("./fsaUtils");
 var fsaUtils_4 = require("./fsaUtils");
+var fsaUtils_5 = require("./fsaUtils");
 var streamConditions_23 = require("../../tokens/streamConditions");
 var nodes_12 = require("../../parseTree/nodes");
 var errors_1 = require("../../utils/errors");
@@ -105,46 +106,45 @@ var streamConditions_31 = require("../../tokens/streamConditions");
  * Even though +- can be unary or binary ops, they will only be unary if they are the
  * first token encountered or they are immediately after a binary op.
  */
-class ExpressionFsa {
+class ExpressionFsa extends fsaUtils_3.BaseFsa {
     constructor(options) {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let unaryState = new fsaUtils_3.FsaState("unary"); // prefix unary operators
-        let binaryState = new fsaUtils_3.FsaState("binary");
-        let binaryMayOmitArg2State = new fsaUtils_3.FsaState("binary may omit arg2"); // commas are like binary operators (they create tuples), but after the last comma, they do not require a trailing operand
-        let ternaryState = new fsaUtils_3.FsaState("ternary");
-        let postFixState = new fsaUtils_3.FsaState("postfix");
-        let numberState = new fsaUtils_3.FsaState("number");
-        let identifierState = new fsaUtils_3.FsaState("identifier");
-        let symbolState = new fsaUtils_3.FsaState("symbol");
-        let parenthesesState = new fsaUtils_3.FsaState("parentheses"); // Parentheses on their own control order of operations.
-        let functionCallState = new fsaUtils_3.FsaState("function call"); // Parentheses after identifiers or certain expressions is a function call.
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let unaryState = new fsaUtils_4.FsaState("unary"); // prefix unary operators
+        let binaryState = new fsaUtils_4.FsaState("binary");
+        let binaryMayOmitArg2State = new fsaUtils_4.FsaState("binary may omit arg2"); // commas are like binary operators (they create tuples), but after the last comma, they do not require a trailing operand
+        let ternaryState = new fsaUtils_4.FsaState("ternary");
+        let postFixState = new fsaUtils_4.FsaState("postfix");
+        let numberState = new fsaUtils_4.FsaState("number");
+        let identifierState = new fsaUtils_4.FsaState("identifier");
+        let symbolState = new fsaUtils_4.FsaState("symbol");
+        let parenthesesState = new fsaUtils_4.FsaState("parentheses"); // Parentheses on their own control order of operations.
+        let functionCallState = new fsaUtils_4.FsaState("function call"); // Parentheses after identifiers or certain expressions is a function call.
         // collapse together the array literal and the indexing state
-        let squareBracketState = new fsaUtils_3.FsaState("square bracket");
+        let squareBracketState = new fsaUtils_4.FsaState("square bracket");
         //let arrayLiteralState = new FsaState("array literal") // Square brackets on their own create an array literal.
         //let indexingState = new FsaState("indexing") // Square brackets after identifiers or certain expressions is essentially an indexing function call.
-        let anyArrayLiteralState = new fsaUtils_3.FsaState("any array literal"); // {} on their own create an Any array literal.
-        let typeParametersState = new fsaUtils_3.FsaState("type parameters"); // {} after identifiers or certain expressions is a type parameters qualifier
-        let keywordBlockState = new fsaUtils_3.FsaState("keyword block"); // ie if...end, for...end, try...end
-        let doBlockState = new fsaUtils_3.FsaState("do block");
-        let quoteState = new fsaUtils_3.FsaState("quote");
-        let regexState = new fsaUtils_3.FsaState("regex");
-        let macroCallState = new fsaUtils_3.FsaState("macro invocation");
-        let returnState = new fsaUtils_3.FsaState("return");
-        let breakState = new fsaUtils_3.FsaState("break");
-        let continueState = new fsaUtils_3.FsaState("continue");
-        let singleColonState = new fsaUtils_3.FsaState(":");
-        let localVarState = new fsaUtils_3.FsaState("local var");
-        let globalVarState = new fsaUtils_3.FsaState("global var");
-        let constVarState = new fsaUtils_3.FsaState("const var");
-        let typeAliasKeyword = new fsaUtils_3.FsaState("typealias");
-        let typeAliasName = new fsaUtils_3.FsaState("typealias name");
-        let typeAliasGenericParamList = new fsaUtils_3.FsaState("type alias generic param list");
-        let typeAliasRefersTo = new fsaUtils_3.FsaState("typealias refers to");
-        let splatState = new fsaUtils_3.FsaState("...");
-        let commaAfterSplatState = new fsaUtils_3.FsaState("comma after ...");
+        let anyArrayLiteralState = new fsaUtils_4.FsaState("any array literal"); // {} on their own create an Any array literal.
+        let typeParametersState = new fsaUtils_4.FsaState("type parameters"); // {} after identifiers or certain expressions is a type parameters qualifier
+        let keywordBlockState = new fsaUtils_4.FsaState("keyword block"); // ie if...end, for...end, try...end
+        let doBlockState = new fsaUtils_4.FsaState("do block");
+        let quoteState = new fsaUtils_4.FsaState("quote");
+        let regexState = new fsaUtils_4.FsaState("regex");
+        let macroCallState = new fsaUtils_4.FsaState("macro invocation");
+        let returnState = new fsaUtils_4.FsaState("return");
+        let breakState = new fsaUtils_4.FsaState("break");
+        let continueState = new fsaUtils_4.FsaState("continue");
+        let singleColonState = new fsaUtils_4.FsaState(":");
+        let localVarState = new fsaUtils_4.FsaState("local var");
+        let globalVarState = new fsaUtils_4.FsaState("global var");
+        let constVarState = new fsaUtils_4.FsaState("const var");
+        let typeAliasKeyword = new fsaUtils_4.FsaState("typealias");
+        let typeAliasName = new fsaUtils_4.FsaState("typealias name");
+        let typeAliasGenericParamList = new fsaUtils_4.FsaState("type alias generic param list");
+        let typeAliasRefersTo = new fsaUtils_4.FsaState("typealias refers to");
+        let splatState = new fsaUtils_4.FsaState("...");
+        let commaAfterSplatState = new fsaUtils_4.FsaState("comma after ...");
         // used to ignore comments and new lines (via option)
         let allStatesNotStop = [startState, unaryState, binaryState, binaryMayOmitArg2State, ternaryState, postFixState,
             numberState, identifierState, symbolState,
@@ -263,7 +263,7 @@ class ExpressionFsa {
             //state.addArc(arrayLiteralState, streamAtOpenSquareBracket, readArrayLiteral )
             state.addArc(squareBracketState, streamConditions_19.streamAtOpenSquareBracket, readSquareBracket);
             state.addArc(anyArrayLiteralState, streamConditions_20.streamAtOpenCurlyBraces, readAnyArrayLiteral);
-            state.addArc(keywordBlockState, streamConditions_2.streamAtKeywordFunctionQuoteBeginIfForWhileLetTry, readKeywordBlock);
+            state.addArc(keywordBlockState, streamConditions_2.streamAtKeywordBlock, readKeywordBlock);
             state.addArc(quoteState, streamConditions_22.streamAtAnyQuote, readAnyQuote);
             state.addArc(regexState, streamConditions_31.streamAtRegex, readRegex);
             state.addArc(macroCallState, streamConditions_24.streamAtMacroIdentifier, readMacroInvocation);
@@ -299,7 +299,7 @@ class ExpressionFsa {
      */
     runStartToStop(ts, wholeState) {
         let state = new ParseState(ts, this, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, state);
+        fsaUtils_5.runFsaStartToStop(this, state);
         let exprResult = orderOfOperations_1.parseIntoTreeByOrderOfOperations(state.nodes, wholeState);
         return exprResult;
     }
@@ -577,6 +577,9 @@ function readDoBlock(state) {
 function readKeywordBlock(state) {
     let unparsedTree = state.ts.read();
     var node;
+    if (!unparsedTree.openToken) {
+        console.log("undefined is");
+    }
     switch (unparsedTree.openToken.str) {
         case "function":
             node = FunctionDefFsa_1.parseWholeFunctionDef(unparsedTree, state.wholeState);

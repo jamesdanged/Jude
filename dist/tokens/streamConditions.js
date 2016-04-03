@@ -12,6 +12,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+var Token_1 = require("./Token");
 var operatorsAndKeywords_1 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_2 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_3 = require("./operatorsAndKeywords");
@@ -146,16 +147,18 @@ function streamAtOpenBlockKeyword(ts) {
     return tok.type === operatorsAndKeywords_6.TokenType.Keyword && (tok.str in operatorsAndKeywords_5.keywordsNeedEnd);
 }
 exports.streamAtOpenBlockKeyword = streamAtOpenBlockKeyword;
-function streamAtKeywordFunctionQuoteBeginIfForWhileLetTry(ts) {
+function streamAtKeywordBlock(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
     if (tok.type !== operatorsAndKeywords_6.TokenType.Keyword)
         return false;
+    if (!(tok instanceof Token_1.TreeToken))
+        return false;
     return tok.str === "function" || tok.str === "quote" || tok.str === "begin" || tok.str === "if" ||
         tok.str === "for" || tok.str === "while" || tok.str === "let" || tok.str === "try";
 }
-exports.streamAtKeywordFunctionQuoteBeginIfForWhileLetTry = streamAtKeywordFunctionQuoteBeginIfForWhileLetTry;
+exports.streamAtKeywordBlock = streamAtKeywordBlock;
 function streamAtAnyQuote(ts) {
     if (ts.eof())
         return false;

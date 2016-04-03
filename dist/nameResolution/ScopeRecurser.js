@@ -386,6 +386,9 @@ class ScopeRecurser {
         this.scopeStack.pop();
     }
     resolveTypeDefNode(node) {
+        let identifierNode = node.name;
+        if (!identifierNode)
+            return; // parse failure
         this.builder.registerType(node);
         if (!this.currFileIsOpen())
             return;
@@ -410,8 +413,10 @@ class ScopeRecurser {
         // TODO new() function inside typedef body
     }
     resolveMacroDefNode(node) {
-        this.builder.registerMacro(node);
         let identNode = node.name;
+        if (!identNode)
+            return; // parse failure
+        this.builder.registerMacro(node);
         let resolve = this.currScope.tryResolveNameThisLevel("@" + identNode.name);
         if (resolve !== null) {
             this.storeIdentifierResolution(identNode, resolve);

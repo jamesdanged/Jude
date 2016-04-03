@@ -25,25 +25,25 @@ var streamConditions_6 = require("./../../tokens/streamConditions");
 var streamConditions_7 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("../general/fsaUtils");
 var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var nodes_2 = require("../../parseTree/nodes");
 var nodes_3 = require("../../parseTree/nodes");
 var assert_1 = require("../../utils/assert");
 var ExpressionFsa_1 = require("../general/ExpressionFsa");
-class TryBlockFsa {
+class TryBlockFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stio");
-        this.startState = startState;
-        this.stopState = stopState;
-        let tryBody = new fsaUtils_3.FsaState("try body");
-        let tryBetweenExpressions = new fsaUtils_3.FsaState("try between expressions");
-        let catchKeyword = new fsaUtils_3.FsaState("catch keyword");
-        let catchErrorVariable = new fsaUtils_3.FsaState("catch error variable");
-        let catchBody = new fsaUtils_3.FsaState("catch body");
-        let catchBetweenExpressions = new fsaUtils_3.FsaState("catch between expressions");
-        let finallyKeyword = new fsaUtils_3.FsaState("finally keyword");
-        let finallyBody = new fsaUtils_3.FsaState("finally body");
-        let finallyBetweenExpressions = new fsaUtils_3.FsaState("finally between expressions");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let tryBody = new fsaUtils_4.FsaState("try body");
+        let tryBetweenExpressions = new fsaUtils_4.FsaState("try between expressions");
+        let catchKeyword = new fsaUtils_4.FsaState("catch keyword");
+        let catchErrorVariable = new fsaUtils_4.FsaState("catch error variable");
+        let catchBody = new fsaUtils_4.FsaState("catch body");
+        let catchBetweenExpressions = new fsaUtils_4.FsaState("catch between expressions");
+        let finallyKeyword = new fsaUtils_4.FsaState("finally keyword");
+        let finallyBody = new fsaUtils_4.FsaState("finally body");
+        let finallyBetweenExpressions = new fsaUtils_4.FsaState("finally between expressions");
         let allStatesExceptStop = [startState,
             tryBody, tryBetweenExpressions,
             catchKeyword, catchErrorVariable, catchBody, catchBetweenExpressions,
@@ -70,7 +70,7 @@ class TryBlockFsa {
         catchErrorVariable.addArc(catchBody, streamConditions_3.alwaysPasses, doNothing);
         // if no error variable, must insert a semicolon or advance to a new line
         catchKeyword.addArc(catchBody, streamConditions_2.streamAtNewLineOrSemicolon, skipOneToken);
-        catchBody.addArc(finallyKeyword, streamConditions_5.streamAtFinally, skipOneToken);
+        catchBody.addArc(finallyKeyword, streamConditions_5.streamAtFinally, newFinallyBlock);
         catchBody.addArc(stopState, streamConditions_6.streamAtEof, doNothing);
         catchBody.addArc(catchBetweenExpressions, streamConditions_3.alwaysPasses, readCatchBodyExpression); // otherwise must be an expression
         catchBetweenExpressions.addArc(catchBody, streamConditions_2.streamAtNewLineOrSemicolon, skipOneToken); // require delimiter
@@ -84,7 +84,7 @@ class TryBlockFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

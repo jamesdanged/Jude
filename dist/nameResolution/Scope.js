@@ -181,7 +181,7 @@ class ModuleScope extends Scope {
         let msg = "Modules used (";
         msg += matchingUsings.map((item) => { return item[0].moduleShortName; }).join(", ");
         msg += ") all export '" + name + "'. Must invoke qualify with module name.";
-        console.error(msg);
+        console.log(msg);
         return null;
     }
     tryResolveExportedName(name) {

@@ -30,28 +30,28 @@ var streamConditions_7 = require("./../../tokens/streamConditions");
 var streamConditions_8 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("../general/fsaUtils");
 var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var nodes_4 = require("../../parseTree/nodes");
 var streamConditions_9 = require("../../tokens/streamConditions");
 var ExpressionFsa_1 = require("../general/ExpressionFsa");
 /**
  * Recognizes the body of a type...end declaration.
  */
-class TypeDefFsa {
+class TypeDefFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let typeDefName = new fsaUtils_3.FsaState("type def name");
-        let genericParams = new fsaUtils_3.FsaState("generic params");
-        let lessThanColon = new fsaUtils_3.FsaState("<:");
-        let parentType = new fsaUtils_3.FsaState("parent type");
-        let body = new fsaUtils_3.FsaState("body");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let typeDefName = new fsaUtils_4.FsaState("type def name");
+        let genericParams = new fsaUtils_4.FsaState("generic params");
+        let lessThanColon = new fsaUtils_4.FsaState("<:");
+        let parentType = new fsaUtils_4.FsaState("parent type");
+        let body = new fsaUtils_4.FsaState("body");
         //let fieldName = new FsaState("field name")
         //let doubleColon = new FsaState("::")
         //let fieldType = new FsaState("file type")
-        let betweenExpressions = new fsaUtils_3.FsaState("between expressions"); // state after a field has been read
-        let generalExpression = new fsaUtils_3.FsaState("general expression");
+        let betweenExpressions = new fsaUtils_4.FsaState("between expressions"); // state after a field has been read
+        let generalExpression = new fsaUtils_4.FsaState("general expression");
         // TODO what about new()
         let allStatesExceptStop = [startState, typeDefName, genericParams, lessThanColon, parentType,
             body,
@@ -98,7 +98,7 @@ class TypeDefFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

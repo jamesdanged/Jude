@@ -21,17 +21,17 @@ var streamConditions_3 = require("./../../tokens/streamConditions");
 var streamConditions_4 = require("./../../tokens/streamConditions");
 var fsaUtils_2 = require("../general/fsaUtils");
 var fsaUtils_3 = require("../general/fsaUtils");
-var assert_1 = require("../../utils/assert");
 var fsaUtils_4 = require("../general/fsaUtils");
+var assert_1 = require("../../utils/assert");
+var fsaUtils_5 = require("../general/fsaUtils");
 var ExpressionFsa_1 = require("../general/ExpressionFsa");
-class BeginBlockFsa {
+class BeginBlockFsa extends fsaUtils_2.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_2.FsaState("start");
-        let stopState = new fsaUtils_2.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let body = new fsaUtils_2.FsaState("body");
-        let betweenExpressions = new fsaUtils_2.FsaState("between expressions");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let body = new fsaUtils_3.FsaState("body");
+        let betweenExpressions = new fsaUtils_3.FsaState("between expressions");
         let allStatesExceptStop = [startState, body, betweenExpressions];
         // skip comments
         for (let state of allStatesExceptStop) {
@@ -46,7 +46,7 @@ class BeginBlockFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_3.runFsaStartToStop(this, parseState);
+        fsaUtils_4.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {
@@ -75,7 +75,7 @@ function parseWholeBeginBlock(beginBlockTree, wholeState) {
         fsaUtils_1.expectNoMoreExpressions(ts);
     }
     catch (err) {
-        fsaUtils_4.handleParseErrorOnly(err, node, beginBlockTree.contents, wholeState);
+        fsaUtils_5.handleParseErrorOnly(err, node, beginBlockTree.contents, wholeState);
     }
     return node;
 }

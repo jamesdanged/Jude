@@ -28,7 +28,6 @@ var chokidar = require("chokidar");
 var taskUtils_1 = require("../utils/taskUtils");
 var atomModule = require("atom");
 // TODO
-// ccall as an identifier
 // symbol quote blocks, eg ":( ... )", "quote ... end"
 // certain operators treated as identifiers in certain circumstances
 //   eg map(arr, +)
@@ -48,6 +47,12 @@ var atomModule = require("atom");
 // Autocomplete by matching alignments, maybe ignoring underscore
 // Do not autocomplete during comments
 // Handle situation where an external library was added into workspace, but still treated as external
+// Ctrl space should display signature information for functions that have info in methods(...), but don't have a file location, eg mmap
+// Ensure Base.Mmap.mmap shows popup
+// Seems to not be running reparse until save, eg type a little, then try to jump to definition of word just typed. Make sure lint on fly is always on.
+// Type one char after module name, does not show autocomplete results?
+// handle docstrings
+// display docstrings in autocomplete and jump to definition
 /**
  * Handles interactions with the editor. Responds to user activity and file system changes.
  */
@@ -59,7 +64,7 @@ class Controller {
         this.autocompleter = new Autocompleter_1.Autocompleter(this.sessionModel, this.jumper);
         this.subscriptions = new atomModule.CompositeDisposable();
         this.dirWatcher = null;
-        this.taskQueue = new taskUtils_1.TaskQueue(true);
+        this.taskQueue = new taskUtils_1.TaskQueue();
         this.serializedState = state;
         this.initializedPromise = false; // the first lint call will trigger initialization of controller
     }
@@ -220,18 +225,24 @@ class Controller {
         }
         let that = this;
         return new Promise((resolve, reject) => __awaiter(this, void 0, Promise, function* () {
-            if (that.initializedPromise === false) {
-                that.initializedPromise = that.initalizeAsync();
+            try {
+                if (that.initializedPromise === false) {
+                    that.initializedPromise = that.initalizeAsync();
+                }
+                yield that.initializedPromise;
+                if (!(path in that.sessionModel.parseSet.fileLevelNodes)) {
+                    console.log("File " + path + " not in workspace.");
+                    resolve([]);
+                    return;
+                }
+                // lint was called because of a change, so must reparse
+                yield that.reparseFileAsync(path, editor.getText());
+                resolve(that.linter.lint(path));
             }
-            yield that.initializedPromise;
-            if (!(path in that.sessionModel.parseSet.fileLevelNodes)) {
-                console.log("File " + path + " not in workspace.");
+            catch (err) {
+                console.error("unexpected error caught while linting: ", err);
                 resolve([]);
-                return;
             }
-            // lint was called because of a change, so must reparse
-            yield that.reparseFileAsync(path, editor.getText());
-            resolve(that.linter.lint(path));
         }));
     }
 }

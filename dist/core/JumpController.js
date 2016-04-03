@@ -83,7 +83,7 @@ class JumpController {
                     }
                 }
                 if (paths.length === 0) {
-                    console.error(identNode.name + " is not in project.");
+                    console.log(identNode.name + " is not in project.");
                     return [];
                 }
                 else if (paths.length === 1) {
@@ -122,7 +122,7 @@ class JumpController {
                 destPoint = resolve.moduleDefNode.name.token.range.start;
             }
             else if (resolve instanceof Resolve_1.ExternalModuleResolve) {
-                console.error("Not supported for modules outside workspace.");
+                console.log("Not supported for modules outside workspace.");
                 return [];
             }
             else {

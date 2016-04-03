@@ -30,34 +30,34 @@ var streamConditions_9 = require("./../../tokens/streamConditions");
 var streamConditions_10 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("../general/fsaUtils");
 var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var nodes_2 = require("../../parseTree/nodes");
 var ExpressionFsa_2 = require("../general/ExpressionFsa");
 /**
  * An automaton that recognizes the entire contents within the parentheses of a function's arg list declaration.
  */
-class FunctionDefArgListFsa {
+class FunctionDefArgListFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let orderedArgName = new fsaUtils_3.FsaState("ordered arg name");
-        let orderedArgType = new fsaUtils_3.FsaState("ordered arg type");
-        let orderedArgTypeCannotBeOptional = new fsaUtils_3.FsaState("ordered arg type, cannot be optional");
-        let orderedArgComma = new fsaUtils_3.FsaState("ordered arg comma");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let orderedArgName = new fsaUtils_4.FsaState("ordered arg name");
+        let orderedArgType = new fsaUtils_4.FsaState("ordered arg type");
+        let orderedArgTypeCannotBeOptional = new fsaUtils_4.FsaState("ordered arg type, cannot be optional");
+        let orderedArgComma = new fsaUtils_4.FsaState("ordered arg comma");
         // optional args are ordered args, but from this point forward, all args will require a default value
-        let optionalArgName = new fsaUtils_3.FsaState("optional arg name");
-        let optionalArgType = new fsaUtils_3.FsaState("optional arg type");
-        let optionalArgEqualSign = new fsaUtils_3.FsaState("optional arg =");
-        let optionalArgDefaultValue = new fsaUtils_3.FsaState("optional arg default value");
-        let optionalArgComma = new fsaUtils_3.FsaState("optional arg comma");
-        let varArgs = new fsaUtils_3.FsaState("var args");
-        let semicolonState = new fsaUtils_3.FsaState("semicolon");
-        let keywordArgName = new fsaUtils_3.FsaState("keyword arg name");
-        let keywordArgType = new fsaUtils_3.FsaState("keyword arg type");
-        let keywordArgEqualSign = new fsaUtils_3.FsaState("keyword arg equal sign");
-        let keywordArgDefaultValue = new fsaUtils_3.FsaState("keyword arg default value");
-        let keywordArgComma = new fsaUtils_3.FsaState("keyword arg comma");
+        let optionalArgName = new fsaUtils_4.FsaState("optional arg name");
+        let optionalArgType = new fsaUtils_4.FsaState("optional arg type");
+        let optionalArgEqualSign = new fsaUtils_4.FsaState("optional arg =");
+        let optionalArgDefaultValue = new fsaUtils_4.FsaState("optional arg default value");
+        let optionalArgComma = new fsaUtils_4.FsaState("optional arg comma");
+        let varArgs = new fsaUtils_4.FsaState("var args");
+        let semicolonState = new fsaUtils_4.FsaState("semicolon");
+        let keywordArgName = new fsaUtils_4.FsaState("keyword arg name");
+        let keywordArgType = new fsaUtils_4.FsaState("keyword arg type");
+        let keywordArgEqualSign = new fsaUtils_4.FsaState("keyword arg equal sign");
+        let keywordArgDefaultValue = new fsaUtils_4.FsaState("keyword arg default value");
+        let keywordArgComma = new fsaUtils_4.FsaState("keyword arg comma");
         let allStatesExceptStop = [startState, orderedArgName, orderedArgType, orderedArgTypeCannotBeOptional, orderedArgComma,
             optionalArgName, optionalArgType, optionalArgEqualSign, optionalArgDefaultValue, optionalArgComma, varArgs,
             semicolonState, keywordArgName, keywordArgType, keywordArgEqualSign, keywordArgDefaultValue, keywordArgComma];
@@ -133,7 +133,7 @@ class FunctionDefArgListFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

@@ -27,23 +27,23 @@ var streamConditions_6 = require("./../../tokens/streamConditions");
 var streamConditions_7 = require("./../../tokens/streamConditions");
 var fsaUtils_2 = require("../general/fsaUtils");
 var fsaUtils_3 = require("../general/fsaUtils");
-var nodes_3 = require("../../parseTree/nodes");
 var fsaUtils_4 = require("../general/fsaUtils");
+var nodes_3 = require("../../parseTree/nodes");
+var fsaUtils_5 = require("../general/fsaUtils");
 var ExpressionFsa_2 = require("../general/ExpressionFsa");
 /**
  * An automaton that recognizes the entire contents within {...} of a type parameter list declaration
  * of a generic function or a generic type.
  */
-class GenericDefArgListFsa {
+class GenericDefArgListFsa extends fsaUtils_2.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_2.FsaState("start");
-        let stopState = new fsaUtils_2.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let argName = new fsaUtils_2.FsaState("arg name");
-        let lessThanColon = new fsaUtils_2.FsaState("<:");
-        let typeRestriction = new fsaUtils_2.FsaState("type restriction");
-        let comma = new fsaUtils_2.FsaState("comma");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let argName = new fsaUtils_3.FsaState("arg name");
+        let lessThanColon = new fsaUtils_3.FsaState("<:");
+        let typeRestriction = new fsaUtils_3.FsaState("type restriction");
+        let comma = new fsaUtils_3.FsaState("comma");
         let allStatesExceptStop = [startState, argName, lessThanColon, typeRestriction, comma];
         // skip new lines and comments
         for (let state of allStatesExceptStop) {
@@ -64,7 +64,7 @@ class GenericDefArgListFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_3.runFsaStartToStop(this, parseState);
+        fsaUtils_4.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {
@@ -113,7 +113,7 @@ function parseGenericDefArgList(tree, wholeState) {
         fsaUtils_1.expectNoMoreExpressions(ts);
     }
     catch (err) {
-        fsaUtils_4.handleParseErrorOnly(err, node, tree.contents, wholeState);
+        fsaUtils_5.handleParseErrorOnly(err, node, tree.contents, wholeState);
     }
     return node;
 }

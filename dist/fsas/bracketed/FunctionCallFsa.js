@@ -26,24 +26,24 @@ var nodes_1 = require("./../../parseTree/nodes");
 var streamConditions_7 = require("./../../tokens/streamConditions");
 var fsaUtils_2 = require("./../general/fsaUtils");
 var fsaUtils_3 = require("./../general/fsaUtils");
-var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_4 = require("./../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var ExpressionFsa_1 = require("../general/ExpressionFsa");
 var ExpressionFsa_2 = require("../general/ExpressionFsa");
 /**
  * A automaton that recognizes the contents within the parentheses of a function invocation,
  * eg  foo(param1, param2, ...)
  */
-class FunctionCallFsa {
+class FunctionCallFsa extends fsaUtils_2.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_2.FsaState("start");
-        let stopState = new fsaUtils_2.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let orderedArgExpression = new fsaUtils_2.FsaState("ordered arg");
-        let orderedArgComma = new fsaUtils_2.FsaState("ordered arg comma");
-        let semicolonState = new fsaUtils_2.FsaState("semicolon");
-        let keywordArg = new fsaUtils_2.FsaState("keyword arg");
-        let keywordArgComma = new fsaUtils_2.FsaState("keyword arg comma");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let orderedArgExpression = new fsaUtils_3.FsaState("ordered arg");
+        let orderedArgComma = new fsaUtils_3.FsaState("ordered arg comma");
+        let semicolonState = new fsaUtils_3.FsaState("semicolon");
+        let keywordArg = new fsaUtils_3.FsaState("keyword arg");
+        let keywordArgComma = new fsaUtils_3.FsaState("keyword arg comma");
         let allStatesExceptStop = [startState, orderedArgExpression, orderedArgComma, semicolonState, keywordArg,
             keywordArgComma];
         // add loops to ignore new lines and comments everywhere
@@ -79,7 +79,7 @@ class FunctionCallFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let state = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_3.runFsaStartToStop(this, state);
+        fsaUtils_4.runFsaStartToStop(this, state);
     }
 }
 class ParseState {
@@ -135,7 +135,7 @@ function parseFunctionCallArgs(parenTree, wholeState) {
         fsaUtils_1.expectNoMoreExpressions(ts);
     }
     catch (err) {
-        fsaUtils_4.handleParseErrorOnly(err, node, parenTree.contents, wholeState);
+        fsaUtils_5.handleParseErrorOnly(err, node, parenTree.contents, wholeState);
     }
     return node;
 }

@@ -13,6 +13,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
     });
 };
 var errors_1 = require("../../utils/errors");
+class BaseFsa {
+    constructor() {
+        let startState = new FsaState("start");
+        let stopState = new FsaState("stop");
+        this.startState = startState;
+        this.stopState = stopState;
+    }
+}
+exports.BaseFsa = BaseFsa;
 class FsaState {
     constructor(name) {
         this.arcs = [];

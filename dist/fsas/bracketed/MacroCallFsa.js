@@ -12,22 +12,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+var assert_1 = require("../../utils/assert");
 var streamConditions_1 = require("../../tokens/streamConditions");
+var streamConditions_2 = require("../../tokens/streamConditions");
 var ExpressionFsa_1 = require("../general/ExpressionFsa");
-var streamConditions_2 = require("./../../tokens/streamConditions");
-var TokenStream_1 = require("./../../tokens/TokenStream");
 var streamConditions_3 = require("./../../tokens/streamConditions");
+var TokenStream_1 = require("./../../tokens/TokenStream");
 var streamConditions_4 = require("./../../tokens/streamConditions");
 var streamConditions_5 = require("./../../tokens/streamConditions");
+var streamConditions_6 = require("./../../tokens/streamConditions");
 var fsaUtils_1 = require("../general/fsaUtils");
 var fsaUtils_2 = require("../general/fsaUtils");
-var streamConditions_6 = require("../../tokens/streamConditions");
+var fsaUtils_3 = require("../general/fsaUtils");
+var streamConditions_7 = require("../../tokens/streamConditions");
 var nodes_1 = require("../../parseTree/nodes");
 var nodes_2 = require("../../parseTree/nodes");
-var streamConditions_7 = require("../../tokens/streamConditions");
+var streamConditions_8 = require("../../tokens/streamConditions");
 var ExpressionFsa_2 = require("./../general/ExpressionFsa");
 var ExpressionFsa_3 = require("../general/ExpressionFsa");
-var streamConditions_8 = require("../../tokens/streamConditions");
+var streamConditions_9 = require("../../tokens/streamConditions");
+var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 /**
  * Parses a macro invocation.
  *
@@ -40,40 +45,54 @@ var streamConditions_8 = require("../../tokens/streamConditions");
  * But without redoing everything to handle whitespace everywhere, we can just ignore this rare issue for now.
  * People rarely will use the space delimited form with multiple arguments with the first argument in parentheses.
  */
-class MacroCallFsa {
+class MacroCallFsa extends fsaUtils_1.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_1.FsaState("start");
-        let stopState = new fsaUtils_1.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let macroNameWithSpace = new fsaUtils_1.FsaState("macro name with space");
-        let macroNameWithoutSpace = new fsaUtils_1.FsaState("macro name without space");
-        let spaceDelimitedArgList = new fsaUtils_1.FsaState("space delimited arg list");
-        let commaDelimitedArgList = new fsaUtils_1.FsaState("comma delimited arg list");
-        let commaDelimitedArg = new fsaUtils_1.FsaState("comma delimited arg");
-        let comma = new fsaUtils_1.FsaState("comma");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let macroNameWithSpace = new fsaUtils_2.FsaState("macro name with space");
+        let macroNameWithoutSpace = new fsaUtils_2.FsaState("macro name without space");
+        let spaceDelimitedArgList = new fsaUtils_2.FsaState("space delimited arg list");
+        let commaDelimitedArgList = new fsaUtils_2.FsaState("comma delimited arg list");
         // space delimited
-        startState.addArc(macroNameWithSpace, streamConditions_1.streamAtMacroWithSpace, readMacroName);
-        macroNameWithSpace.addArc(spaceDelimitedArgList, streamConditions_3.alwaysPasses, doNothing);
+        startState.addArc(macroNameWithSpace, streamConditions_2.streamAtMacroWithSpace, readMacroName);
+        macroNameWithSpace.addArc(spaceDelimitedArgList, streamConditions_4.alwaysPasses, doNothing);
         // spaces were already removed from stream, so just keep reading expressions until end of line or ;
-        spaceDelimitedArgList.addArc(stopState, streamConditions_4.streamAtNewLineOrSemicolon, doNothing);
-        spaceDelimitedArgList.addArc(stopState, streamConditions_2.streamAtComment, doNothing);
-        spaceDelimitedArgList.addArc(spaceDelimitedArgList, streamConditions_3.alwaysPasses, readSpaceDelimitedArg);
+        spaceDelimitedArgList.addArc(stopState, streamConditions_5.streamAtNewLineOrSemicolon, doNothing);
+        spaceDelimitedArgList.addArc(stopState, streamConditions_3.streamAtComment, doNothing);
+        spaceDelimitedArgList.addArc(spaceDelimitedArgList, streamConditions_4.alwaysPasses, readSpaceDelimitedArg);
         // comma delimited
-        startState.addArc(macroNameWithoutSpace, streamConditions_8.streamAtMacroWithoutSpace, readMacroName);
-        macroNameWithoutSpace.addArc(commaDelimitedArgList, streamConditions_6.streamAtOpenParenthesis, switchToParenStream);
-        // 0 or more args
-        commaDelimitedArgList.addArc(stopState, streamConditions_5.streamAtEof, doNothing);
-        commaDelimitedArgList.addArc(commaDelimitedArg, streamConditions_3.alwaysPasses, readCommaDelimitedArg);
-        // must have comma to continue list
-        commaDelimitedArg.addArc(stopState, streamConditions_5.streamAtEof, doNothing);
-        commaDelimitedArg.addArc(comma, streamConditions_7.streamAtComma, skipOneToken);
-        // must have arg after a comma
-        comma.addArc(commaDelimitedArg, streamConditions_3.alwaysPasses, readCommaDelimitedArg);
+        startState.addArc(macroNameWithoutSpace, streamConditions_9.streamAtMacroWithoutSpace, readMacroName);
+        macroNameWithoutSpace.addArc(commaDelimitedArgList, streamConditions_7.streamAtOpenParenthesis, readCommaArgList);
+        commaDelimitedArgList.addArc(stopState, streamConditions_4.alwaysPasses, doNothing);
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_2.runFsaStartToStop(this, parseState);
+        fsaUtils_3.runFsaStartToStop(this, parseState);
+    }
+}
+class MacroCommaArgListFsa extends fsaUtils_1.BaseFsa {
+    constructor() {
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let commaDelimitedArg = new fsaUtils_2.FsaState("comma delimited arg");
+        let comma = new fsaUtils_2.FsaState("comma");
+        for (let state of [comma, commaDelimitedArg]) {
+            state.addArc(state, streamConditions_1.streamAtNewLine, skipOneToken);
+        }
+        // 0 or more args
+        startState.addArc(stopState, streamConditions_6.streamAtEof, doNothing);
+        startState.addArc(commaDelimitedArg, streamConditions_4.alwaysPasses, readCommaDelimitedArg);
+        // must have comma to continue list
+        commaDelimitedArg.addArc(stopState, streamConditions_6.streamAtEof, doNothing);
+        commaDelimitedArg.addArc(comma, streamConditions_8.streamAtComma, skipOneToken);
+        // must have arg after a comma
+        comma.addArc(commaDelimitedArg, streamConditions_4.alwaysPasses, readCommaDelimitedArg);
+    }
+    runStartToStop(ts, nodeToFill, wholeState) {
+        let state = new ParseState(ts, nodeToFill, wholeState);
+        fsaUtils_3.runFsaStartToStop(this, state);
     }
 }
 class ParseState {
@@ -92,9 +111,9 @@ function readMacroName(state) {
     let tok = state.ts.read();
     state.nodeToFill.name = new nodes_2.IdentifierNode(tok);
 }
-function switchToParenStream(state) {
+function readCommaArgList(state) {
     let tokenTree = state.ts.read();
-    state.ts = new TokenStream_1.TokenStream(tokenTree.contents, tokenTree.openToken);
+    parseCommaArgList(tokenTree, state.nodeToFill, state.wholeState);
 }
 var fsaMacroCallExpressions = null; // build on first usage. Constructors may not be exported yet upon global scope evaluation.
 function readCommaDelimitedArg(state) {
@@ -129,4 +148,18 @@ function parseMacroCall(ts, wholeState) {
     return node;
 }
 exports.parseMacroCall = parseMacroCall;
+var fsaMacroCommaArgList = new MacroCommaArgListFsa();
+function parseCommaArgList(bracketTree, node, wholeState) {
+    if (bracketTree.openToken.str !== "(")
+        throw new assert_1.AssertError("");
+    let ts = new TokenStream_1.TokenStream(bracketTree.contents, bracketTree.openToken);
+    try {
+        fsaMacroCommaArgList.runStartToStop(ts, node, wholeState);
+        fsaUtils_4.expectNoMoreExpressions(ts);
+    }
+    catch (err) {
+        fsaUtils_5.handleParseErrorOnly(err, node, bracketTree.contents, wholeState);
+    }
+}
+exports.parseCommaArgList = parseCommaArgList;
 //# sourceMappingURL=MacroCallFsa.js.map

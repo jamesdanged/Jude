@@ -28,23 +28,23 @@ var streamConditions_9 = require("./../../tokens/streamConditions");
 var streamConditions_10 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("../general/fsaUtils");
 var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var nodes_2 = require("../../parseTree/nodes");
 var assert_1 = require("../../utils/assert");
 var ExpressionFsa_1 = require("../general/ExpressionFsa");
 var operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
 var errors_1 = require("../../utils/errors");
-class ForBlockFsa {
+class ForBlockFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let iterVariable = new fsaUtils_3.FsaState("iter variable");
-        let equals = new fsaUtils_3.FsaState("equals");
-        let inKeyword = new fsaUtils_3.FsaState("in keyword");
-        let iterRange = new fsaUtils_3.FsaState("iter range");
-        let body = new fsaUtils_3.FsaState("body");
-        let betweenExpressions = new fsaUtils_3.FsaState("between expressions");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let iterVariable = new fsaUtils_4.FsaState("iter variable");
+        let equals = new fsaUtils_4.FsaState("equals");
+        let inKeyword = new fsaUtils_4.FsaState("in keyword");
+        let iterRange = new fsaUtils_4.FsaState("iter range");
+        let body = new fsaUtils_4.FsaState("body");
+        let betweenExpressions = new fsaUtils_4.FsaState("between expressions");
         let allStatesExceptStop = [startState, iterVariable, equals, inKeyword, iterRange, body, betweenExpressions];
         // allow comments everywhere
         for (let state of allStatesExceptStop) {
@@ -72,7 +72,7 @@ class ForBlockFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

@@ -29,6 +29,7 @@ var streamConditions_9 = require("./../../tokens/streamConditions");
 var streamConditions_10 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("../general/fsaUtils");
 var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var nodes_2 = require("../../parseTree/nodes");
 var assert_1 = require("../../utils/assert");
 var GenericDefArgListFsa_1 = require("./GenericDefArgListFsa");
@@ -37,18 +38,17 @@ var operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
 /**
  * An automaton that recognizes the entire contents within a function ... end block.
  */
-class FunctionDefFsa {
+class FunctionDefFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let functionName = new fsaUtils_3.FsaState("function name");
-        let functionNameDot = new fsaUtils_3.FsaState("function name dot");
-        let typeParams = this.typeParamsState = new fsaUtils_3.FsaState("type params");
-        let functionArgList = this.functionArgListState = new fsaUtils_3.FsaState("function arg list"); // the entire handling of the arg list will be handled by a sub fsa
-        let functionBody = this.functionBodyState = new fsaUtils_3.FsaState("function body");
-        let betweenExpressions = new fsaUtils_3.FsaState("between expressions"); // state after an expression has been read
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let functionName = new fsaUtils_4.FsaState("function name");
+        let functionNameDot = new fsaUtils_4.FsaState("function name dot");
+        let typeParams = this.typeParamsState = new fsaUtils_4.FsaState("type params");
+        let functionArgList = this.functionArgListState = new fsaUtils_4.FsaState("function arg list"); // the entire handling of the arg list will be handled by a sub fsa
+        let functionBody = this.functionBodyState = new fsaUtils_4.FsaState("function body");
+        let betweenExpressions = new fsaUtils_4.FsaState("between expressions"); // state after an expression has been read
         let allStatesExceptStop = [startState, functionName, functionNameDot, typeParams, functionArgList, functionBody, betweenExpressions];
         // ignore new lines between parts of the function declaration
         for (let state of [startState, functionName, functionNameDot, typeParams]) {
@@ -87,7 +87,7 @@ class FunctionDefFsa {
         //if (wholeState.onlyParseTopLevel) {
         //runFsaStartToEarlyExit(this, parseState, [this.typeParamsState, this.functionArgListState, this.functionBodyState])
         //} else {
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
         //}
     }
 }

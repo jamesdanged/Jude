@@ -25,6 +25,10 @@ var nodes_2 = require("../parseTree/nodes");
 var Resolve_1 = require("../nameResolution/Resolve");
 var nodes_3 = require("../parseTree/nodes");
 var atomApi_2 = require("../utils/atomApi");
+// TODO
+// test for ccall
+// should not throw error in promise when
+//   resolve recursing a macro/type/function node with no name
 describe("basic function parsing", () => {
     let j13to20 = jasmine13to20_1.jasmine13to20();
     let beforeAll = j13to20.beforeAll;

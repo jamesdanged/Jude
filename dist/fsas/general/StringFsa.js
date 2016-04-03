@@ -15,9 +15,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 var fsaUtils_1 = require("./fsaUtils");
 var fsaUtils_2 = require("./fsaUtils");
 var fsaUtils_3 = require("./fsaUtils");
+var fsaUtils_4 = require("./fsaUtils");
 var streamConditions_1 = require("../../tokens/streamConditions");
 var TokenStream_1 = require("../../tokens/TokenStream");
-var fsaUtils_4 = require("./fsaUtils");
+var fsaUtils_5 = require("./fsaUtils");
 var nodes_1 = require("../../parseTree/nodes");
 var streamConditions_2 = require("../../tokens/streamConditions");
 var nodes_2 = require("../../parseTree/nodes");
@@ -33,12 +34,11 @@ var ExpressionFsa_1 = require("./ExpressionFsa");
  * Handles interpolated strings and simple strings.
  * Works for double quoted string and backtick (`) strings.
  */
-class StringFsa {
+class StringFsa extends fsaUtils_4.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
         let stringLiteral = new fsaUtils_3.FsaState("string literal");
         let dollarSign = new fsaUtils_3.FsaState("$ sign");
         let interpVariable = new fsaUtils_3.FsaState("interpolated variable");
@@ -59,7 +59,7 @@ class StringFsa {
      */
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

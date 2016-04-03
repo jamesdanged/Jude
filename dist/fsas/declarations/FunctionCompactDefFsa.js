@@ -23,6 +23,7 @@ var streamConditions_7 = require("./../../tokens/streamConditions");
 var streamConditions_8 = require("./../../tokens/streamConditions");
 var fsaUtils_1 = require("../general/fsaUtils");
 var fsaUtils_2 = require("../general/fsaUtils");
+var fsaUtils_3 = require("../general/fsaUtils");
 var streamConditions_9 = require("../../tokens/streamConditions");
 var nodes_2 = require("../../parseTree/nodes");
 var ExpressionFsa_1 = require("../general/ExpressionFsa");
@@ -34,21 +35,20 @@ var operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
  *  f{T}(val::T) = val + 1
  * where there is no 'function' or 'end' and the body is a single expression.
  */
-class FunctionCompactDefFsa {
+class FunctionCompactDefFsa extends fsaUtils_1.BaseFsa {
     /**
      * The token stream is assumed to have the function name (being assigned to) as the first token.
      */
     constructor() {
-        let startState = new fsaUtils_1.FsaState("start");
-        let stopState = new fsaUtils_1.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let functionName = new fsaUtils_1.FsaState('function name');
-        let functionNameDot = new fsaUtils_1.FsaState("function name dot");
-        let typeParams = new fsaUtils_1.FsaState("type params");
-        let functionArgList = new fsaUtils_1.FsaState("function arg list");
-        let equalsSign = new fsaUtils_1.FsaState("= sign");
-        let functionBody = new fsaUtils_1.FsaState("function body");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let functionName = new fsaUtils_2.FsaState('function name');
+        let functionNameDot = new fsaUtils_2.FsaState("function name dot");
+        let typeParams = new fsaUtils_2.FsaState("type params");
+        let functionArgList = new fsaUtils_2.FsaState("function arg list");
+        let equalsSign = new fsaUtils_2.FsaState("= sign");
+        let functionBody = new fsaUtils_2.FsaState("function body");
         let allStatesExceptStop = [startState, functionName, functionNameDot, typeParams, functionArgList, equalsSign, functionBody];
         // TODO allow newlines between elements if the def is contained within a parentheses
         // ignore new lines between parts of the function declaration
@@ -81,7 +81,7 @@ class FunctionCompactDefFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_2.runFsaStartToStop(this, parseState);
+        fsaUtils_3.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

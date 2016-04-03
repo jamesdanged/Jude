@@ -16,23 +16,23 @@ var fsaUtils_1 = require("./fsaUtils");
 var ModuleContentsFsa_1 = require("./ModuleContentsFsa");
 var fsaUtils_2 = require("./fsaUtils");
 var fsaUtils_3 = require("./fsaUtils");
+var fsaUtils_4 = require("./fsaUtils");
 var TokenStream_1 = require("../../tokens/TokenStream");
 var nodes_1 = require("../../parseTree/nodes");
-var fsaUtils_4 = require("./fsaUtils");
+var fsaUtils_5 = require("./fsaUtils");
 var streamConditions_1 = require("../../tokens/streamConditions");
 var streamConditions_2 = require("../../tokens/streamConditions");
 var streamConditions_3 = require("../../tokens/streamConditions");
 var nodes_2 = require("../../parseTree/nodes");
 var streamConditions_4 = require("../../tokens/streamConditions");
 var assert_1 = require("../../utils/assert");
-class ModuleDefFsa {
+class ModuleDefFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let nameState = new fsaUtils_3.FsaState("name");
-        let bodyState = new fsaUtils_3.FsaState("body");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let nameState = new fsaUtils_4.FsaState("name");
+        let bodyState = new fsaUtils_4.FsaState("body");
         let allStatesExceptStop = [startState, nameState, bodyState];
         // ignore comments and new lines everywhere
         for (let state of allStatesExceptStop) {
@@ -45,7 +45,7 @@ class ModuleDefFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

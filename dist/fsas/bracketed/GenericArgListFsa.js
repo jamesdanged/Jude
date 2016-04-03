@@ -23,22 +23,22 @@ var streamConditions_4 = require("./../../tokens/streamConditions");
 var streamConditions_5 = require("./../../tokens/streamConditions");
 var fsaUtils_2 = require("./../general/fsaUtils");
 var fsaUtils_3 = require("./../general/fsaUtils");
+var fsaUtils_4 = require("./../general/fsaUtils");
 var assert_1 = require("../../utils/assert");
-var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var ExpressionFsa_2 = require("../general/ExpressionFsa");
 /**
  * Recognizes a type parameter list (within { ... } )
  * for invocations of a generic function or for instantiations of a generic type,
  * not for a declaration of either.
  */
-class GenericArgListFsa {
+class GenericArgListFsa extends fsaUtils_2.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_2.FsaState("start");
-        let stopState = new fsaUtils_2.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
-        let typeExpression = new fsaUtils_2.FsaState("type expression");
-        let comma = new fsaUtils_2.FsaState("comma");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let typeExpression = new fsaUtils_3.FsaState("type expression");
+        let comma = new fsaUtils_3.FsaState("comma");
         let allStatesExceptStop = [startState, stopState, typeExpression, comma];
         // ignore new lines and comments everywhere
         for (let state of allStatesExceptStop) {
@@ -53,7 +53,7 @@ class GenericArgListFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_3.runFsaStartToStop(this, parseState);
+        fsaUtils_4.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {
@@ -91,7 +91,7 @@ function parseGenericArgList(curlyTree, wholeState) {
         fsaUtils_1.expectNoMoreExpressions(ts);
     }
     catch (err) {
-        fsaUtils_4.handleParseErrorOnly(err, node, curlyTree.contents, wholeState);
+        fsaUtils_5.handleParseErrorOnly(err, node, curlyTree.contents, wholeState);
     }
     return node;
 }

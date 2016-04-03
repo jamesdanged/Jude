@@ -232,8 +232,6 @@ class ScopeBuilder {
     }
     registerType(typeDefNode) {
         let identifierNode = typeDefNode.name;
-        if (!identifierNode)
-            return; // parse failure
         let name = identifierNode.name;
         let resolve = this.currScope.tryResolveNameThisLevel(name);
         if (resolve !== null) {
@@ -243,10 +241,8 @@ class ScopeBuilder {
         this.currScope.names[name] = new Resolve_7.TypeResolve(typeDefNode, this.currFile);
     }
     registerMacro(macroDefNode) {
-        let nameTok = macroDefNode.name.token;
         let identifierNode = macroDefNode.name;
-        if (!identifierNode)
-            return; // parse failure
+        let nameTok = identifierNode.token;
         let name = identifierNode.name;
         if (name[0] === "@")
             throw new assert_1.AssertError("");

@@ -29,23 +29,23 @@ var nodes_2 = require("./../../parseTree/nodes");
 var arrayUtils_1 = require("../../utils/arrayUtils");
 var fsaUtils_3 = require("../general/fsaUtils");
 var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var assert_1 = require("../../utils/assert");
-class IfBlockFsa {
+class IfBlockFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start state");
-        let stopState = new fsaUtils_3.FsaState("stop state");
-        this.startState = startState;
-        this.stopState = stopState;
-        let ifCondition = new fsaUtils_3.FsaState("if condition");
-        let ifTrueBlock = new fsaUtils_3.FsaState("if true block");
-        let ifTrueBetweenExpressions = new fsaUtils_3.FsaState("if true between expressions");
-        let elseIfKeyword = new fsaUtils_3.FsaState("else if keyword");
-        let elseIfCondition = new fsaUtils_3.FsaState("else if condition");
-        let elseIfBlock = new fsaUtils_3.FsaState("else if block");
-        let elseIfBetweenExpressions = new fsaUtils_3.FsaState("else if between expressions");
-        let elseKeyword = new fsaUtils_3.FsaState("else keyword");
-        let elseBlock = new fsaUtils_3.FsaState("else block");
-        let elseBetweenExpressions = new fsaUtils_3.FsaState("else between expressions");
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
+        let ifCondition = new fsaUtils_4.FsaState("if condition");
+        let ifTrueBlock = new fsaUtils_4.FsaState("if true block");
+        let ifTrueBetweenExpressions = new fsaUtils_4.FsaState("if true between expressions");
+        let elseIfKeyword = new fsaUtils_4.FsaState("else if keyword");
+        let elseIfCondition = new fsaUtils_4.FsaState("else if condition");
+        let elseIfBlock = new fsaUtils_4.FsaState("else if block");
+        let elseIfBetweenExpressions = new fsaUtils_4.FsaState("else if between expressions");
+        let elseKeyword = new fsaUtils_4.FsaState("else keyword");
+        let elseBlock = new fsaUtils_4.FsaState("else block");
+        let elseBetweenExpressions = new fsaUtils_4.FsaState("else between expressions");
         let allStatesExceptStop = [startState,
             ifCondition, ifTrueBlock, ifTrueBetweenExpressions,
             elseIfKeyword, elseIfCondition, elseIfBlock, elseIfBetweenExpressions,
@@ -90,7 +90,7 @@ class IfBlockFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {

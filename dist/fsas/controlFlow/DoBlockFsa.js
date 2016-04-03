@@ -30,23 +30,23 @@ var streamConditions_8 = require("./../../tokens/streamConditions");
 var streamConditions_9 = require("./../../tokens/streamConditions");
 var fsaUtils_3 = require("../general/fsaUtils");
 var fsaUtils_4 = require("../general/fsaUtils");
+var fsaUtils_5 = require("../general/fsaUtils");
 var nodes_3 = require("../../parseTree/nodes");
 var ExpressionFsa_2 = require("../general/ExpressionFsa");
 var ExpressionFsa_3 = require("../general/ExpressionFsa");
-class DoBlockFsa {
+class DoBlockFsa extends fsaUtils_3.BaseFsa {
     constructor() {
-        let startState = new fsaUtils_3.FsaState("start");
-        let stopState = new fsaUtils_3.FsaState("stop");
-        this.startState = startState;
-        this.stopState = stopState;
+        super();
+        let startState = this.startState;
+        let stopState = this.stopState;
         // similar to function definition's arg list, but cannot have default values or keyword args
-        let argList = new fsaUtils_3.FsaState("arg list");
-        let argName = new fsaUtils_3.FsaState("arg name");
-        let argDoubleColon = new fsaUtils_3.FsaState("arg ::");
-        let argTypeAnnotation = new fsaUtils_3.FsaState("arg type annotation");
-        let argListComma = new fsaUtils_3.FsaState("arg list comma");
-        let body = new fsaUtils_3.FsaState("body");
-        let betweenExpressions = new fsaUtils_3.FsaState("between expressions");
+        let argList = new fsaUtils_4.FsaState("arg list");
+        let argName = new fsaUtils_4.FsaState("arg name");
+        let argDoubleColon = new fsaUtils_4.FsaState("arg ::");
+        let argTypeAnnotation = new fsaUtils_4.FsaState("arg type annotation");
+        let argListComma = new fsaUtils_4.FsaState("arg list comma");
+        let body = new fsaUtils_4.FsaState("body");
+        let betweenExpressions = new fsaUtils_4.FsaState("between expressions");
         let allStatesExceptStop = [startState, argList, argName, argDoubleColon, argTypeAnnotation, argListComma, body, betweenExpressions];
         // allow comments everywhere
         for (let state of allStatesExceptStop) {
@@ -79,7 +79,7 @@ class DoBlockFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        fsaUtils_4.runFsaStartToStop(this, parseState);
+        fsaUtils_5.runFsaStartToStop(this, parseState);
     }
 }
 class ParseState {
