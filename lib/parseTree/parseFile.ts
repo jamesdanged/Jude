@@ -38,7 +38,7 @@ export function parseFile(path: string, fileContents: string, sessionModel: Sess
   }
 
   // convert tokens to tree of tokens, grouped by brackets and blocks
-  let tokenMinus1 = new Token("", TokenType.LineWhiteSpace, new Range(new Point(0, 0), new Point(0, 1)), new Indent(""))
+  let tokenMinus1 = new Token("", TokenType.LineWhiteSpace, new Range(new Point(0, 0), new Point(0, 1)))
   let tokenStream = new TokenStream(tokens, tokenMinus1)
   let tokenTreeBuilder = new BracketGrouper()
   tokenTreeBuilder.runGrouping(tokenStream)

@@ -31,14 +31,12 @@ export class Tokenizer {
   _ss : StringStream
   //_currRow: number  // 0 is first line
   //_currCol: number  // 0 is first col
-  _currIndent: Indent  // indent used by everything on the current line
   _currParenthesisLevel: number  // 0 unless we are currently interpolating a string.
   _tokens: Token[]
   errors: InvalidParseError[]
 
   constructor() {
     this._ss = null
-    this._currIndent = null
     this._currParenthesisLevel = 0
     this._tokens = null
     this.errors = null
@@ -54,7 +52,6 @@ export class Tokenizer {
   tokenize(str: string): void {
     this._tokens = []
     this._ss = new StringStream(str)
-    this._currIndent = this._readIndent()
     this._currParenthesisLevel = 0
     this.errors = []
 
@@ -95,7 +92,7 @@ export class Tokenizer {
       let str = ss.readUntil(charUtils.isNewLine)
       str = "#" + str // leave the '#' in front in order to distinguish the str from operators/keywords
       let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(str, TokenType.Comment, rng, this._currIndent))
+      this._tokens.push(new Token(str, TokenType.Comment, rng))
       return
     }
 
@@ -104,14 +101,13 @@ export class Tokenizer {
       let str = ss.readWhile(charUtils.isWhiteSpaceNotNewLine)
       str = c + str
       let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(str, TokenType.LineWhiteSpace, rng, this._currIndent))
+      this._tokens.push(new Token(str, TokenType.LineWhiteSpace, rng))
       return
     }
     if (charUtils.isNewLine(c)) {
       let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(c, TokenType.NewLine, rng, this._currIndent))
+      this._tokens.push(new Token(c, TokenType.NewLine, rng))
       //this._currRow++
-      this._currIndent = this._readIndent()
       return
     }
 
@@ -129,14 +125,14 @@ export class Tokenizer {
     // but usually we can just check 'str' if we know we are not inside quotes.
     if (c === "\"" || c === "`") {
       let openQuote = c
-      this._tokens.push(new Token(c, TokenType.Quote, new Range(pointStart, pointStart), this._currIndent))
+      this._tokens.push(new Token(c, TokenType.Quote, new Range(pointStart, pointStart)))
 
       let str = ""
       let pointCurrStringLiteralStart = ss.currPoint()
       let storeCurrentStringLiteral = () => {
         if (str.length > 0) {
           let rng = new Range(pointCurrStringLiteralStart, ss.currPoint())
-          this._tokens.push(new Token(str, TokenType.StringLiteralContents, rng, this._currIndent))
+          this._tokens.push(new Token(str, TokenType.StringLiteralContents, rng))
         }
         str = ""
       }
@@ -150,7 +146,7 @@ export class Tokenizer {
           // especially if it is \$
           if (ss.eof()) {
             throw new InvalidParseError("Unexpected EOF",
-              new Token(ch, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent ))
+              new Token(ch, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
           }
           let ch2 = ss.read()
           str += "\\" + ch2
@@ -159,7 +155,6 @@ export class Tokenizer {
           // julia strings can span multiple lines
           str += "\n"
           //this._currRow++
-          this._currIndent = new Indent("")  // no indentation recognized within a string literal
 
         } else if (ch === openQuote) {
           // terminate the string
@@ -168,7 +163,7 @@ export class Tokenizer {
           // store close quote
           let pointCloseQuote = ss.currPoint()
           let rng = new Range(pointCloseQuote, pointCloseQuote)
-          this._tokens.push(new Token(ch, TokenType.Quote, rng, this._currIndent))
+          this._tokens.push(new Token(ch, TokenType.Quote, rng))
           stringClosedSuccessfully = true
 
           break // while
@@ -177,7 +172,7 @@ export class Tokenizer {
 
           if (ss.eof()) {
             throw new InvalidParseError("Unexpected EOF",
-              new Token(ch, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent))
+              new Token(ch, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
           }
 
           let pointDollar = ss.prevPoint()
@@ -186,16 +181,16 @@ export class Tokenizer {
 
           if (charUtils.isValidIdentifierStart(ch2)) {
             storeCurrentStringLiteral()
-            this._tokens.push(new Token("$", TokenType.StringInterpolationStart, new Range(pointDollar, pointAfterDollar), this._currIndent))
+            this._tokens.push(new Token("$", TokenType.StringInterpolationStart, new Range(pointDollar, pointAfterDollar)))
             let str = ss.readWhile(charUtils.isValidIdentifierContinuation)
-            this._tokens.push(new Token(ch2 + str, TokenType.Identifier, new Range(pointAfterDollar, ss.currPoint()), this._currIndent))
+            this._tokens.push(new Token(ch2 + str, TokenType.Identifier, new Range(pointAfterDollar, ss.currPoint())))
 
           } else if (ch2 === "(") {
             // major string interpolation
             // need to recurse
             storeCurrentStringLiteral()
-            this._tokens.push(new Token("$", TokenType.StringInterpolationStart, new Range(pointDollar, pointAfterDollar), this._currIndent))
-            this._tokens.push(new Token("(", TokenType.Bracket, new Range(pointAfterDollar, ss.currPoint()), this._currIndent))
+            this._tokens.push(new Token("$", TokenType.StringInterpolationStart, new Range(pointDollar, pointAfterDollar)))
+            this._tokens.push(new Token("(", TokenType.Bracket, new Range(pointAfterDollar, ss.currPoint())))
             let origParenthesisLevel = this._currParenthesisLevel
             this._currParenthesisLevel++
             while (!ss.eof() && this._currParenthesisLevel != origParenthesisLevel) {
@@ -208,7 +203,7 @@ export class Tokenizer {
 
           } else {
             throw new InvalidParseError("Invalid interpolation syntax: $" + ch2,
-              new Token(ch2, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent ))
+              new Token(ch2, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
           }
         } else {
           str += ch
@@ -224,13 +219,13 @@ export class Tokenizer {
       if (c === "(") {
         this._currParenthesisLevel++
         let rng = new Range(pointStart, ss.currPoint())
-        this._tokens.push(new Token(c, TokenType.Bracket, rng, this._currIndent))
+        this._tokens.push(new Token(c, TokenType.Bracket, rng))
         return
       }
       if (c === ")") {
         this._currParenthesisLevel--
         let rng = new Range(pointStart, ss.currPoint())
-        this._tokens.push(new Token(c, TokenType.Bracket, rng, this._currIndent))
+        this._tokens.push(new Token(c, TokenType.Bracket, rng))
         return
       }
     }
@@ -247,7 +242,7 @@ export class Tokenizer {
           (lastToken.type === TokenType.Bracket && (lastToken.str === ")" || lastToken.str === "]"))) {
 
           let rng = new Range(pointStart, ss.currPoint())
-          this._tokens.push(new Token(c, TokenType.Operator, rng, this._currIndent))
+          this._tokens.push(new Token(c, TokenType.Operator, rng))
           return
         }
       }
@@ -258,11 +253,11 @@ export class Tokenizer {
         let c1 = next2[0]
         let c2 = next2[1]
         if (c1 !== "'" && c1 !== "\\" && c2 === "'") {
-          this._tokens.push(new Token(c, TokenType.Quote, new Range(pointStart, ss.currPoint()), this._currIndent))
+          this._tokens.push(new Token(c, TokenType.Quote, new Range(pointStart, ss.currPoint())))
           ss.read()
-          this._tokens.push(new Token(c1, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent))
+          this._tokens.push(new Token(c1, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
           ss.read()
-          this._tokens.push(new Token(c2, TokenType.Quote, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent))
+          this._tokens.push(new Token(c2, TokenType.Quote, new Range(ss.prevPoint(), ss.currPoint())))
           return
         }
         // escaped chars, ie \'  \n  \t  \r
@@ -270,17 +265,17 @@ export class Tokenizer {
           let next3 = ss.peekUpToX(3)
           let c3 = next3[2]
           if (c3 === "'") {
-            this._tokens.push(new Token(c, TokenType.Quote, new Range(pointStart, ss.currPoint()), this._currIndent))
+            this._tokens.push(new Token(c, TokenType.Quote, new Range(pointStart, ss.currPoint())))
             ss.read()
             ss.read()
-            this._tokens.push(new Token("'", TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent))
+            this._tokens.push(new Token("'", TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
             ss.read()
-            this._tokens.push(new Token(c3, TokenType.Quote, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent))
+            this._tokens.push(new Token(c3, TokenType.Quote, new Range(ss.prevPoint(), ss.currPoint())))
             return
           }
         }
         throw new InvalidParseError("Character literal must have only one character.",
-          new Token(c, TokenType.Quote, new Range(pointStart, ss.currPoint()), this._currIndent))
+          new Token(c, TokenType.Quote, new Range(pointStart, ss.currPoint())))
       }
     }
 
@@ -301,13 +296,13 @@ export class Tokenizer {
             // escape the next character
             if (ss.eof()) {
               throw new InvalidParseError("Unexpected EOF",
-                new Token(iChar, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent))
+                new Token(iChar, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
             }
             let iChar2 = ss.read()
             regexContents += "\\" + iChar2
           } else if (iChar === "\"") {
             // terminate
-            this._tokens.push(new Token("r\"" + regexContents + "\"", TokenType.Regex, new Range(pointStart, ss.currPoint()), this._currIndent))
+            this._tokens.push(new Token("r\"" + regexContents + "\"", TokenType.Regex, new Range(pointStart, ss.currPoint())))
             return
           } else {
             regexContents += iChar
@@ -315,7 +310,7 @@ export class Tokenizer {
         }
 
         throw new InvalidParseError("Unexpected EOF",
-          new Token(lastChar, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent))
+          new Token(lastChar, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
       }
     }
 
@@ -338,7 +333,7 @@ export class Tokenizer {
       if (charUtils.isValidIdentifierStart(c2)) {
         let str = ss.readWhile(charUtils.isValidIdentifierContinuation)
         str = c + c2 + str
-        this._tokens.push(new Token(str, TokenType.Symbol, new Range(pointStart, ss.currPoint()), this._currIndent))
+        this._tokens.push(new Token(str, TokenType.Symbol, new Range(pointStart, ss.currPoint())))
         return
       }
 
@@ -346,13 +341,13 @@ export class Tokenizer {
       if (this._streamAtNumber()) {
         let str = this._readNumber()
         str = c + str
-        this._tokens.push(new Token(str, TokenType.Symbol, new Range(pointStart, ss.currPoint()), this._currIndent))
+        this._tokens.push(new Token(str, TokenType.Symbol, new Range(pointStart, ss.currPoint())))
         return
       }
       if (this._streamAtOperator()) {
         let str = this._readOperator()
         str = c + str
-        this._tokens.push(new Token(str, TokenType.Symbol, new Range(pointStart, ss.currPoint()), this._currIndent))
+        this._tokens.push(new Token(str, TokenType.Symbol, new Range(pointStart, ss.currPoint())))
         return
       }
 
@@ -371,7 +366,7 @@ export class Tokenizer {
     if (this._streamAtOperator()) {
       let str = this._readOperator()
       let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(str, TokenType.Operator, rng, this._currIndent))
+      this._tokens.push(new Token(str, TokenType.Operator, rng))
       return
     } else {
       ss.read()
@@ -386,21 +381,21 @@ export class Tokenizer {
 
       // make sure not a keyword
       if (str in keywords) {
-        this._tokens.push(new Token(str, TokenType.Keyword, rng, this._currIndent))
+        this._tokens.push(new Token(str, TokenType.Keyword, rng))
         return
       }
 
       if (str in keywordValues) {
-        this._tokens.push(new Token(str, TokenType.Number, rng, this._currIndent))  // can treat like a number for parse purposes
+        this._tokens.push(new Token(str, TokenType.Number, rng))  // can treat like a number for parse purposes
         return
       }
 
       if (str in binaryOperatorsLikeIdentifiers) {
-        this._tokens.push(new Token(str, TokenType.Operator, rng, this._currIndent))
+        this._tokens.push(new Token(str, TokenType.Operator, rng))
         return
       }
 
-      this._tokens.push(new Token(str, TokenType.Identifier, rng, this._currIndent))
+      this._tokens.push(new Token(str, TokenType.Identifier, rng))
       return
     }
 
@@ -414,16 +409,16 @@ export class Tokenizer {
         let followedBySpace = false
         if (!ss.eof()) {
           let c3 = ss.peek()
-          if (c3 === " " || c3 === "\t") followedBySpace = true
+          if (c3 === " " || c3 === "\t" || c3 === "\n" || c3 === "\r") followedBySpace = true
         }
         let tokType = TokenType.Macro
         if (followedBySpace) tokType = TokenType.MacroWithSpace
 
-        this._tokens.push(new Token(str, tokType, rng, this._currIndent))
+        this._tokens.push(new Token(str, tokType, rng))
         return
       } else {
         throw new InvalidParseError("Expecting a macro name, but got '..." + ss.getContext() + "...'",
-          new Token(c + c2, TokenType.Macro, new Range(pointStart, ss.currPoint()), this._currIndent))
+          new Token(c + c2, TokenType.Macro, new Range(pointStart, ss.currPoint())))
       }
     }
 
@@ -432,7 +427,7 @@ export class Tokenizer {
     if (this._streamAtNumber()) {
       let str = this._readNumber()
       let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(str, TokenType.Number, rng, this._currIndent))
+      this._tokens.push(new Token(str, TokenType.Number, rng))
       return
     } else {
       ss.read()
@@ -440,24 +435,24 @@ export class Tokenizer {
 
     if (c in allBrackets) {
       let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(c, TokenType.Bracket, rng, this._currIndent))
+      this._tokens.push(new Token(c, TokenType.Bracket, rng))
       return
     }
 
     if (c in allQuotes) {
       let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(c, TokenType.Quote, rng, this._currIndent))
+      this._tokens.push(new Token(c, TokenType.Quote, rng))
       return
     }
 
     if (c === ";") {
       let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(c, TokenType.SemiColon, rng, this._currIndent))
+      this._tokens.push(new Token(c, TokenType.SemiColon, rng))
       return
     }
 
     throw new InvalidParseError("Unexpected character: '" + c + "'. Context: '" + ss.getContext() + "'.",
-      new Token(c, TokenType.Identifier, new Range(ss.prevPoint(), ss.currPoint()), this._currIndent ))
+      new Token(c, TokenType.Identifier, new Range(ss.prevPoint(), ss.currPoint()) ))
   }
 
 
@@ -499,11 +494,11 @@ export class Tokenizer {
       if (c === ".") {
         if (foundDecimal) {
           throw new InvalidParseError("Cannot have two decimals in a number: \"" + str + c + "\"",
-            new Token(c, TokenType.Number, new Range(ss.prevPoint(), ss.prevPoint()), this._currIndent ))
+            new Token(c, TokenType.Number, new Range(ss.prevPoint(), ss.prevPoint()) ))
         }
         if (foundExp) {
           throw new InvalidParseError("Cannot have decimal in exponent: \"" + str + c + "\"",
-            new Token(c, TokenType.Number, new Range(ss.prevPoint(), ss.prevPoint()), this._currIndent ))
+            new Token(c, TokenType.Number, new Range(ss.prevPoint(), ss.prevPoint()) ))
         }
         foundDecimal = true
         str = str + c
@@ -613,7 +608,7 @@ export class Tokenizer {
     for (let i = 0; i < tokens.length - 1; i++) {
       if (tokens[i].type === TokenType.Number && tokens[i+1].type === TokenType.Identifier) {
         let rng = new Range(tokens[i+1].range.start, tokens[i].range.end ) // position the fake * token at the identifier token, but with 0 length
-        tokens.splice(i+1, 0, new Token("*", TokenType.Operator, rng, tokens[i].indent))
+        tokens.splice(i+1, 0, new Token("*", TokenType.Operator, rng))
       }
     }
 
@@ -621,7 +616,7 @@ export class Tokenizer {
     for (let i = 0; i < tokens.length - 1; i++) {
       if (tokens[i].type === TokenType.Number && tokens[i+1].type === TokenType.Bracket && tokens[i+1].str === "(") {
         let rng = new Range(tokens[i+1].range.start, tokens[i].range.end ) // position the fake * token at the paren token, but with 0 length
-        tokens.splice(i+1, 0, new Token("*", TokenType.Operator, rng, tokens[i].indent))
+        tokens.splice(i+1, 0, new Token("*", TokenType.Operator, rng))
       }
     }
   }

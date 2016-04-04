@@ -7,14 +7,12 @@ import {TokenType} from "./operatorsAndKeywords";
 export class Token {
   str: string
   type: TokenType
-  indent: Indent  // was going to use to track when missing correct open/close brackets, but not not really used
   range: Range
 
-  constructor(str : string, type: TokenType, range: Range, indent: Indent) {
+  constructor(str : string, type: TokenType, range: Range) {
     this.str = str
     this.type = type
     this.range = range
-    this.indent = indent
   }
 
   toString(): string { return this.str }
@@ -27,7 +25,7 @@ export class Token {
    * @returns {Token}
    */
   static createEmptyIdentifier(name: string): Token {
-    return new Token(name, TokenType.Identifier, Range.createEmptyRange(), new Indent(""))
+    return new Token(name, TokenType.Identifier, Range.createEmptyRange())
   }
 }
 
@@ -41,7 +39,7 @@ export class TreeToken extends Token {
   contents: Token[]
 
   constructor(openToken: Token) {
-    super(openToken.str, openToken.type, openToken.range, openToken.indent)
+    super(openToken.str, openToken.type, openToken.range)
     this.openToken = openToken
     this.closeToken = null
     this.contents = []

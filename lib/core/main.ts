@@ -35,7 +35,9 @@ class MainObject {
 
   deactivate(state) {
     gParseController.subscriptions.dispose()
-    gParseController.dirWatcher.close()
+    if (gParseController.dirWatcher) {
+      gParseController.dirWatcher.close()
+    }
   }
 
   provideLinter() {

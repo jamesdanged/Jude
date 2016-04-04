@@ -380,11 +380,11 @@ function readMultiPartName(state: ParseState): MultiPartName {
       if (tok.str.length > 1) {
         let dotStart = tok.range.start
         let dotEnd = new Point(dotStart.row, dotStart.column + 1)
-        let tokDot = new Token(".", TokenType.Operator, new Range(dotStart, dotEnd), tok.indent)
+        let tokDot = new Token(".", TokenType.Operator, new Range(dotStart, dotEnd))
 
         let opStart = new Point(dotEnd.row, dotEnd.column)
         let opEnd = tok.range.end
-        let tokOp = new Token(tok.str.slice(1), TokenType.Operator, new Range(opStart, opEnd), tok.indent)
+        let tokOp = new Token(tok.str.slice(1), TokenType.Operator, new Range(opStart, opEnd))
 
         ts.splice(ts.index, 1, tokDot, tokOp)
       }
@@ -473,7 +473,7 @@ export class WholeFileParseState {
 export function parseWholeFileContents(nodeToFill: FileLevelNode, fileContents: Token[]): WholeFileParseState {
 
   let wholeState = new WholeFileParseState()
-  let tokenMinus1 = new Token("", TokenType.LineWhiteSpace, new Range(new Point(0, 0), new Point(0, 1)), new Indent(""))
+  let tokenMinus1 = new Token("", TokenType.LineWhiteSpace, new Range(new Point(0, 0), new Point(0, 1)))
   let ts = new TokenStream(fileContents, tokenMinus1)
 
   try {

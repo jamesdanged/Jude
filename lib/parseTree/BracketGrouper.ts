@@ -160,7 +160,7 @@ export class BracketGrouper {
   }
 
   static groupIntoOneThrowIfError(tokens: Token[]): TreeToken {
-    let tokenMinus1 = new Token("", TokenType.LineWhiteSpace, new Range(new Point(0, 0), new Point(0, 1)), new Indent(""))
+    let tokenMinus1 = new Token("", TokenType.LineWhiteSpace, new Range(new Point(0, 0), new Point(0, 1)))
     let tokenStream = new TokenStream(tokens, tokenMinus1)
     let treeBuilder = new BracketGrouper()
     treeBuilder.runGrouping(tokenStream)

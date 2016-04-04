@@ -29,15 +29,6 @@ import {handleParseErrorOnly} from "../general/fsaUtils";
 
 /**
  * Parses a macro invocation.
- *
- * Since we removed all spaces except \n from the token stream, we introduce the possibility of misparsing
- * the macro invocation. ie
- *
- *   @sprintf("%d", 5)
- *   @sprintf ("%d, 5)  <-- this should be treated as a single argument
- *
- * But without redoing everything to handle whitespace everywhere, we can just ignore this rare issue for now.
- * People rarely will use the space delimited form with multiple arguments with the first argument in parentheses.
  */
 class MacroCallFsa extends BaseFsa {
 

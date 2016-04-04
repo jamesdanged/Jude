@@ -18,8 +18,7 @@ import {mockRunDelayed} from "../utils/taskUtils";
 import {unmockRunDelayed} from "../utils/taskUtils";
 
 
-
-describe("module parsing", () => {
+describe("basic module parsing", () => {
   let j13to20 = jasmine13to20(); let beforeAll = j13to20.beforeAll; let beforeEach = j13to20.beforeEach; let it = j13to20.it; let afterEach = j13to20.afterEach; let afterAll = j13to20.afterAll
 
   //dorunDelayed(() => { console.log("hi there")})
@@ -83,6 +82,58 @@ baz = 5
   })
 
 
+})
+
+
+describe("multiple modules in a file", () => {
+  let j13to20 = jasmine13to20(); let beforeAll = j13to20.beforeAll; let beforeEach = j13to20.beforeEach; let it = j13to20.it; let afterEach = j13to20.afterEach; let afterAll = j13to20.afterAll
+
+
+  let contents = `
+module Mod1
+  function foo()
+  end
+end
+
+module Mod2
+  function bar()
+  end
+end
+
+Mod1.foo()
+Mod2.bar()
+`
+
+  let path = "/dir/only_file.jl"
+
+
+  let sessionModel = createTestSessionModel()
+  let errors = sessionModel.parseSet.errors
+
+  beforeAll(() => {
+    let o: ProjectFilesHash = {}
+    o[path] = contents
+    mockProjectFiles(o)
+    mockOpenFiles([path])
+    mockRunDelayed()
+  })
+
+  afterAll(() => {
+    unmockProjectFiles()
+    unmockOpenFiles()
+    unmockRunDelayed()
+  })
+
+
+
+  it("should be able to have multiple modules in a single file", async (done) => {
+    await parseFullWorkspaceAsync(sessionModel)
+    expect(errors[path].parseErrors.length).toBe(0)
+    expect(errors[path].nameErrors.length).toBe(0)
+    done()
+  })
+
 
 
 })
+
