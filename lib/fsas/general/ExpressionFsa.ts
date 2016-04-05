@@ -705,7 +705,7 @@ function readAnonymousFunctionDef(state: ParseState): void {
 
 function readAnyQuote(state: ParseState): void {
   let tok = state.ts.read()
-  if (tok.str === "\"" || tok.str === "`") {
+  if (tok.str === '"' || tok.str === "`" || tok.str === '"""') {
     let node = parseString(tok as TreeToken, state.wholeState)
     state.nodes.push(node)
   } else if (tok.str === "'") {

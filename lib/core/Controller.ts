@@ -43,7 +43,6 @@ import * as atomModule from "atom"
 //   [+, -]
 //   (+, -)
 // @everywhere include(...)
-// @Base.time vs Base.@time
 // m == 0 && return x
 // Ignore field after indexing, eg arr[i].x
 // Ensure Base.Mmap.mmap shows popup

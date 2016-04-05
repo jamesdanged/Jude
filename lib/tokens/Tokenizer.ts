@@ -112,7 +112,7 @@ export class Tokenizer {
     }
 
     // string literals
-    // " or `
+    // " or ` or """
     //
     // The double quote is stored as a token.
     // The contents of the string literal is stored as a single token.
@@ -125,7 +125,16 @@ export class Tokenizer {
     // but usually we can just check 'str' if we know we are not inside quotes.
     if (c === "\"" || c === "`") {
       let openQuote = c
-      this._tokens.push(new Token(c, TokenType.Quote, new Range(pointStart, pointStart)))
+
+      // could be a triple quote
+      let next2 = ss.peekUpToX(2)
+      if (next2 === '""') {
+        openQuote = '"""'
+        ss.read()
+        ss.read()
+      }
+
+      this._tokens.push(new Token(openQuote, TokenType.Quote, new Range(pointStart, ss.currPoint())))
 
       let str = ""
       let pointCurrStringLiteralStart = ss.currPoint()
@@ -141,47 +150,61 @@ export class Tokenizer {
       // read string contents
       while (!ss.eof()) {
         let ch = ss.read()
+        let chPoint = ss.currPoint()
+
         if (ch === "\\") {
           // escape the next character
           // especially if it is \$
           if (ss.eof()) {
             throw new InvalidParseError("Unexpected EOF",
-              new Token(ch, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
+              new Token(ch, TokenType.StringLiteralContents, new Range(chPoint, ss.currPoint())))
           }
           let ch2 = ss.read()
           str += "\\" + ch2
+          continue
+        }
 
-        } else if (ch === "\n") {
+        if (ch === "\n") {
           // julia strings can span multiple lines
           str += "\n"
           //this._currRow++
+          continue
+        }
 
-        } else if (ch === openQuote) {
+        let matchesOpenQuote = false
+        if (openQuote.length === 1 && ch === openQuote) matchesOpenQuote = true
+        if (openQuote.length === 3) {
+          let next2 = ss.peekUpToX(2)
+          if (next2 !== null && ch + next2 === openQuote) {
+            matchesOpenQuote = true
+            ss.read()
+            ss.read()
+          }
+        }
+        if (matchesOpenQuote) {
           // terminate the string
           storeCurrentStringLiteral()
 
           // store close quote
-          let pointCloseQuote = ss.currPoint()
-          let rng = new Range(pointCloseQuote, pointCloseQuote)
-          this._tokens.push(new Token(ch, TokenType.Quote, rng))
+          this._tokens.push(new Token(openQuote, TokenType.Quote, new Range(chPoint, ss.currPoint())))
           stringClosedSuccessfully = true
 
           break // while
+        }
 
-        } else if (ch === "$") {
+        if (ch === "$") {
 
           if (ss.eof()) {
             throw new InvalidParseError("Unexpected EOF",
-              new Token(ch, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
+              new Token(ch, TokenType.StringLiteralContents, new Range(chPoint, ss.currPoint())))
           }
 
-          let pointDollar = ss.prevPoint()
           let pointAfterDollar = ss.currPoint()
           let ch2 = ss.read()
 
           if (charUtils.isValidIdentifierStart(ch2)) {
             storeCurrentStringLiteral()
-            this._tokens.push(new Token("$", TokenType.StringInterpolationStart, new Range(pointDollar, pointAfterDollar)))
+            this._tokens.push(new Token("$", TokenType.StringInterpolationStart, new Range(chPoint, pointAfterDollar)))
             let str = ss.readWhile(charUtils.isValidIdentifierContinuation)
             this._tokens.push(new Token(ch2 + str, TokenType.Identifier, new Range(pointAfterDollar, ss.currPoint())))
 
@@ -189,7 +212,7 @@ export class Tokenizer {
             // major string interpolation
             // need to recurse
             storeCurrentStringLiteral()
-            this._tokens.push(new Token("$", TokenType.StringInterpolationStart, new Range(pointDollar, pointAfterDollar)))
+            this._tokens.push(new Token("$", TokenType.StringInterpolationStart, new Range(chPoint, pointAfterDollar)))
             this._tokens.push(new Token("(", TokenType.Bracket, new Range(pointAfterDollar, ss.currPoint())))
             let origParenthesisLevel = this._currParenthesisLevel
             this._currParenthesisLevel++
@@ -203,11 +226,15 @@ export class Tokenizer {
 
           } else {
             throw new InvalidParseError("Invalid interpolation syntax: $" + ch2,
-              new Token(ch2, TokenType.StringLiteralContents, new Range(ss.prevPoint(), ss.currPoint())))
+              new Token(ch2, TokenType.StringLiteralContents, new Range(chPoint, ss.currPoint())))
           }
-        } else {
-          str += ch
+
+          continue
         }
+
+        // simply append to the string
+        str += ch
+
       } // while
 
       if (!stringClosedSuccessfully) throw new InvalidParseError("Got to EOF without closing string.", last(this._tokens))
@@ -436,12 +463,6 @@ export class Tokenizer {
     if (c in allBrackets) {
       let rng = new Range(pointStart, ss.currPoint())
       this._tokens.push(new Token(c, TokenType.Bracket, rng))
-      return
-    }
-
-    if (c in allQuotes) {
-      let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(c, TokenType.Quote, rng))
       return
     }
 

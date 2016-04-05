@@ -192,7 +192,8 @@ export var allBrackets = createStringSet([
 export var allQuotes = createStringSet([
   "\"",
   "'",
-  "`"
+  "`",
+  "\"\"\""
 ])
 
 

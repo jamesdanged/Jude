@@ -101,7 +101,7 @@ function readInterpolationExpression(state: ParseState): void {
 var fsaStringFsa = new StringFsa()
 
 export function parseString(tree: TreeToken, wholeState: WholeFileParseState): (InterpolatedStringNode | StringLiteralNode) {
-  if (tree.openToken.str !== "\"" && tree.openToken.str !== "`") throw new AssertError("")
+  if (tree.openToken.str !== '"' && tree.openToken.str !== "`" && tree.openToken.str !== '"""') throw new AssertError("")
   let tokens = tree.contents
   let ts = new TokenStream(tokens, tree.openToken)
   let node = new InterpolatedStringNode()

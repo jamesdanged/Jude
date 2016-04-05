@@ -197,6 +197,7 @@ function isOpenCloseMatch(openToken: Token, closeToken: Token) : boolean {
     if (openToken.str === "\"" && closeToken.str === "\"") return true
     if (openToken.str === "'" && closeToken.str === "'") return true
     if (openToken.str === "`" && closeToken.str === "`") return true
+    if (openToken.str === '"""' && closeToken.str === '"""') return true
   }
   if (openToken.type === TokenType.Keyword && closeToken.type == TokenType.Keyword) {
     if ((openToken.str in keywordsNeedEnd) && closeToken.str === "end") {
