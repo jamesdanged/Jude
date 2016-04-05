@@ -172,7 +172,7 @@ function readIterVariable(state: ParseState) {
 function readMultipleIterVariables(state: ParseState) {
   let parenTok = state.ts.read() as TreeToken
   let ts = new TokenStream(parenTok.contents, parenTok.openToken)
-  ts.skipNewLinesAndComments()
+  ts.skipToNextNonWhitespace()
 
   while (!ts.eof()) {
     let tok = ts.read()
@@ -181,7 +181,7 @@ function readMultipleIterVariables(state: ParseState) {
       return
     }
     state.listComprehensionNode.iterVariable.push(new IdentifierNode(tok))
-    ts.skipNewLinesAndComments()
+    ts.skipToNextNonWhitespace()
 
     if (ts.eof()) break
     tok = ts.read()
@@ -189,7 +189,7 @@ function readMultipleIterVariables(state: ParseState) {
       state.wholeState.parseErrors.push(new InvalidParseError("Expecting ','", tok))
       return
     }
-    ts.skipNewLinesAndComments()
+    ts.skipToNextNonWhitespace()
   }
 
   if (state.listComprehensionNode.iterVariable.length === 0) {

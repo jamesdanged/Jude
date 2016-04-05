@@ -1,5 +1,6 @@
 "use strict"
 
+import {throwErrorFromTimeout} from "../../utils/assert";
 import {streamAtMacroIdentifier} from "../../tokens/streamConditions";
 import {streamAtOverridableOperator} from "../../tokens/streamConditions";
 import {streamAtOpenCurlyBraces} from "../../tokens/streamConditions";
@@ -389,7 +390,7 @@ function readMultiPartName(state: ParseState): MultiPartName {
         ts.splice(ts.index, 1, tokDot, tokOp)
       }
       ts.read() // skip the dot
-      ts.skipNewLinesAndComments()
+      ts.skipToNextNonWhitespace()
       readNamePart()
     } else {
       break
@@ -417,7 +418,7 @@ function readExportedName(state: ParseState): void {
 function readIncludePath(state: ParseState): void {
   let treeToken = state.ts.read() as TreeToken
   let innerTs = new TokenStream(treeToken.contents, treeToken.openToken)
-  innerTs.skipNewLinesAndComments()
+  innerTs.skipToNextNonWhitespace()
 
   if (innerTs.eof()) throw new InvalidParseError("Expected include path.", innerTs.getLastToken())
 
@@ -433,7 +434,7 @@ function readIncludePath(state: ParseState): void {
   let includeNode = new IncludeNode(new StringLiteralNode(pathToken))
   state.nodeToFill.expressions.push(includeNode)
 
-  innerTs.skipNewLinesAndComments()
+  innerTs.skipToNextNonWhitespace()
   if (!innerTs.eof()) throw new InvalidParseError("Unexpected token.", innerTs.read())
 
 }
@@ -484,6 +485,7 @@ export function parseWholeFileContents(nodeToFill: FileLevelNode, fileContents: 
       handleParseErrorOnly(err, nodeToFill, fileContents, wholeState)
     } else {
       console.error("Unexpected error while parsing file " + nodeToFill.path, err)
+      //throwErrorFromTimeout(err)
     }
   }
   return wholeState

@@ -120,6 +120,7 @@ function readKeywordArg(state: ParseState): void {
   if (idToken.type != TokenType.Identifier) throw new AssertError("")
   let paramName = idToken.str
 
+  state.ts.skipToNextNonWhitespace()
   let equalsToken = state.ts.readNonNewLine()
   if (equalsToken.str != "=") throw new AssertError("")
 

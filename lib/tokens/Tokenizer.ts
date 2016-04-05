@@ -588,56 +588,6 @@ export class Tokenizer {
     return prevTokenIsOk
   }
 
-
-  //_insertImplicitMultiplications(): void {
-  //  let tokens: Token[] = this._tokens
-  //  // whenever there is a number directly followed by an identifier without any spacing, insert a multiplication
-  //  for (let i = 0; i < tokens.length - 1; i++) {
-  //    if (tokens[i].type === TokenType.Number && tokens[i+1].type === TokenType.Identifier) {
-  //      let rng = new Range(tokens[i+1].range.start, tokens[i].range.end ) // position the fake * token at the identifier token, but with 0 length
-  //      tokens.splice(i+1, 0, new Token("*", TokenType.Operator, rng))
-  //    }
-  //  }
-  //
-  //  // whenever there is a number directly followed by an open parenthesis without any spacing, insert a multiplication
-  //  for (let i = 0; i < tokens.length - 1; i++) {
-  //    if (tokens[i].type === TokenType.Number && tokens[i+1].type === TokenType.Bracket && tokens[i+1].str === "(") {
-  //      let rng = new Range(tokens[i+1].range.start, tokens[i].range.end ) // position the fake * token at the paren token, but with 0 length
-  //      tokens.splice(i+1, 0, new Token("*", TokenType.Operator, rng))
-  //    }
-  //  }
-  //}
-
-  ///**
-  // * Removes non newline whitespace from token stream after it has been fully read.
-  // * Makes it easier to parse.
-  // *
-  // * Whitespace can be signifcant. Known cases:
-  // *  macro usage:
-  // *    Space after the macro name leads to different parameter treatment
-  // *    @assert()
-  // *    @assert ()
-  // *  colons:
-  // *    Spaces not allowed after a ':' and before another identifier.
-  // *    :xxx is interpreted as a symbol.
-  // *  numbers:
-  // *    '5x' is interpreted as 5 * x
-  // *    We are compensating for this.
-  // *
-  // * We can eventually allow spaces in the stream, but it will make some of the FSA's much more complex.
-  // *
-  // */
-  //_removeLineWhiteSpace(): void {
-  //  for (let i = 0; i < this._tokens.length; i++) {
-  //    if (this._tokens[i].type === TokenType.LineWhiteSpace) {
-  //      this._tokens.splice(i, 1)
-  //    }
-  //  }
-  //}
-
-
-
-
   static tokenizeThrowIfError(str: string): Token[] {
     let tokenizer = new Tokenizer()
     tokenizer.tokenize(str)

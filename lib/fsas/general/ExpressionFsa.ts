@@ -558,7 +558,7 @@ function readTernaryOp(state: ParseState): void {
   node.trueExpression = parseTernaryOpTrueExpression(state.ts, state.wholeState)
 
   // read the colon
-  state.ts.skipNewLinesAndComments()
+  state.ts.skipToNextNonWhitespace()
   if (state.ts.eof()) throw new InvalidParseError("Expecting ':' before end.", state.ts.getLastToken())
   token = state.ts.read()
   if (!(token.type === TokenType.Operator && token.str === ":")) {
@@ -678,8 +678,9 @@ function readFunctionCompactDef(state: ParseState): void {
 
 function readAnonymousFunctionDef(state: ParseState): void {
   let argsToken = state.ts.read()
+  state.ts.skipToNextNonWhitespace()
   state.ts.read() // arrow
-  state.ts.skipNewLinesAndComments()
+  state.ts.skipToNextNonWhitespace()
 
   let funcNode = new FunctionDefNode()
 

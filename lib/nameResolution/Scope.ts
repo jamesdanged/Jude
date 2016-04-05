@@ -399,7 +399,7 @@ export class ExternalModuleScope extends ModuleScope {
     // parse the type def block
     let code = parts[3]
     let tokens = Tokenizer.tokenizeThrowIfError(code)
-    if (tokens[1].type !== TokenType.Identifier) {
+    if (tokens[2].type !== TokenType.Identifier) {
       console.log("Skipping type due to name: " + code)
       return
     }
