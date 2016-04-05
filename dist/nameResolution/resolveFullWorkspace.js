@@ -218,7 +218,7 @@ function populateRoots(sessionModel) {
         resolveRoot.scope.tokenStart = startNode.scopeStartToken;
         resolveRoot.scope.tokenEnd = startNode.scopeEndToken;
         if (startNode instanceof nodes_1.ModuleDefNode)
-            resolveRoot.scope.moduleShortName = startNode.name.name;
+            resolveRoot.scope.moduleShortName = startNode.name.str;
         // leave resolving imports for later
         candidateRoots.push(resolveRoot);
     }
@@ -241,7 +241,7 @@ function populateRoots(sessionModel) {
             let moduleName = moduleLibrary.workspaceModulePaths[path];
             if (resolveRoot.root instanceof nodes_1.ModuleDefNode) {
                 let moduleDefNode = resolveRoot.root;
-                if (moduleDefNode.name.name === moduleName) {
+                if (moduleDefNode.name.str === moduleName) {
                     // is a match
                     moduleLibrary.modules[moduleName] = resolveRoot.scope;
                 }

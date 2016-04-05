@@ -21,11 +21,11 @@ In the future, this may include tools to find usages of a function, limited stat
 
 **Jump to defintion** is also triggered by `ctrl-space` when the cursor is on any word. You can jump to function definitions, type defintions, or variable declarations for files in your workspace. You can even jump to some function declarations in files not in your workspace, such as in the base library. Your jump history is tracked, and you can go back/forward using `ctrl-alt-left`/`ctrl-alt-right`. 
 
-**Syntax errors** are highlighted as lint warnings. Jude shows these when it cannot parse your code or resolve a name. You can customize the linter to hide the error message panel that pops up at the bottom of the screen by going to the Linter package options and unselecting `Show Error Panel`. If you don't see the Linter package installed, type `apm install linter` in the console.
+**Syntax errors** are highlighted as lint warnings. Jude shows these when it cannot parse your code or resolve a name. You can customize the linter to hide the error message panel that pops up at the bottom of the screen by going to the Linter package options and unselecting `Show Error Panel`.
 
 ### How it works
 
-Jude performs a full syntax parse of all your Julia files in the workspace, and does scoping analysis statically to resolve names. Names are resolved specific to the scope where they are used, not using fuzzy matching over the entire project. Your project files are not loaded into Julia or executed to run the analysis. All the parsing is done locally within Javascript. 
+Jude performs a full syntax parse of all the Julia files in your workspace in Javascript, and does scoping analysis statically to resolve names. Names are resolved specific to the scope where they are used, not using fuzzy matching over the entire project. Your project files are not loaded into Julia or executed to run the analysis.  
 
 Jude reparses some or all of your code as you type. This is done in <50 ms for small to medium sized codebases, especially if it is broken into modules. If you are editing a file that has no "module" declarations (maybe it is just included in another file that does), the reparse can be <5 ms. 
 

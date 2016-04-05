@@ -18,7 +18,6 @@ var Token_1 = require("../tokens/Token");
 var operatorsAndKeywords_1 = require("../tokens/operatorsAndKeywords");
 var Token_2 = require("../tokens/Token");
 var Token_3 = require("../tokens/Token");
-var Token_4 = require("../tokens/Token");
 var TokenStream_1 = require("../tokens/TokenStream");
 var BracketGrouper_1 = require("./BracketGrouper");
 var ModuleContentsFsa_1 = require("../fsas/general/ModuleContentsFsa");
@@ -41,7 +40,7 @@ function parseFile(path, fileContents, sessionModel) {
         fileLevelNode.scopeEndToken = arrayUtils_1.last(tokens);
     }
     // convert tokens to tree of tokens, grouped by brackets and blocks
-    let tokenMinus1 = new Token_1.Token("", operatorsAndKeywords_1.TokenType.LineWhiteSpace, new Token_3.Range(new Token_2.Point(0, 0), new Token_2.Point(0, 1)), new Token_4.Indent(""));
+    let tokenMinus1 = new Token_1.Token("", operatorsAndKeywords_1.TokenType.LineWhiteSpace, new Token_3.Range(new Token_2.Point(0, 0), new Token_2.Point(0, 1)));
     let tokenStream = new TokenStream_1.TokenStream(tokens, tokenMinus1);
     let tokenTreeBuilder = new BracketGrouper_1.BracketGrouper();
     tokenTreeBuilder.runGrouping(tokenStream);

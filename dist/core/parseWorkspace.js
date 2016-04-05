@@ -45,7 +45,7 @@ function parseFullWorkspaceAsync(sessionModel) {
         for (let path in sessionModel.parseSet.errors) {
             let errorSet = sessionModel.parseSet.errors[path];
             for (let err of errorSet.parseErrors) {
-                console.log(path, err);
+                console.log("Parse error in " + path + ":\n", err);
             }
         }
         //console.log("Reparsed whole workspace.")

@@ -93,7 +93,7 @@ function readInterpolationExpression(state) {
 }
 var fsaStringFsa = new StringFsa();
 function parseString(tree, wholeState) {
-    if (tree.openToken.str !== "\"" && tree.openToken.str !== "`")
+    if (tree.openToken.str !== '"' && tree.openToken.str !== "`" && tree.openToken.str !== '"""')
         throw new assert_1.AssertError("");
     let tokens = tree.contents;
     let ts = new TokenStream_1.TokenStream(tokens, tree.openToken);

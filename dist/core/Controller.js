@@ -35,24 +35,23 @@ var atomModule = require("atom");
 //   (+, -)
 // @everywhere include(...)
 // m == 0 && return x
+// Ignore field after indexing, eg arr[i].x
+// Ensure Base.Mmap.mmap shows popup
 // for ii in 1:m, jj in 1:n
 // .0
+// handle docstrings
+// display docstrings in autocomplete and jump to definition
+// Type one char after module name, does not show autocomplete results?
 // jump to definition for includes
-// @Base.time vs Base.@time
 // macros in module in workspace, ie MyMod.@my_macro name not being resolved.
 // test make sure full reparse when project folder changes. Esp if no jl files loaded in session to begin with.
 // Jump to definition for function with module qualifier, eg Mod1.func(), should show definitions from that module, not from the current scope.
 // log identifier for target of an alias type
-// Ignore field after indexing, eg arr[i].x
 // Autocomplete by matching alignments, maybe ignoring underscore
 // Do not autocomplete during comments
 // Handle situation where an external library was added into workspace, but still treated as external
 // Ctrl space should display signature information for functions that have info in methods(...), but don't have a file location, eg mmap
-// Ensure Base.Mmap.mmap shows popup
 // Seems to not be running reparse until save, eg type a little, then try to jump to definition of word just typed. Make sure lint on fly is always on.
-// Type one char after module name, does not show autocomplete results?
-// handle docstrings
-// display docstrings in autocomplete and jump to definition
 /**
  * Handles interactions with the editor. Responds to user activity and file system changes.
  */

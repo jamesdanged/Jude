@@ -35,6 +35,13 @@ function streamAtComment(ts) {
     return tok.type === operatorsAndKeywords_6.TokenType.Comment;
 }
 exports.streamAtComment = streamAtComment;
+function streamAtLineWhitespace(ts) {
+    if (ts.eof())
+        return false;
+    let tok = ts.peek();
+    return tok.type === operatorsAndKeywords_6.TokenType.LineWhiteSpace;
+}
+exports.streamAtLineWhitespace = streamAtLineWhitespace;
 function streamAtReturn(ts) {
     if (ts.eof())
         return false;
@@ -102,23 +109,9 @@ function streamAtMacroIdentifier(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Macro || tok.type === operatorsAndKeywords_6.TokenType.MacroWithSpace;
-}
-exports.streamAtMacroIdentifier = streamAtMacroIdentifier;
-function streamAtMacroWithSpace(ts) {
-    if (ts.eof())
-        return false;
-    let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.MacroWithSpace;
-}
-exports.streamAtMacroWithSpace = streamAtMacroWithSpace;
-function streamAtMacroWithoutSpace(ts) {
-    if (ts.eof())
-        return false;
-    let tok = ts.peek();
     return tok.type === operatorsAndKeywords_6.TokenType.Macro;
 }
-exports.streamAtMacroWithoutSpace = streamAtMacroWithoutSpace;
+exports.streamAtMacroIdentifier = streamAtMacroIdentifier;
 function streamAtOpenParenthesis(ts) {
     if (ts.eof())
         return false;
@@ -240,6 +233,13 @@ function streamAtLessThanColon(ts) {
     return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === "<:";
 }
 exports.streamAtLessThanColon = streamAtLessThanColon;
+function streamAtArrow(ts) {
+    if (ts.eof())
+        return false;
+    let tok = ts.peek();
+    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === "->";
+}
+exports.streamAtArrow = streamAtArrow;
 function streamAtIn(ts) {
     if (ts.eof())
         return false;
@@ -433,69 +433,76 @@ function streamAtInclude(ts) {
     return tok.type === operatorsAndKeywords_6.TokenType.Identifier && tok.str === "include";
 }
 exports.streamAtInclude = streamAtInclude;
-/**
- * True if the stream is at a compact function declaration such as
- *  f(val) = 2*val
- */
-function streamAtFunctionCompactDeclaration(ts) {
-    // could have done identifier check after peekUpTo4 but this saves having to do the slice by checking the identifier first
-    if (ts.eof())
-        return false;
-    let tok = ts.peek();
-    if (tok.type !== operatorsAndKeywords_6.TokenType.Identifier && !streamAtOverridableOperator(ts)) {
-        return false;
-    }
-    // TODO handle multi part names
-    let next4 = ts.peekUpToX(4);
-    if (next4 === null)
-        return false;
-    // function with type parameters
-    if (next4[1].type === operatorsAndKeywords_6.TokenType.Bracket && next4[1].str === "{" &&
-        next4[2].type === operatorsAndKeywords_6.TokenType.Bracket && next4[2].str === "(" &&
-        next4[3].type === operatorsAndKeywords_6.TokenType.Operator && next4[3].str === "=")
-        return true;
-    // function without type parameters
-    if (next4[1].type === operatorsAndKeywords_6.TokenType.Bracket && next4[1].str === "(" &&
-        next4[2].type === operatorsAndKeywords_6.TokenType.Operator && next4[2].str === "=")
-        return true;
-    return false;
-}
-exports.streamAtFunctionCompactDeclaration = streamAtFunctionCompactDeclaration;
-function streamAtAnonymousFunction(ts) {
-    let next2 = ts.peekUpToX(2);
-    if (next2 === null)
-        return false;
-    let argsTok = next2[0];
-    let arrowTok = next2[1];
-    if (argsTok.type === operatorsAndKeywords_6.TokenType.Identifier ||
-        (argsTok.type === operatorsAndKeywords_6.TokenType.Bracket && argsTok.str === "(")) {
-        if (arrowTok.type === operatorsAndKeywords_6.TokenType.Operator && arrowTok.str === "->") {
-            return true;
-        }
-        return false;
-    }
-    else {
-        return false;
-    }
-}
-exports.streamAtAnonymousFunction = streamAtAnonymousFunction;
-function streamAtIdentifierEquals(ts) {
-    if (ts.eof())
-        return false;
-    ts = ts.shallowCopy();
-    let tokens = [];
-    while (tokens.length < 2) {
-        if (ts.eof())
-            return false;
-        let tok = ts.read();
-        if (tok.type !== operatorsAndKeywords_6.TokenType.NewLine) {
-            tokens.push(tok);
-        }
-    }
-    if (tokens[0].type === operatorsAndKeywords_6.TokenType.Identifier && tokens[1].type === operatorsAndKeywords_6.TokenType.Operator && tokens[1].str === "=") {
-        return true;
-    }
-    return false;
-}
-exports.streamAtIdentifierEquals = streamAtIdentifierEquals;
+//
+///**
+// * True if the stream is at a compact function declaration such as
+// *  f(val) = 2*val
+// */
+//export function streamAtFunctionCompactDeclaration(ts: TokenStream): boolean {
+//
+//  // could have done identifier check after peekUpTo4 but this saves having to do the slice by checking the identifier first
+//  if (ts.eof()) return false
+//  let tok = ts.peek()
+//  if (tok.type !== TokenType.Identifier && !streamAtOverridableOperator(ts)) { //
+//    return false
+//  }
+//
+//  // TODO handle multi part names
+//  let next4 = ts.peekUpToX(4)
+//  if (next4 === null) return false
+//
+//  // function with type parameters
+//  if (next4[1].type === TokenType.Bracket && next4[1].str === "{" &&
+//    next4[2].type === TokenType.Bracket && next4[2].str === "(" &&
+//      next4[3].type === TokenType.Operator && next4[3].str === "=") return true
+//
+//  // function without type parameters
+//  if (next4[1].type === TokenType.Bracket && next4[1].str === "(" &&
+//    next4[2].type === TokenType.Operator && next4[2].str === "=") return true
+//
+//  return false
+//}
+//
+//export function streamAtAnonymousFunction(ts: TokenStream): boolean {
+//  let next2 = ts.peekUpToX(2)
+//  if (next2 === null) return false
+//
+//  let argsTok = next2[0]
+//  let arrowTok = next2[1]
+//
+//  if (argsTok.type === TokenType.Identifier ||
+//      (argsTok.type === TokenType.Bracket && argsTok.str === "(")) {
+//
+//    if (arrowTok.type === TokenType.Operator && arrowTok.str === "->") {
+//      return true
+//    }
+//    return false
+//  } else {
+//    return false
+//  }
+//}
+//
+//
+//
+//export function streamAtIdentifierEquals(ts: TokenStream): boolean {
+//  if (ts.eof()) return false
+//
+//  ts = ts.shallowCopy()
+//
+//  let tokens: Token[] = []
+//  while (tokens.length < 2) {
+//    if (ts.eof()) return false
+//
+//    let tok = ts.read()
+//    if (tok.type !== TokenType.NewLine) {
+//      tokens.push(tok)
+//    }
+//  }
+//
+//  if (tokens[0].type === TokenType.Identifier && tokens[1].type === TokenType.Operator && tokens[1].str === "=") {
+//    return true
+//  }
+//  return false
+//}
+//
 //# sourceMappingURL=streamConditions.js.map

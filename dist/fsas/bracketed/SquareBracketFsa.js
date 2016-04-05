@@ -154,7 +154,7 @@ function readIterVariable(state) {
 function readMultipleIterVariables(state) {
     let parenTok = state.ts.read();
     let ts = new TokenStream_1.TokenStream(parenTok.contents, parenTok.openToken);
-    ts.skipNewLinesAndComments();
+    ts.skipToNextNonWhitespace();
     while (!ts.eof()) {
         let tok = ts.read();
         if (tok.type !== operatorsAndKeywords_1.TokenType.Identifier) {
@@ -162,7 +162,7 @@ function readMultipleIterVariables(state) {
             return;
         }
         state.listComprehensionNode.iterVariable.push(new nodes_3.IdentifierNode(tok));
-        ts.skipNewLinesAndComments();
+        ts.skipToNextNonWhitespace();
         if (ts.eof())
             break;
         tok = ts.read();
@@ -170,7 +170,7 @@ function readMultipleIterVariables(state) {
             state.wholeState.parseErrors.push(new errors_1.InvalidParseError("Expecting ','", tok));
             return;
         }
-        ts.skipNewLinesAndComments();
+        ts.skipToNextNonWhitespace();
     }
     if (state.listComprehensionNode.iterVariable.length === 0) {
         state.wholeState.parseErrors.push(new errors_1.InvalidParseError("Must have at least one name.", parenTok));

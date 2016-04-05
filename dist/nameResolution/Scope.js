@@ -12,8 +12,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
-var assert_1 = require("../utils/assert");
 var Resolve_1 = require("./Resolve");
+var assert_1 = require("../utils/assert");
+var Resolve_2 = require("./Resolve");
 var assert_2 = require("../utils/assert");
 var Token_1 = require("../tokens/Token");
 var nodes_1 = require("../parseTree/nodes");
@@ -23,19 +24,19 @@ var arrayUtils_1 = require("../utils/arrayUtils");
 var StringSet_1 = require("../utils/StringSet");
 var nodes_2 = require("../parseTree/nodes");
 var errors_1 = require("../utils/errors");
-var Resolve_2 = require("./Resolve");
+var Resolve_3 = require("./Resolve");
 var PrefixTree_1 = require("./PrefixTree");
 var PrefixTree_2 = require("./PrefixTree");
-var Resolve_3 = require("./Resolve");
 var Resolve_4 = require("./Resolve");
 var Resolve_5 = require("./Resolve");
+var Resolve_6 = require("./Resolve");
 var Tokenizer_1 = require("../tokens/Tokenizer");
 var operatorsAndKeywords_1 = require("../tokens/operatorsAndKeywords");
 var BracketGrouper_1 = require("../parseTree/BracketGrouper");
 var ModuleContentsFsa_1 = require("../fsas/general/ModuleContentsFsa");
 var TypeDefFsa_1 = require("../fsas/declarations/TypeDefFsa");
-var Resolve_6 = require("./Resolve");
 var Resolve_7 = require("./Resolve");
+var Resolve_8 = require("./Resolve");
 var FunctionDefFsa_1 = require("../fsas/declarations/FunctionDefFsa");
 class Scope {
     constructor(type) {
@@ -85,18 +86,18 @@ class Scope {
         let currScope = this;
         for (let idx = 0; idx < multiPartName.length; idx++) {
             let identNode = multiPartName[idx];
-            let namePart = identNode.name;
+            let namePart = identNode.str;
             let isLastPart = idx === multiPartName.length - 1;
             let resolve = currScope.tryResolveNameThroughParentScopes(namePart, false);
             if (resolve !== null) {
                 if (isLastPart)
                     return resolve;
-                if (resolve instanceof Resolve_1.ModuleResolve) {
+                if (resolve instanceof Resolve_2.ModuleResolve) {
                     currScope = resolve.moduleRootScope;
                 }
                 else {
                     return new errors_1.NameError("Expected '" + resolve.name + "' to be a module, but was already declared as " +
-                        Resolve_2.getResolveInfoType(resolve) + " in this scope.", identNode.token);
+                        Resolve_3.getResolveInfoType(resolve) + " in this scope.", identNode.token);
                 }
             }
             else {
@@ -162,7 +163,7 @@ class ModuleScope extends Scope {
         for (let scope of this._importAllModules) {
             let resolve = scope.tryResolveExportedName(name);
             if (resolve !== null)
-                return resolve;
+                return wrapInImportIfNecessary(resolve);
         }
         let matchingUsings = [];
         for (let scope of this._usingModules) {
@@ -175,7 +176,7 @@ class ModuleScope extends Scope {
             return null;
         }
         if (matchingUsings.length === 1) {
-            return matchingUsings[0][1];
+            return wrapInImportIfNecessary(matchingUsings[0][1]);
         }
         // conflicts between multiple usings
         let msg = "Modules used (";
@@ -318,7 +319,7 @@ class ExternalModuleScope extends ModuleScope {
         }
         if (fullModulePath in this.moduleLibrary.modules) {
             let innerModuleScope = this.moduleLibrary.modules[fullModulePath];
-            this.names[name] = new Resolve_3.ExternalModuleResolve(fullModulePath, innerModuleScope);
+            this.names[name] = new Resolve_4.ExternalModuleResolve(fullModulePath, innerModuleScope);
         }
         else {
             // module hasn't been retrieved from Julia yet
@@ -333,7 +334,7 @@ class ExternalModuleScope extends ModuleScope {
         if (name in this.names) {
             assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared multiple times in loaded Julia module??"));
         }
-        this.names[name] = new Resolve_4.VariableResolve(Token_2.Token.createEmptyIdentifier(name), null);
+        this.names[name] = new Resolve_5.VariableResolve(Token_2.Token.createEmptyIdentifier(name), null);
     }
     addMacroFromSerialized(parts) {
         if (parts.length !== 3)
@@ -343,7 +344,7 @@ class ExternalModuleScope extends ModuleScope {
         if (name in this.names) {
             assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared multiple times in loaded Julia module??"));
         }
-        this.names[name] = new Resolve_5.MacroResolve(name);
+        this.names[name] = new Resolve_6.MacroResolve(name);
     }
     addTypeFromSerialized(parts) {
         if (parts.length !== 4)
@@ -352,7 +353,7 @@ class ExternalModuleScope extends ModuleScope {
         // parse the type def block
         let code = parts[3];
         let tokens = Tokenizer_1.Tokenizer.tokenizeThrowIfError(code);
-        if (tokens[1].type !== operatorsAndKeywords_1.TokenType.Identifier) {
+        if (tokens[2].type !== operatorsAndKeywords_1.TokenType.Identifier) {
             console.log("Skipping type due to name: " + code);
             return;
         }
@@ -365,7 +366,7 @@ class ExternalModuleScope extends ModuleScope {
         if (name in this.names) {
             assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared multiple times in loaded Julia module??"));
         }
-        this.names[name] = new Resolve_6.TypeResolve(node, null);
+        this.names[name] = new Resolve_7.TypeResolve(node, null);
     }
     addFunctionFromSerialized(parts) {
         if (parts.length !== 6)
@@ -380,14 +381,14 @@ class ExternalModuleScope extends ModuleScope {
             lineNumber = parseInt(parts[5]);
         let resolve = this.names[name];
         if (resolve) {
-            if (!(resolve instanceof Resolve_7.FunctionResolve)) {
+            if (!(resolve instanceof Resolve_8.FunctionResolve)) {
                 assert_1.throwErrorFromTimeout(new assert_2.AssertError("'" + name + "' declared both as function and as " +
-                    Resolve_2.getResolveInfoType(resolve) + " in module loaded from Julia??"));
+                    Resolve_3.getResolveInfoType(resolve) + " in module loaded from Julia??"));
                 return;
             }
         }
         else {
-            resolve = new Resolve_7.FunctionResolve(name);
+            resolve = new Resolve_8.FunctionResolve(name);
             this.names[name] = resolve;
         }
         let functionResolve = resolve;
@@ -426,6 +427,13 @@ class ExternalModuleScope extends ModuleScope {
     }
 }
 exports.ExternalModuleScope = ExternalModuleScope;
+function wrapInImportIfNecessary(resolve) {
+    if (resolve instanceof Resolve_1.ImportedResolve)
+        return resolve;
+    if (resolve instanceof Resolve_2.ModuleResolve)
+        return resolve;
+    return new Resolve_1.ImportedResolve(resolve);
+}
 (function (ScopeType) {
     ScopeType[ScopeType["Module"] = 0] = "Module";
     ScopeType[ScopeType["Function"] = 1] = "Function";

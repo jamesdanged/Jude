@@ -88,10 +88,10 @@ end`;
         expect(arg3Node.defaultValue instanceof nodes_1.NumberNode).toBe(true);
         expect(funcNode.genericArgs.args.length).toBe(1);
         let genArg1 = funcNode.genericArgs.args[0];
-        expect(genArg1.name.name).toBe("T");
+        expect(genArg1.name.str).toBe("T");
         expect(genArg1.restriction instanceof nodes_3.IdentifierNode).toBe(true);
         let restriction = genArg1.restriction;
-        expect(restriction.name).toBe("Int");
+        expect(restriction.str).toBe("Int");
         identifiers = sessionModel.parseSet.identifiers[path];
     });
     it("should resolve arg1 to the param list", () => {

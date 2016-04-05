@@ -51,7 +51,7 @@ class FunctionResolve extends Resolve {
 exports.FunctionResolve = FunctionResolve;
 class TypeResolve extends Resolve {
     constructor(node, filePath) {
-        super(node.name.name);
+        super(node.name.str);
         this.filePath = filePath;
         this.typeDefNode = node;
     }
@@ -103,7 +103,7 @@ exports.ExternalModuleResolve = ExternalModuleResolve;
  */
 class LocalModuleResolve extends ModuleResolve {
     constructor(moduleDefNode, filePath, moduleRootScope) {
-        super(moduleDefNode.name.name, moduleRootScope);
+        super(moduleDefNode.name.str, moduleRootScope);
         this.moduleDefNode = moduleDefNode;
         this.filePath = filePath;
     }
@@ -120,10 +120,9 @@ exports.LocalModuleResolve = LocalModuleResolve;
  * Imported modules should be unwrapped.
  */
 class ImportedResolve extends Resolve {
-    constructor(ref, module) {
+    constructor(ref) {
         super(ref.name);
         this.ref = ref;
-        this.module = module;
         if (!(ref instanceof FunctionResolve || ref instanceof VariableResolve || ref instanceof TypeResolve || ref instanceof MacroResolve)) {
             throw new assert_1.AssertError("");
         }
@@ -134,7 +133,7 @@ class ImportedResolve extends Resolve {
         return this.ref.resolvesInWorkspace();
     }
     shallowCopy() {
-        return new ImportedResolve(this.ref, this.module);
+        return new ImportedResolve(this.ref);
     }
 }
 exports.ImportedResolve = ImportedResolve;

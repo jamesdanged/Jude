@@ -64,7 +64,6 @@ var nodes_9 = require("../../parseTree/nodes");
 var GenericDefArgListFsa_1 = require("../declarations/GenericDefArgListFsa");
 var Token_2 = require("../../tokens/Token");
 var Token_3 = require("../../tokens/Token");
-var Token_4 = require("../../tokens/Token");
 var operatorsAndKeywords_2 = require("../../tokens/operatorsAndKeywords");
 /**
  * Recognizes the contents of a module.
@@ -321,14 +320,14 @@ function readMultiPartName(state) {
             if (tok.str.length > 1) {
                 let dotStart = tok.range.start;
                 let dotEnd = new Token_2.Point(dotStart.row, dotStart.column + 1);
-                let tokDot = new Token_1.Token(".", operatorsAndKeywords_1.TokenType.Operator, new Token_3.Range(dotStart, dotEnd), tok.indent);
+                let tokDot = new Token_1.Token(".", operatorsAndKeywords_1.TokenType.Operator, new Token_3.Range(dotStart, dotEnd));
                 let opStart = new Token_2.Point(dotEnd.row, dotEnd.column);
                 let opEnd = tok.range.end;
-                let tokOp = new Token_1.Token(tok.str.slice(1), operatorsAndKeywords_1.TokenType.Operator, new Token_3.Range(opStart, opEnd), tok.indent);
+                let tokOp = new Token_1.Token(tok.str.slice(1), operatorsAndKeywords_1.TokenType.Operator, new Token_3.Range(opStart, opEnd));
                 ts.splice(ts.index, 1, tokDot, tokOp);
             }
             ts.read(); // skip the dot
-            ts.skipNewLinesAndComments();
+            ts.skipToNextNonWhitespace();
             readNamePart();
         }
         else {
@@ -352,7 +351,7 @@ function readExportedName(state) {
 function readIncludePath(state) {
     let treeToken = state.ts.read();
     let innerTs = new TokenStream_1.TokenStream(treeToken.contents, treeToken.openToken);
-    innerTs.skipNewLinesAndComments();
+    innerTs.skipToNextNonWhitespace();
     if (innerTs.eof())
         throw new errors_1.InvalidParseError("Expected include path.", innerTs.getLastToken());
     let quoteToken = innerTs.read();
@@ -367,7 +366,7 @@ function readIncludePath(state) {
         throw new errors_1.InvalidParseError("Expected include path.", pathToken);
     let includeNode = new nodes_6.IncludeNode(new nodes_7.StringLiteralNode(pathToken));
     state.nodeToFill.expressions.push(includeNode);
-    innerTs.skipNewLinesAndComments();
+    innerTs.skipToNextNonWhitespace();
     if (!innerTs.eof())
         throw new errors_1.InvalidParseError("Unexpected token.", innerTs.read());
 }
@@ -395,7 +394,7 @@ exports.WholeFileParseState = WholeFileParseState;
  */
 function parseWholeFileContents(nodeToFill, fileContents) {
     let wholeState = new WholeFileParseState();
-    let tokenMinus1 = new Token_1.Token("", operatorsAndKeywords_1.TokenType.LineWhiteSpace, new Token_3.Range(new Token_2.Point(0, 0), new Token_2.Point(0, 1)), new Token_4.Indent(""));
+    let tokenMinus1 = new Token_1.Token("", operatorsAndKeywords_1.TokenType.LineWhiteSpace, new Token_3.Range(new Token_2.Point(0, 0), new Token_2.Point(0, 1)));
     let ts = new TokenStream_1.TokenStream(fileContents, tokenMinus1);
     try {
         fsaModuleContents.runStartToStop(ts, nodeToFill, wholeState);

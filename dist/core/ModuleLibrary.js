@@ -115,7 +115,7 @@ function resolveModuleForLibrary(fullModuleName, sessionModel) {
                 for (let expr of fileLevelNode.expressions) {
                     if (expr instanceof nodes_1.ModuleDefNode) {
                         let moduleDefNode = expr;
-                        if (moduleDefNode.name.name === outerModuleName) {
+                        if (moduleDefNode.name.str === outerModuleName) {
                             // get the matching scope
                             let resolveRoot = sessionModel.parseSet.getResolveRoot(moduleDefNode);
                             let moduleScope = resolveRoot.scope;

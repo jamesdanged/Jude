@@ -89,21 +89,21 @@ exports.SymbolNode = SymbolNode;
 class IdentifierNode extends Node {
     constructor(token) {
         super();
-        if (token.type !== operatorsAndKeywords_1.TokenType.Identifier && token.type !== operatorsAndKeywords_1.TokenType.Macro && token.type !== operatorsAndKeywords_1.TokenType.MacroWithSpace)
+        if (token.type !== operatorsAndKeywords_1.TokenType.Identifier && token.type !== operatorsAndKeywords_1.TokenType.Macro)
             throw new assert_1.AssertError("");
-        this.name = token.str;
+        this.str = token.str;
         this.token = token;
     }
     isEndIndex() {
-        return this.name === "end";
+        return this.str === "end";
     }
     isColon() {
-        return this.name === ":";
+        return this.str === ":";
     }
     isSpecialIdentifier() {
         return this.isEndIndex() || this.isColon();
     }
-    toString() { return this.name; }
+    toString() { return this.str; }
 }
 exports.IdentifierNode = IdentifierNode;
 class VarDeclarationNode extends Node {
@@ -184,7 +184,12 @@ class UnaryOpNode extends Node {
         this.token = token;
         this.arg = null;
     }
-    toString() { return this.op; }
+    toString() {
+        let s = this.op;
+        if (this.arg !== null)
+            s = s + this.arg.toString();
+        return "(" + s + ")";
+    }
 }
 exports.UnaryOpNode = UnaryOpNode;
 class BinaryOpNode extends Node {
@@ -197,7 +202,15 @@ class BinaryOpNode extends Node {
         this.arg1 = null;
         this.arg2 = null;
     }
-    toString() { return this.op; }
+    toString() {
+        let s = this.op;
+        if (this.arg1 !== null)
+            s = this.arg1.toString() + s;
+        if (this.arg2 !== null)
+            s = s + this.arg2.toString();
+        s = "(" + s + ")";
+        return s;
+    }
 }
 exports.BinaryOpNode = BinaryOpNode;
 class TernaryOpNode extends Node {
@@ -241,7 +254,12 @@ class ParenthesesNode extends MayBeUnparsedNode {
         super();
         this.expression = null;
     }
-    toString() { return "( ... )"; }
+    toString() {
+        if (this.expression !== null) {
+            return this.expression.toString(); // don't need to wrap in extra parentheses for printing. Operator nodes will already have them.
+        }
+        return "( <missing> )";
+    }
 }
 exports.ParenthesesNode = ParenthesesNode;
 class FunctionCallNode extends MayBeUnparsedNode {
@@ -358,7 +376,7 @@ class GenericArgNode extends Node {
     }
     toString() {
         let s = "";
-        s += this.name.name;
+        s += this.name.str;
         if (this.restriction !== null) {
             s += "<:";
             s += this.restriction.toString();
@@ -378,7 +396,7 @@ class FunctionDefNode extends MayBeUnparsedNode {
         this.scopeEndToken = null;
     }
     toSignatureString() {
-        let name = arrayUtils_1.last(this.name).name;
+        let name = arrayUtils_1.last(this.name).str;
         let sig = name;
         let genArgs = this.genericArgs;
         if (genArgs !== null) {
@@ -411,7 +429,7 @@ class FunctionDefArgNode extends Node {
     toString() {
         let s = "";
         if (this.name !== null)
-            s += this.name.name;
+            s += this.name.str;
         if (this.type !== null)
             s += "::" + this.type.toString();
         if (this.defaultValue !== null)
@@ -423,7 +441,7 @@ class FunctionDefArgNode extends Node {
     toSnippet(snippetIndex) {
         let s = "${" + snippetIndex + ":";
         if (this.name !== null)
-            s += this.name.name;
+            s += this.name.str;
         if (this.type !== null)
             s += "::" + this.type.toString();
         if (this.defaultValue !== null)
@@ -634,7 +652,7 @@ exports.TryBlockNode = TryBlockNode;
 class MacroInvocationNode extends MayBeUnparsedNode {
     constructor() {
         super();
-        this.name = null;
+        this.name = [];
         this.params = [];
     }
 }

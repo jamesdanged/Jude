@@ -12,6 +12,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
+var operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
 var errors_1 = require("../../utils/errors");
 class BaseFsa {
     constructor() {
@@ -43,7 +44,9 @@ class Arc {
      *
      * @param nextState
      * @param condition
-     * @param onSuccessParseStreamCallback  Callback of dynamic type: (T) => void  where T is the parse state
+     * @param onSuccessParseStreamCallback   callback of dynamic type: (T) => void, where
+     *  for full fsa's: T is the parse state.
+     *  for mini fsa's: T is the token stream.
      */
     constructor(nextState, condition, onSuccessParseStreamCallback) {
         this.nextState = nextState;
@@ -61,27 +64,28 @@ exports.Arc = Arc;
  * This separates the algorithm for traversing the FSA from the FSA.
  */
 function runFsaStartToStop(fsa, parseState) {
-    runFsaHelper(fsa, parseState, null);
+    runFsaStartToStopHelper(fsa, parseState, false);
 }
 exports.runFsaStartToStop = runFsaStartToStop;
-function runFsaStartToEarlyExit(fsa, parseState, earlyStopStates) {
-    runFsaHelper(fsa, parseState, earlyStopStates);
+function runFsaStartToStopAllowWhitespace(fsa, parseState) {
+    runFsaStartToStopHelper(fsa, parseState, true);
 }
-exports.runFsaStartToEarlyExit = runFsaStartToEarlyExit;
-function runFsaHelper(fsa, parseState, earlyStopStates) {
+exports.runFsaStartToStopAllowWhitespace = runFsaStartToStopAllowWhitespace;
+function runFsaStartToStopHelper(fsa, parseState, allowWhitespace) {
     let currState = fsa.startState;
-    //let streamStartIndex = parseState.ts.index
+    let ts = parseState.ts;
     // track state sequence and corresponding token stream indexes for help when debugging
     let stateSteps = [];
     let tsIndexes = [];
     while (currState !== fsa.stopState) {
-        stateSteps.push(currState);
-        tsIndexes.push(parseState.ts.index);
-        if (earlyStopStates !== null) {
-            if (earlyStopStates.indexOf(currState) >= 0) {
-                break;
+        // skip whitespace
+        if (!allowWhitespace) {
+            while (!ts.eof() && ts.peek().type === operatorsAndKeywords_1.TokenType.LineWhiteSpace) {
+                ts.read();
             }
         }
+        stateSteps.push(currState);
+        tsIndexes.push(parseState.ts.index);
         // find the correct arc to follow
         let foundArc = false;
         for (let i = 0; i < currState.arcs.length; i++) {
@@ -102,6 +106,7 @@ function runFsaHelper(fsa, parseState, earlyStopStates) {
         }
     }
 }
+exports.runFsaStartToStopHelper = runFsaStartToStopHelper;
 // helper method for failures
 function throwParseErrorFailedToFindArc(ts, stateSteps, tsIndexes) {
     let currIndex = ts.index;

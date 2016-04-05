@@ -21,7 +21,7 @@ var parseWorkspace_2 = require("../core/parseWorkspace");
 var parseWorkspace_3 = require("../core/parseWorkspace");
 var taskUtils_1 = require("../utils/taskUtils");
 var taskUtils_2 = require("../utils/taskUtils");
-describe("module parsing", () => {
+describe("basic module parsing", () => {
     let j13to20 = jasmine13to20_1.jasmine13to20();
     let beforeAll = j13to20.beforeAll;
     let beforeEach = j13to20.beforeEach;
@@ -73,6 +73,49 @@ baz = 5
         expect(errors[modPath].parseErrors.length).toBe(1);
         expect(errors[path1].parseErrors.length).toBe(0);
         expect(errors[path2].parseErrors.length).toBe(0);
+        done();
+    }));
+});
+describe("multiple modules in a file", () => {
+    let j13to20 = jasmine13to20_1.jasmine13to20();
+    let beforeAll = j13to20.beforeAll;
+    let beforeEach = j13to20.beforeEach;
+    let it = j13to20.it;
+    let afterEach = j13to20.afterEach;
+    let afterAll = j13to20.afterAll;
+    let contents = `
+module Mod1
+  function foo()
+  end
+end
+
+module Mod2
+  function bar()
+  end
+end
+
+Mod1.foo()
+Mod2.bar()
+`;
+    let path = "/dir/only_file.jl";
+    let sessionModel = emptySession_1.createTestSessionModel();
+    let errors = sessionModel.parseSet.errors;
+    beforeAll(() => {
+        let o = {};
+        o[path] = contents;
+        parseWorkspace_1.mockProjectFiles(o);
+        atomApi_1.mockOpenFiles([path]);
+        taskUtils_1.mockRunDelayed();
+    });
+    afterAll(() => {
+        parseWorkspace_2.unmockProjectFiles();
+        atomApi_2.unmockOpenFiles();
+        taskUtils_2.unmockRunDelayed();
+    });
+    it("should be able to have multiple modules in a single file", (done) => __awaiter(this, void 0, Promise, function* () {
+        yield parseWorkspace_3.parseFullWorkspaceAsync(sessionModel);
+        expect(errors[path].parseErrors.length).toBe(0);
+        expect(errors[path].nameErrors.length).toBe(0);
         done();
     }));
 });

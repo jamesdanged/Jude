@@ -21,7 +21,6 @@ var Token_1 = require("./../tokens/Token");
 var Token_2 = require("./../tokens/Token");
 var Token_3 = require("../tokens/Token");
 var Token_4 = require("../tokens/Token");
-var Token_5 = require("../tokens/Token");
 /**
  * Runs a partial parse of the token sequence, merely
  * grouping tokens within
@@ -148,7 +147,7 @@ class BracketGrouper {
         return false;
     }
     static groupIntoOneThrowIfError(tokens) {
-        let tokenMinus1 = new Token_1.Token("", operatorsAndKeywords_2.TokenType.LineWhiteSpace, new Token_5.Range(new Token_4.Point(0, 0), new Token_4.Point(0, 1)), new Token_3.Indent(""));
+        let tokenMinus1 = new Token_1.Token("", operatorsAndKeywords_2.TokenType.LineWhiteSpace, new Token_4.Range(new Token_3.Point(0, 0), new Token_3.Point(0, 1)));
         let tokenStream = new TokenStream_1.TokenStream(tokens, tokenMinus1);
         let treeBuilder = new BracketGrouper();
         treeBuilder.runGrouping(tokenStream);
@@ -188,6 +187,8 @@ function isOpenCloseMatch(openToken, closeToken) {
         if (openToken.str === "'" && closeToken.str === "'")
             return true;
         if (openToken.str === "`" && closeToken.str === "`")
+            return true;
+        if (openToken.str === '"""' && closeToken.str === '"""')
             return true;
     }
     if (openToken.type === operatorsAndKeywords_2.TokenType.Keyword && closeToken.type == operatorsAndKeywords_2.TokenType.Keyword) {

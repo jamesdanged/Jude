@@ -43,13 +43,14 @@ class FunctionCompactDefFsa extends fsaUtils_1.BaseFsa {
         super();
         let startState = this.startState;
         let stopState = this.stopState;
-        let functionName = new fsaUtils_2.FsaState('function name');
-        let functionNameDot = new fsaUtils_2.FsaState("function name dot");
+        let name = new fsaUtils_2.FsaState('function name');
+        let nameDot = new fsaUtils_2.FsaState("function name dot");
+        let overridableOperator = new fsaUtils_2.FsaState("overridable operator");
         let typeParams = new fsaUtils_2.FsaState("type params");
         let functionArgList = new fsaUtils_2.FsaState("function arg list");
         let equalsSign = new fsaUtils_2.FsaState("= sign");
         let functionBody = new fsaUtils_2.FsaState("function body");
-        let allStatesExceptStop = [startState, functionName, functionNameDot, typeParams, functionArgList, equalsSign, functionBody];
+        let allStatesExceptStop = [startState, name, nameDot, overridableOperator, typeParams, functionArgList, equalsSign, functionBody];
         // TODO allow newlines between elements if the def is contained within a parentheses
         // ignore new lines between parts of the function declaration
         //for (let state of [startState, functionName, typeParams]) {
@@ -60,16 +61,18 @@ class FunctionCompactDefFsa extends fsaUtils_1.BaseFsa {
             state.addArc(state, streamConditions_8.streamAtComment, skipOneToken);
         }
         // function name cannot be skipped
-        startState.addArc(functionName, streamConditions_4.streamAtIdentifier, readFunctionName);
-        startState.addArc(functionName, streamConditions_1.streamAtOverridableOperator, readFunctionNameAsOverridableOperator);
+        startState.addArc(name, streamConditions_4.streamAtIdentifier, readFunctionName);
+        startState.addArc(overridableOperator, streamConditions_1.streamAtOverridableOperator, readFunctionNameAsOverridableOperator);
         // name can have multiple parts if referring to a function name in another module
-        functionName.addArc(functionNameDot, streamConditions_2.streamAtDot, skipOneToken);
-        functionNameDot.addArc(functionName, streamConditions_4.streamAtIdentifier, readFunctionName);
-        functionNameDot.addArc(functionName, streamConditions_1.streamAtOverridableOperator, readFunctionNameAsOverridableOperator);
+        name.addArc(nameDot, streamConditions_2.streamAtDot, skipOneToken);
+        nameDot.addArc(name, streamConditions_4.streamAtIdentifier, readFunctionName);
+        nameDot.addArc(overridableOperator, streamConditions_1.streamAtOverridableOperator, readFunctionNameAsOverridableOperator);
         // optional type params
-        functionName.addArc(typeParams, streamConditions_6.streamAtOpenCurlyBraces, readFunctionGenericParams);
+        name.addArc(typeParams, streamConditions_6.streamAtOpenCurlyBraces, readFunctionGenericParams);
+        overridableOperator.addArc(typeParams, streamConditions_6.streamAtOpenCurlyBraces, readFunctionGenericParams);
         // must be followed by function arg list
-        functionName.addArc(functionArgList, streamConditions_5.streamAtOpenParenthesis, readFunctionArgList);
+        name.addArc(functionArgList, streamConditions_5.streamAtOpenParenthesis, readFunctionArgList);
+        overridableOperator.addArc(functionArgList, streamConditions_5.streamAtOpenParenthesis, readFunctionArgList);
         typeParams.addArc(functionArgList, streamConditions_5.streamAtOpenParenthesis, readFunctionArgList);
         // require equals sign
         functionArgList.addArc(equalsSign, streamConditions_9.streamAtEquals, skipOneToken);

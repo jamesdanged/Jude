@@ -56,7 +56,7 @@ class JumpController {
                 return [];
             }
             if (!resolve.resolvesInWorkspace()) {
-                console.log(identNode.name + " is not in workspace.");
+                console.log(identNode.str + " is not in workspace.");
                 return [];
             }
             if (resolve instanceof Resolve_7.ImportedResolve)
@@ -83,7 +83,7 @@ class JumpController {
                     }
                 }
                 if (paths.length === 0) {
-                    console.log(identNode.name + " is not in project.");
+                    console.log(identNode.str + " is not in project.");
                     return [];
                 }
                 else if (paths.length === 1) {

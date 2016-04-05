@@ -43,15 +43,16 @@ class FunctionDefFsa extends fsaUtils_3.BaseFsa {
         super();
         let startState = this.startState;
         let stopState = this.stopState;
-        let functionName = new fsaUtils_4.FsaState("function name");
-        let functionNameDot = new fsaUtils_4.FsaState("function name dot");
+        let name = new fsaUtils_4.FsaState("function name");
+        let nameDot = new fsaUtils_4.FsaState("function name dot");
+        let overridableOperator = new fsaUtils_4.FsaState("overridable operator");
         let typeParams = this.typeParamsState = new fsaUtils_4.FsaState("type params");
         let functionArgList = this.functionArgListState = new fsaUtils_4.FsaState("function arg list"); // the entire handling of the arg list will be handled by a sub fsa
         let functionBody = this.functionBodyState = new fsaUtils_4.FsaState("function body");
         let betweenExpressions = new fsaUtils_4.FsaState("between expressions"); // state after an expression has been read
-        let allStatesExceptStop = [startState, functionName, functionNameDot, typeParams, functionArgList, functionBody, betweenExpressions];
+        let allStatesExceptStop = [startState, name, nameDot, overridableOperator, typeParams, functionArgList, functionBody, betweenExpressions];
         // ignore new lines between parts of the function declaration
-        for (let state of [startState, functionName, functionNameDot, typeParams]) {
+        for (let state of [startState, name, nameDot, typeParams]) {
             state.addArc(state, streamConditions_3.streamAtNewLine, skipOneToken);
         }
         // ignore comments everywhere
@@ -59,17 +60,19 @@ class FunctionDefFsa extends fsaUtils_3.BaseFsa {
             state.addArc(state, streamConditions_10.streamAtComment, skipOneToken);
         }
         // function name can be skipped if anonymous
-        startState.addArc(functionName, streamConditions_4.streamAtIdentifier, readFunctionName);
-        startState.addArc(functionName, streamConditions_1.streamAtOverridableOperator, readFunctionNameAsOverridableOperator);
+        startState.addArc(name, streamConditions_4.streamAtIdentifier, readFunctionName);
+        startState.addArc(overridableOperator, streamConditions_1.streamAtOverridableOperator, readFunctionNameAsOverridableOperator);
         startState.addArc(functionArgList, streamConditions_5.streamAtOpenParenthesis, readFunctionArgList);
         // name can have multiple parts if referring to a function name in another module
-        functionName.addArc(functionNameDot, streamConditions_2.streamAtDot, skipOneToken);
-        functionNameDot.addArc(functionName, streamConditions_4.streamAtIdentifier, readFunctionName);
-        functionNameDot.addArc(functionName, streamConditions_1.streamAtOverridableOperator, readFunctionNameAsOverridableOperator);
+        name.addArc(nameDot, streamConditions_2.streamAtDot, skipOneToken);
+        nameDot.addArc(name, streamConditions_4.streamAtIdentifier, readFunctionName);
+        nameDot.addArc(overridableOperator, streamConditions_1.streamAtOverridableOperator, readFunctionNameAsOverridableOperator);
         // type params only allowed if there was a function name
-        functionName.addArc(typeParams, streamConditions_6.streamAtOpenCurlyBraces, readFunctionGenericParams);
+        name.addArc(typeParams, streamConditions_6.streamAtOpenCurlyBraces, readFunctionGenericParams);
+        overridableOperator.addArc(typeParams, streamConditions_6.streamAtOpenCurlyBraces, readFunctionGenericParams);
         // must be followed by function arg list
-        functionName.addArc(functionArgList, streamConditions_5.streamAtOpenParenthesis, readFunctionArgList);
+        name.addArc(functionArgList, streamConditions_5.streamAtOpenParenthesis, readFunctionArgList);
+        overridableOperator.addArc(functionArgList, streamConditions_5.streamAtOpenParenthesis, readFunctionArgList);
         typeParams.addArc(functionArgList, streamConditions_5.streamAtOpenParenthesis, readFunctionArgList);
         // rest must be function body
         functionArgList.addArc(functionBody, streamConditions_7.alwaysPasses, doNothing);
@@ -84,11 +87,7 @@ class FunctionDefFsa extends fsaUtils_3.BaseFsa {
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let parseState = new ParseState(ts, nodeToFill, wholeState);
-        //if (wholeState.onlyParseTopLevel) {
-        //runFsaStartToEarlyExit(this, parseState, [this.typeParamsState, this.functionArgListState, this.functionBodyState])
-        //} else {
         fsaUtils_5.runFsaStartToStop(this, parseState);
-        //}
     }
 }
 class ParseState {

@@ -15,11 +15,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 var assert_1 = require("../utils/assert");
 var operatorsAndKeywords_1 = require("./operatorsAndKeywords");
 class Token {
-    constructor(str, type, range, indent) {
+    constructor(str, type, range) {
         this.str = str;
         this.type = type;
         this.range = range;
-        this.indent = indent;
     }
     toString() { return this.str; }
     /**
@@ -30,7 +29,7 @@ class Token {
      * @returns {Token}
      */
     static createEmptyIdentifier(name) {
-        return new Token(name, operatorsAndKeywords_1.TokenType.Identifier, Range.createEmptyRange(), new Indent(""));
+        return new Token(name, operatorsAndKeywords_1.TokenType.Identifier, Range.createEmptyRange());
     }
 }
 exports.Token = Token;
@@ -40,7 +39,7 @@ exports.Token = Token;
  */
 class TreeToken extends Token {
     constructor(openToken) {
-        super(openToken.str, openToken.type, openToken.range, openToken.indent);
+        super(openToken.str, openToken.type, openToken.range);
         this.openToken = openToken;
         this.closeToken = null;
         this.contents = [];

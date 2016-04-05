@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.2.4]
+Parsing macro invocations better. Parsing triple quoted strings.
+
 ## [0.2.3]
 Improved error handling and some bug fixes.
 

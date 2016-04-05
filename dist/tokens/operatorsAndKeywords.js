@@ -31,9 +31,8 @@ var assert_1 = require("../utils/assert");
     TokenType[TokenType["StringInterpolationStart"] = 11] = "StringInterpolationStart";
     TokenType[TokenType["CharacterLiteralContents"] = 12] = "CharacterLiteralContents";
     TokenType[TokenType["Macro"] = 13] = "Macro";
-    TokenType[TokenType["MacroWithSpace"] = 14] = "MacroWithSpace";
-    TokenType[TokenType["Regex"] = 15] = "Regex";
-    TokenType[TokenType["Symbol"] = 16] = "Symbol"; // eg :foo
+    TokenType[TokenType["Regex"] = 14] = "Regex";
+    TokenType[TokenType["Symbol"] = 15] = "Symbol"; // eg :foo
 })(exports.TokenType || (exports.TokenType = {}));
 var TokenType = exports.TokenType;
 exports.arithmeticOperators = StringSet_1.createStringSet([
@@ -126,10 +125,12 @@ exports.binaryOperatorsMayOmitArg2 = StringSet_1.createStringSet([","]);
 exports.postFixOperators = StringSet_1.createStringSet([
     "'"
 ]);
-// note, many operators can be assigned to
-// eg + = 5
-// which changes the meaning of + and makes it no longer a binary operator
-// We will ignore such possibilities.
+// note, many operators can be overridden
+//   eg +(a, b) = a + b
+// That is ok, but changing '+' from binary to some other function or a variable is beyond
+// our ability to statically parse.
+//   eg + = 5
+// We will just throw parse errors when that happens.
 exports.overridableBinaryOperators = StringSet_2.mergeSets([exports.arithmeticOperators, exports.comparisonOperators, exports.bitshiftOperators, exports.elementWiseOperators, exports.binaryOperatorsLikeIdentifiers]);
 StringSet_3.addToSet(exports.overridableBinaryOperators, "|>");
 StringSet_3.addToSet(exports.overridableBinaryOperators, "&");
@@ -166,7 +167,8 @@ exports.allBrackets = StringSet_1.createStringSet([
 exports.allQuotes = StringSet_1.createStringSet([
     "\"",
     "'",
-    "`"
+    "`",
+    "\"\"\""
 ]);
 (function (Escapes) {
     Escapes[Escapes["End"] = 0] = "End";

@@ -20,10 +20,10 @@ var streamConditions_1 = require("./../../tokens/streamConditions");
 var streamConditions_2 = require("./../../tokens/streamConditions");
 var streamConditions_3 = require("./../../tokens/streamConditions");
 var streamConditions_4 = require("./../../tokens/streamConditions");
+var lookAheadStreamConditions_1 = require("./../../tokens/lookAheadStreamConditions");
 var streamConditions_5 = require("./../../tokens/streamConditions");
-var streamConditions_6 = require("./../../tokens/streamConditions");
 var nodes_1 = require("./../../parseTree/nodes");
-var streamConditions_7 = require("./../../tokens/streamConditions");
+var streamConditions_6 = require("./../../tokens/streamConditions");
 var fsaUtils_2 = require("./../general/fsaUtils");
 var fsaUtils_3 = require("./../general/fsaUtils");
 var fsaUtils_4 = require("./../general/fsaUtils");
@@ -48,13 +48,13 @@ class FunctionCallFsa extends fsaUtils_2.BaseFsa {
             keywordArgComma];
         // add loops to ignore new lines and comments everywhere
         for (let state of allStatesExceptStop) {
-            state.addArc(state, streamConditions_6.streamAtNewLine, skipOneToken);
-            state.addArc(state, streamConditions_7.streamAtComment, skipOneToken);
+            state.addArc(state, streamConditions_5.streamAtNewLine, skipOneToken);
+            state.addArc(state, streamConditions_6.streamAtComment, skipOneToken);
         }
         // can start with nothing (no params), a semicolon, a keyword arg, or an ordered arg
         startState.addArc(stopState, streamConditions_1.streamAtEof, doNothing); // passes if EOF
         startState.addArc(semicolonState, streamConditions_2.streamAtSemicolon, skipOneToken);
-        startState.addArc(keywordArg, streamConditions_5.streamAtIdentifierEquals, readKeywordArg);
+        startState.addArc(keywordArg, lookAheadStreamConditions_1.streamAtIdentifierEquals, readKeywordArg);
         startState.addArc(orderedArgExpression, streamConditions_3.alwaysPasses, readOrderedArg); // add this one last as its condition always passes
         // after an ordered arg, can have
         //   a comma and another arg
@@ -64,10 +64,10 @@ class FunctionCallFsa extends fsaUtils_2.BaseFsa {
         orderedArgExpression.addArc(semicolonState, streamConditions_2.streamAtSemicolon, skipOneToken);
         orderedArgExpression.addArc(stopState, streamConditions_1.streamAtEof, doNothing);
         orderedArgComma.addArc(stopState, streamConditions_1.streamAtEof, doNothing); // , can be dangling at end
-        orderedArgComma.addArc(keywordArg, streamConditions_5.streamAtIdentifierEquals, readKeywordArg); // ; is optional in function calls. Required in function defs.
+        orderedArgComma.addArc(keywordArg, lookAheadStreamConditions_1.streamAtIdentifierEquals, readKeywordArg); // ; is optional in function calls. Required in function defs.
         orderedArgComma.addArc(orderedArgExpression, streamConditions_3.alwaysPasses, readOrderedArg); // add this one last as its condition always passes
         // after semicolon, can have a keyword arg or EOF
-        semicolonState.addArc(keywordArg, streamConditions_5.streamAtIdentifierEquals, readKeywordArg);
+        semicolonState.addArc(keywordArg, lookAheadStreamConditions_1.streamAtIdentifierEquals, readKeywordArg);
         semicolonState.addArc(stopState, streamConditions_1.streamAtEof, doNothing);
         // after a keyword arg, can have
         //   a comma and another keyword arg
@@ -75,7 +75,7 @@ class FunctionCallFsa extends fsaUtils_2.BaseFsa {
         keywordArg.addArc(keywordArgComma, streamConditions_4.streamAtComma, skipOneToken);
         keywordArg.addArc(stopState, streamConditions_1.streamAtEof, doNothing);
         keywordArgComma.addArc(stopState, streamConditions_1.streamAtEof, doNothing);
-        keywordArgComma.addArc(keywordArg, streamConditions_5.streamAtIdentifierEquals, readKeywordArg);
+        keywordArgComma.addArc(keywordArg, lookAheadStreamConditions_1.streamAtIdentifierEquals, readKeywordArg);
     }
     runStartToStop(ts, nodeToFill, wholeState) {
         let state = new ParseState(ts, nodeToFill, wholeState);
@@ -104,6 +104,7 @@ function readKeywordArg(state) {
     if (idToken.type != operatorsAndKeywords_1.TokenType.Identifier)
         throw new assert_1.AssertError("");
     let paramName = idToken.str;
+    state.ts.skipToNextNonWhitespace();
     let equalsToken = state.ts.readNonNewLine();
     if (equalsToken.str != "=")
         throw new assert_1.AssertError("");
