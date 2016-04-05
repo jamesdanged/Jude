@@ -1,5 +1,9 @@
 "use strict"
 
+import {streamAtMacroInvocation} from "../../tokens/lookAheadStreamConditions";
+import {last} from "../../utils/arrayUtils";
+import {streamAtLineWhitespace} from "../../tokens/streamConditions";
+import {runFsaStartToStopAllowWhitespace} from "./fsaUtils";
 import {parseWholeLetBlock} from "../controlFlow/LetBlockFsa";
 import {streamAtDo} from "../../tokens/streamConditions";
 import {streamAtKeywordBlock} from "../../tokens/streamConditions";
@@ -13,7 +17,7 @@ import {ContinueNode} from "../../parseTree/nodes";
 import {streamAtContinue} from "../../tokens/streamConditions";
 import {streamAtBreak} from "../../tokens/streamConditions";
 import {streamAtTypeAlias} from "../../tokens/streamConditions";
-import {streamAtAnonymousFunction} from "../../tokens/streamConditions";
+import {streamAtAnonymousFunction} from "../../tokens/lookAheadStreamConditions";
 import {streamAtTripleDot} from "../../tokens/streamConditions";
 import {parseWholeMacroDef} from "../declarations/MacroDefFsa";
 import {expectNoMoreExpressions} from "./fsaUtils";
@@ -70,10 +74,9 @@ import {FsaState} from "./fsaUtils";
 import {runFsaStartToStop} from "./fsaUtils";
 import {IFsaParseState} from "./fsaUtils";
 import {TreeToken} from "../../tokens/Token";
-import {streamAtFunctionCompactDeclaration} from "../../tokens/streamConditions";
+import {streamAtFunctionCompactDeclaration} from "../../tokens/lookAheadStreamConditions";
 import {TernaryOpNode} from "../../parseTree/nodes";
 import {InvalidParseError} from "../../utils/errors";
-import {streamAtMacroIdentifier} from "../../tokens/streamConditions";
 import {streamAtNewLineOrSemicolon} from "../../tokens/streamConditions";
 import {ReturnNode} from "../../parseTree/nodes";
 import {parseGenericArgList} from "../bracketed/GenericArgListFsa";
@@ -109,7 +112,8 @@ import {parseAnyArrayLiteral} from "../bracketed/SquareBracketFsa";
 import {parseSquareBracket} from "../bracketed/SquareBracketFsa";
 import {RegexNode} from "../../parseTree/nodes";
 import {streamAtRegex} from "../../tokens/streamConditions";
-
+import {Range} from "../../tokens/Token"
+import {Token} from "../../tokens/Token";
 
 /**
  * Automaton used for recognizing expressions.
@@ -167,7 +171,7 @@ export class ExpressionFsa extends BaseFsa {
     let splatState = new FsaState("...")
     let commaAfterSplatState = new FsaState("comma after ...")
 
-    // used to ignore comments and new lines (via option)
+    // used to ignore comments, line whitespace, and new lines (via option)
     let allStatesNotStop = [startState, unaryState, binaryState, binaryMayOmitArg2State, ternaryState, postFixState,
       numberState, identifierState, symbolState,
       parenthesesState, functionCallState,
@@ -199,6 +203,13 @@ export class ExpressionFsa extends BaseFsa {
     for (let state of allStatesNotStop) {
       state.addArc(state, streamAtComment, skipOneToken)
     }
+    // ignore line whitespace everywhere
+    // except immediately after a number
+    for (let state of allStatesNotStop) {
+      if (state === numberState) continue
+      state.addArc(state, streamAtLineWhitespace, skipOneToken)
+    }
+
 
     // New line handling.
     //
@@ -308,6 +319,7 @@ export class ExpressionFsa extends BaseFsa {
       state.addArc(symbolState, streamAtSymbol, readSymbol )
       state.addArc(keywordBlockState, streamAtFunctionCompactDeclaration, readFunctionCompactDef) // must be checked before streamAtIdentifier
       state.addArc(keywordBlockState, streamAtAnonymousFunction, readAnonymousFunctionDef) // must be checked before streamAtIdentifier and streamAtOpenParenthesis
+      state.addArc(macroCallState, streamAtMacroInvocation, readMacroInvocation) // must be checked before streamAtIdentifier
       state.addArc(identifierState, streamAtIdentifier, readIdentifier )
       state.addArc(parenthesesState, streamAtOpenParenthesis, readGroupingParentheses)
       //state.addArc(arrayLiteralState, streamAtOpenSquareBracket, readArrayLiteral )
@@ -316,7 +328,6 @@ export class ExpressionFsa extends BaseFsa {
       state.addArc(keywordBlockState, streamAtKeywordBlock, readKeywordBlock)
       state.addArc(quoteState, streamAtAnyQuote, readAnyQuote)
       state.addArc(regexState, streamAtRegex, readRegex)
-      state.addArc(macroCallState, streamAtMacroIdentifier, readMacroInvocation)
     }
 
     // these states result in expressions that can be invoked as functions or indexed as arrays
@@ -331,6 +342,12 @@ export class ExpressionFsa extends BaseFsa {
 
       state.addArc(stopState, streamNotAtContinuingOpNorOpenBracket, doNothing) // be sure to add this last as a lot of tokens will trigger it
     }
+
+    // a number followed immediately by an identifier or an open parentheses implies multiplication
+    numberState.addArc(identifierState, streamAtIdentifier, readImplicitMultiplicationIdentifier)
+    numberState.addArc(parenthesesState, streamAtOpenParenthesis, readImplicitMultiplicationParentheses)
+    // otherwise spaces are ignored
+    numberState.addArc(numberState, streamAtLineWhitespace, skipOneToken)
 
     // these states cannot be directly invoked afterwards
     //   (if surrounded in parentheses, they can be though)
@@ -355,7 +372,7 @@ export class ExpressionFsa extends BaseFsa {
    */
   runStartToStop(ts:TokenStream, wholeState: WholeFileParseState): Node {
     let state = new ParseState(ts, this, wholeState)
-    runFsaStartToStop(this, state)
+    runFsaStartToStopAllowWhitespace(this, state)
     let exprResult = parseIntoTreeByOrderOfOperations(state.nodes, wholeState)
     return exprResult
   }
@@ -557,6 +574,28 @@ function readPostFixOp(state: ParseState): void {
   state.nodes.push(node)
 }
 
+function readImplicitMultiplicationIdentifier(state: ParseState): void {
+  insertImplicitMultiplication(state)
+  readIdentifier(state)
+}
+
+function readImplicitMultiplicationParentheses(state: ParseState): void {
+  insertImplicitMultiplication(state)
+  readGroupingParentheses(state)
+}
+
+function insertImplicitMultiplication(state: ParseState): void {
+  let numberNode = last(state.nodes) as NumberNode
+  let numberEndPoint = numberNode.token.range.end
+
+  // create a non-existent token for the implied multiplication
+  let rng = new Range(numberEndPoint, numberEndPoint) // position the fake * token at the end of the number token, but with 0 length
+  let token = new Token("*", TokenType.Operator, rng)
+  state.nodes.push(new BinaryOpNode(token))
+}
+
+
+
 function readNumber(state: ParseState): void {
   let token = state.ts.read()
   let node = new NumberNode(token)
@@ -578,7 +617,7 @@ function readRegex(state: ParseState): void {
 function readIdentifier(state: ParseState): void {
   let token = state.ts.read()
   let node = new IdentifierNode(token)
-  node.name = token.str
+  node.str = token.str
   state.nodes.push(node)
 }
 

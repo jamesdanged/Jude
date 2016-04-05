@@ -101,10 +101,10 @@ end`
 
     expect(funcNode.genericArgs.args.length).toBe(1)
     let genArg1 = funcNode.genericArgs.args[0]
-    expect(genArg1.name.name).toBe("T")
+    expect(genArg1.name.str).toBe("T")
     expect(genArg1.restriction instanceof IdentifierNode).toBe(true)
     let restriction = genArg1.restriction as IdentifierNode
-    expect(restriction.name).toBe("Int")
+    expect(restriction.str).toBe("Int")
 
     identifiers = sessionModel.parseSet.identifiers[path]
 

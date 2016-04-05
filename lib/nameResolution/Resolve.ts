@@ -60,7 +60,7 @@ export class TypeResolve extends Resolve {
   filePath: string  // null if source not in workspace
   typeDefNode: TypeDefNode
   constructor(node: TypeDefNode, filePath: string) {
-    super(node.name.name)
+    super(node.name.str)
     this.filePath = filePath
     this.typeDefNode = node
   }
@@ -116,7 +116,7 @@ export class ExternalModuleResolve extends ModuleResolve {
  */
 export class LocalModuleResolve extends ModuleResolve {
   constructor(public moduleDefNode: ModuleDefNode, public filePath: string, moduleRootScope: ModuleScope) {
-    super(moduleDefNode.name.name, moduleRootScope)
+    super(moduleDefNode.name.str, moduleRootScope)
   }
   resolvesInWorkspace(): boolean {
     return true

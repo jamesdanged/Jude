@@ -142,7 +142,7 @@ export async function resolveModuleForLibrary(fullModuleName: string, sessionMod
       for (let expr of fileLevelNode.expressions) {
         if (expr instanceof ModuleDefNode) {
           let moduleDefNode = expr as ModuleDefNode
-          if (moduleDefNode.name.name === outerModuleName) {
+          if (moduleDefNode.name.str === outerModuleName) {
             // get the matching scope
             let resolveRoot = sessionModel.parseSet.getResolveRoot(moduleDefNode)
             let moduleScope = resolveRoot.scope

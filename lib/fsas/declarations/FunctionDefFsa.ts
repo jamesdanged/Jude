@@ -20,7 +20,6 @@ import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
-import {runFsaStartToEarlyExit} from "../general/fsaUtils";
 import {TreeToken} from "../../tokens/Token";
 import {IdentifierNode} from "../../parseTree/nodes";
 import {AssertError} from "../../utils/assert";
@@ -44,17 +43,18 @@ class FunctionDefFsa extends BaseFsa {
     let startState = this.startState
     let stopState = this.stopState
 
-    let functionName = new FsaState("function name")
-    let functionNameDot = new FsaState("function name dot")
+    let name = new FsaState("function name")
+    let nameDot = new FsaState("function name dot")
+    let overridableOperator = new FsaState("overridable operator")
     let typeParams = this.typeParamsState = new FsaState("type params")
     let functionArgList = this.functionArgListState = new FsaState("function arg list") // the entire handling of the arg list will be handled by a sub fsa
     let functionBody = this.functionBodyState = new FsaState("function body")
     let betweenExpressions = new FsaState("between expressions") // state after an expression has been read
 
-    let allStatesExceptStop = [startState, functionName, functionNameDot, typeParams, functionArgList, functionBody, betweenExpressions]
+    let allStatesExceptStop = [startState, name, nameDot, overridableOperator, typeParams, functionArgList, functionBody, betweenExpressions]
 
     // ignore new lines between parts of the function declaration
-    for (let state of [startState, functionName, functionNameDot, typeParams]) {
+    for (let state of [startState, name, nameDot, typeParams]) {
       state.addArc(state, streamAtNewLine, skipOneToken)
     }
     // ignore comments everywhere
@@ -64,19 +64,21 @@ class FunctionDefFsa extends BaseFsa {
 
 
     // function name can be skipped if anonymous
-    startState.addArc(functionName, streamAtIdentifier, readFunctionName)
-    startState.addArc(functionName, streamAtOverridableOperator, readFunctionNameAsOverridableOperator)
+    startState.addArc(name, streamAtIdentifier, readFunctionName)
+    startState.addArc(overridableOperator, streamAtOverridableOperator, readFunctionNameAsOverridableOperator)
     startState.addArc(functionArgList, streamAtOpenParenthesis, readFunctionArgList)
 
     // name can have multiple parts if referring to a function name in another module
-    functionName.addArc(functionNameDot, streamAtDot, skipOneToken)
-    functionNameDot.addArc(functionName, streamAtIdentifier, readFunctionName)
-    functionNameDot.addArc(functionName, streamAtOverridableOperator, readFunctionNameAsOverridableOperator)
+    name.addArc(nameDot, streamAtDot, skipOneToken)
+    nameDot.addArc(name, streamAtIdentifier, readFunctionName)
+    nameDot.addArc(overridableOperator, streamAtOverridableOperator, readFunctionNameAsOverridableOperator)
 
     // type params only allowed if there was a function name
-    functionName.addArc(typeParams, streamAtOpenCurlyBraces, readFunctionGenericParams)
+    name.addArc(typeParams, streamAtOpenCurlyBraces, readFunctionGenericParams)
+    overridableOperator.addArc(typeParams, streamAtOpenCurlyBraces, readFunctionGenericParams)
     // must be followed by function arg list
-    functionName.addArc(functionArgList, streamAtOpenParenthesis, readFunctionArgList)
+    name.addArc(functionArgList, streamAtOpenParenthesis, readFunctionArgList)
+    overridableOperator.addArc(functionArgList, streamAtOpenParenthesis, readFunctionArgList)
     typeParams.addArc(functionArgList, streamAtOpenParenthesis, readFunctionArgList)
 
     // rest must be function body
@@ -97,11 +99,7 @@ class FunctionDefFsa extends BaseFsa {
 
   runStartToStop(ts: TokenStream, nodeToFill: FunctionDefNode, wholeState: WholeFileParseState): void {
     let parseState = new ParseState(ts, nodeToFill, wholeState)
-    //if (wholeState.onlyParseTopLevel) {
-    //runFsaStartToEarlyExit(this, parseState, [this.typeParamsState, this.functionArgListState, this.functionBodyState])
-    //} else {
     runFsaStartToStop(this, parseState)
-    //}
   }
 
 

@@ -179,9 +179,9 @@ export class ScopeRecurser {
 
   resolveIdentifierNode(node: IdentifierNode): void {
     if (node.isSpecialIdentifier()) return
-    if (node.name === "new" && this.scopeStack.findIndex((o) => { return o.type === ScopeType.TypeDef}) >= 0) return
+    if (node.str === "new" && this.scopeStack.findIndex((o) => { return o.type === ScopeType.TypeDef}) >= 0) return
 
-    let resolve = this.currScope.tryResolveNameThroughParentScopes(node.name, false)
+    let resolve = this.currScope.tryResolveNameThroughParentScopes(node.str, false)
     if (resolve === null) {
       this.logNameError(new NameError("Unknown name", node.token))
     } else {
@@ -200,7 +200,7 @@ export class ScopeRecurser {
       } else if (node.declType === NameDeclType.Global) {
         // check the name exists only at the module scope. Skip intermediate levels.
         let moduleScope = this.scopeStack[0]
-        let resolve = moduleScope.tryResolveNameThisLevel(identNode.name)
+        let resolve = moduleScope.tryResolveNameThisLevel(identNode.str)
         if (resolve === null) {
           this.logNameError(new NameError("Name not found in module scope.", identNode.token))
         } else {
@@ -446,7 +446,7 @@ export class ScopeRecurser {
     if (!identNode) return // parse failure
 
     this.builder.registerMacro(node)
-    let resolve = this.currScope.tryResolveNameThisLevel("@" + identNode.name)
+    let resolve = this.currScope.tryResolveNameThisLevel("@" + identNode.str)
     if (resolve !== null) {
       this.storeIdentifierResolution(identNode, resolve)
     }
@@ -454,7 +454,18 @@ export class ScopeRecurser {
   }
 
   resolveMacroInvocationNode(node: MacroInvocationNode): void {
-    this.resolveIdentifierNode(node.name)
+    // normalize the name so it has @ only on the last part
+    let numParts = node.name.length
+    for (let i = 0; i < numParts; i++) {
+      let ipart = node.name[i]
+      if (i === 0 && numParts > 1 && ipart.str[0] === "@") {
+        ipart.str = ipart.str.slice(1)
+      }
+      if (i === numParts - 1 && ipart.str[0] !== "@") {
+        ipart.str = "@" + ipart.str
+      }
+    }
+    this.resolveMultiPartName(node.name)
     for (let param of node.params) {
       this.resolveNode(param)
     }
@@ -511,7 +522,7 @@ export class ScopeRecurser {
     let moduleScope = scope as ModuleScope
 
     for (let identNode of node.names) {
-      addToSet(moduleScope.exportedNames, identNode.name)
+      addToSet(moduleScope.exportedNames, identNode.str)
     }
   }
 

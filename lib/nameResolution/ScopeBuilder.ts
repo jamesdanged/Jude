@@ -89,7 +89,7 @@ export class ScopeBuilder {
     if (multiPartName.length == 0) throw new AssertError("")
 
     let identNode = last(multiPartName)
-    let name = identNode.name
+    let name = identNode.str
     if (name in this.currScope.names) {
       this.logNameError(new NameError("Conflicting import: '" + name + "' already declared as " +
         getResolveInfoType(this.currScope.names[name]) + " in this scope.", identNode.token ))
@@ -98,7 +98,7 @@ export class ScopeBuilder {
 
     // If the first part is not already imported, must be imported.
     let firstPart = multiPartName[0]
-    let firstName = firstPart.name
+    let firstName = firstPart.str
     this.logImport(firstName)
     let firstPartResolve = this.currScope.tryResolveNameThisLevel(firstName)
     if (firstPartResolve === null) {
@@ -172,7 +172,7 @@ export class ScopeBuilder {
    * the existing name.
    */
   createNameByAssignmentIfNecessary(identNode: IdentifierNode): void {
-    let name = identNode.name
+    let name = identNode.str
 
     if (identNode.isEndIndex()) {
       this.logNameError(new NameError("Cannot assign to end keyword.", identNode.token))
@@ -194,7 +194,7 @@ export class ScopeBuilder {
   }
 
   registerVariable(identifierNode: IdentifierNode): void {
-    let name = identifierNode.name
+    let name = identifierNode.str
     let resolve = this.currScope.tryResolveNameThisLevel(name)
     if (resolve !== null) {
       this.logNameError(new NameError("'" + name + "' already declared in this scope.", identifierNode.token))
@@ -208,12 +208,12 @@ export class ScopeBuilder {
 
     if (functionDefNode.name.length === 1) {
       let identifierNode = functionDefNode.name[0]
-      let name = identifierNode.name
+      let name = identifierNode.str
 
       // register the function definition
       let resolve = this.currScope.tryResolveNameThisLevel(name)
       if (resolve === null) {
-        resolve = new FunctionResolve(identifierNode.name)
+        resolve = new FunctionResolve(identifierNode.str)
         this.currScope.names[name] = resolve
       } else if (resolve instanceof TypeResolve) {
         // a special constructor function for the type
@@ -232,11 +232,11 @@ export class ScopeBuilder {
       let lastPart = last(functionDefNode.name)
       let res = this.currScope.tryResolveMultiPartName(functionDefNode.name)
       if (res instanceof NameError) {
-        this.logNameError(new NameError("'" + lastPart.name + "' not found in module '" + modulePath + "'", lastPart.token))
+        this.logNameError(new NameError("'" + lastPart.str + "' not found in module '" + modulePath + "'", lastPart.token))
       } else {
         let resolve = res as Resolve
         if (!(resolve instanceof FunctionResolve)) {
-          this.logNameError(new NameError("'" + lastPart.name + "' already declared as " + getResolveInfoType(resolve) +
+          this.logNameError(new NameError("'" + lastPart.str + "' already declared as " + getResolveInfoType(resolve) +
             " in module '" + modulePath + "'", lastPart.token))
         } else {
           // add this function definition to the external module
@@ -250,7 +250,7 @@ export class ScopeBuilder {
 
   registerType(typeDefNode: TypeDefNode): void {
     let identifierNode = typeDefNode.name
-    let name = identifierNode.name
+    let name = identifierNode.str
     let resolve = this.currScope.tryResolveNameThisLevel(name)
     if (resolve !== null) {
       this.logNameError(new NameError("'" + name + "' already declared as " + getResolveInfoType(resolve) + " in this scope.", identifierNode.token))
@@ -262,7 +262,7 @@ export class ScopeBuilder {
   registerMacro(macroDefNode: MacroDefNode): void {
     let identifierNode = macroDefNode.name
     let nameTok = identifierNode.token
-    let name = identifierNode.name
+    let name = identifierNode.str
     if (name[0] === "@") throw new AssertError("")
     name = "@" + name
     let resolve = this.currScope.tryResolveNameThisLevel(name)
@@ -283,7 +283,7 @@ export class ScopeBuilder {
     let identifierNode = moduleDefNode.name
     if (!identifierNode) return // parse failure
 
-    let name = identifierNode.name
+    let name = identifierNode.str
     let resolve = this.currScope.tryResolveNameThisLevel(name)
     if (resolve !== null) {
       this.logNameError(new NameError("'" + name + "' already declared as " + getResolveInfoType(resolve) + " in this scope.", identifierNode.token))

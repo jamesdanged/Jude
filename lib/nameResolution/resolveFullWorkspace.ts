@@ -244,7 +244,7 @@ function populateRoots(sessionModel: SessionModel): void {
     resolveRoot.scope = new ModuleScope()
     resolveRoot.scope.tokenStart = startNode.scopeStartToken
     resolveRoot.scope.tokenEnd = startNode.scopeEndToken
-    if (startNode instanceof ModuleDefNode) resolveRoot.scope.moduleShortName = startNode.name.name
+    if (startNode instanceof ModuleDefNode) resolveRoot.scope.moduleShortName = startNode.name.str
 
     // leave resolving imports for later
     candidateRoots.push(resolveRoot)
@@ -270,7 +270,7 @@ function populateRoots(sessionModel: SessionModel): void {
       let moduleName = moduleLibrary.workspaceModulePaths[path]
       if (resolveRoot.root instanceof ModuleDefNode) {
         let moduleDefNode = resolveRoot.root as ModuleDefNode
-        if (moduleDefNode.name.name === moduleName) {
+        if (moduleDefNode.name.str === moduleName) {
           // is a match
           moduleLibrary.modules[moduleName] = resolveRoot.scope
         }

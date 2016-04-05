@@ -95,24 +95,24 @@ export class SymbolNode extends Node {
 }
 
 export class IdentifierNode extends Node {
-  name: string
+  str: string
   token: Token
   constructor(token: Token) {
     super()
-    if (token.type !== TokenType.Identifier && token.type !== TokenType.Macro && token.type !== TokenType.MacroWithSpace) throw new AssertError("")
-    this.name = token.str
+    if (token.type !== TokenType.Identifier && token.type !== TokenType.Macro) throw new AssertError("")
+    this.str = token.str
     this.token = token
   }
   isEndIndex(): boolean {
-    return this.name === "end"
+    return this.str === "end"
   }
   isColon(): boolean {
-    return this.name === ":"
+    return this.str === ":"
   }
   isSpecialIdentifier(): boolean {
     return this.isEndIndex() || this.isColon()
   }
-  toString(): string { return this.name }
+  toString(): string { return this.str }
 }
 
 export class VarDeclarationNode extends Node {
@@ -206,7 +206,11 @@ export class UnaryOpNode extends Node {
     this.token = token
     this.arg = null
   }
-  toString(): string { return this.op }
+  toString(): string {
+    let s = this.op
+    if (this.arg !== null) s = s + this.arg.toString()
+    return "(" + s + ")"
+  }
 }
 
 export class BinaryOpNode extends Node {
@@ -222,7 +226,13 @@ export class BinaryOpNode extends Node {
     this.arg1 = null
     this.arg2 = null
   }
-  toString(): string { return this.op }
+  toString(): string {
+    let s = this.op
+    if (this.arg1 !== null) s = this.arg1.toString() + s
+    if (this.arg2 !== null) s = s + this.arg2.toString()
+    s = "(" + s + ")"
+    return s
+  }
 }
 
 export class TernaryOpNode extends Node {
@@ -275,7 +285,12 @@ export class ParenthesesNode extends MayBeUnparsedNode {
     super()
     this.expression = null
   }
-  toString(): string { return "( ... )" }
+  toString(): string {
+    if (this.expression !== null) {
+      return this.expression.toString()  // don't need to wrap in extra parentheses for printing. Operator nodes will already have them.
+    }
+    return "( <missing> )"
+  }
 }
 
 export class FunctionCallNode extends MayBeUnparsedNode {
@@ -404,7 +419,7 @@ export class GenericArgNode extends Node {
 
   toString(): string {
     let s = ""
-    s += this.name.name
+    s += this.name.str
     if (this.restriction !== null) {
       s += "<:"
       s += this.restriction.toString()
@@ -430,7 +445,7 @@ export class FunctionDefNode extends MayBeUnparsedNode {
     this.scopeEndToken = null
   }
   toSignatureString(): string {
-    let name = last(this.name).name
+    let name = last(this.name).str
     let sig = name
     let genArgs = this.genericArgs
     if (genArgs !== null) {
@@ -466,7 +481,7 @@ export class FunctionDefArgNode extends Node {
   }
   toString(): string {
     let s = ""
-    if (this.name !== null) s += this.name.name
+    if (this.name !== null) s += this.name.str
     if (this.type !== null) s += "::" + this.type.toString()
     if (this.defaultValue !== null) s += "=" + this.defaultValue.toString()
     if (this.isVarArgs) s += "..."
@@ -474,7 +489,7 @@ export class FunctionDefArgNode extends Node {
   }
   toSnippet(snippetIndex: number): string {
     let s = "${" + snippetIndex + ":"
-    if (this.name !== null) s += this.name.name
+    if (this.name !== null) s += this.name.str
     if (this.type !== null) s += "::" + this.type.toString()
     if (this.defaultValue !== null) s += "=" + this.defaultValue.toString()
     if (this.isVarArgs) s += "..."
@@ -728,11 +743,11 @@ export class TryBlockNode extends MayBeUnparsedNode {
 }
 
 export class MacroInvocationNode extends MayBeUnparsedNode {
-  name: IdentifierNode // macro token, includes the @ sign
+  name: MultiPartName // the @ sign may be on the first part or the last part
   params: Node[]
   constructor() {
     super()
-    this.name = null
+    this.name = []
     this.params = []
   }
 }

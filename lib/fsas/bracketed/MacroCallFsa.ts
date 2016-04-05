@@ -1,8 +1,9 @@
 "use strict"
 
+import {streamAtLineWhitespace} from "../../tokens/streamConditions";
+import {runFsaStartToStopAllowWhitespace} from "../general/fsaUtils";
 import {AssertError} from "../../utils/assert";
 import {streamAtNewLine} from "../../tokens/streamConditions";
-import {streamAtMacroWithSpace} from "../../tokens/streamConditions";
 import {ExpressionFsaOptions} from "../general/ExpressionFsa";
 import {WholeFileParseState} from "./../general/ModuleContentsFsa";
 import {streamAtMacroIdentifier} from "../../tokens/streamConditions";
@@ -22,9 +23,10 @@ import {TreeToken} from "../../tokens/Token";
 import {streamAtComma} from "../../tokens/streamConditions";
 import {parseGeneralBlockExpression} from "./../general/ExpressionFsa";
 import {ExpressionFsa} from "../general/ExpressionFsa";
-import {streamAtMacroWithoutSpace} from "../../tokens/streamConditions";
 import {expectNoMoreExpressions} from "../general/fsaUtils";
 import {handleParseErrorOnly} from "../general/fsaUtils";
+import {streamAtIdentifier} from "../../tokens/streamConditions";
+import {streamAtDot} from "../../tokens/streamConditions";
 
 
 /**
@@ -34,33 +36,64 @@ class MacroCallFsa extends BaseFsa {
 
   constructor() {
     super()
-    let startState = this.startState
-    let stopState = this.stopState
+    let start = this.startState
+    let stop = this.stopState
 
-    let macroNameWithSpace = new FsaState("macro name with space")
-    let macroNameWithoutSpace = new FsaState("macro name without space")
+    // for @Base.time
+    // or @time
+    let firstNameWithAt = new FsaState("first name with @")
+    let suffix = new FsaState("suffix")  // no names should have @
+    let dotSuffix = new FsaState(". suffix")
 
-    let spaceDelimitedArgList  = new FsaState("space delimited arg list")
+    // for Base.@time
+    let prefix = new FsaState("prefix") // no names should have @
+    let dotPrefix = new FsaState(". prefix")
+    let lastNameWithAt = new FsaState("last name with @")
+
+    let space = new FsaState("space")
+    let spaceDelimitedArg  = new FsaState("space delimited arg")
+
     let commaDelimitedArgList = new FsaState("comma delimited arg list")
 
-    // space delimited
-    startState.addArc(macroNameWithSpace, streamAtMacroWithSpace, readMacroName)
-    macroNameWithSpace.addArc(spaceDelimitedArgList, alwaysPasses, doNothing)
-    // spaces were already removed from stream, so just keep reading expressions until end of line or ;
-    spaceDelimitedArgList.addArc(stopState, streamAtNewLineOrSemicolon, doNothing)
-    spaceDelimitedArgList.addArc(stopState, streamAtComment, doNothing)
-    spaceDelimitedArgList.addArc(spaceDelimitedArgList, alwaysPasses, readSpaceDelimitedArg)
+    start.addArc(firstNameWithAt, streamAtMacroIdentifier, readMacroNamePart)
+    firstNameWithAt.addArc(dotSuffix, streamAtDot, skipOneToken)
+    dotSuffix.addArc(suffix, streamAtIdentifier, readMacroNamePart)
+    suffix.addArc(dotSuffix, streamAtDot, skipOneToken)
 
-    // comma delimited
-    startState.addArc(macroNameWithoutSpace, streamAtMacroWithoutSpace, readMacroName)
-    macroNameWithoutSpace.addArc(commaDelimitedArgList, streamAtOpenParenthesis, readCommaArgList)
-    commaDelimitedArgList.addArc(stopState, alwaysPasses, doNothing)
+    start.addArc(prefix, streamAtIdentifier, readMacroNamePart)
+    prefix.addArc(dotPrefix, streamAtDot, skipOneToken)
+    dotPrefix.addArc(prefix, streamAtIdentifier, readMacroNamePart)
+    dotPrefix.addArc(lastNameWithAt, streamAtMacroIdentifier, readMacroNamePart)
 
+    // valid name ending states
+    for (let state of [firstNameWithAt, suffix, lastNameWithAt]) {
+      // start a space delimited arg list
+      state.addArc(space, streamAtLineWhitespace, skipOneToken)
+      // start a comma delimited arg list
+      state.addArc(commaDelimitedArgList, streamAtOpenParenthesis, readCommaArgList)
+      // no args nor parentheses before new line
+      state.addArc(stop, streamAtNewLineOrSemicolon, doNothing)
+      state.addArc(stop, streamAtComment, doNothing)
+      state.addArc(stop, streamAtEof, doNothing)
+    }
+
+    // handle space delimited arg list
+    space.addArc(stop, streamAtNewLineOrSemicolon, doNothing)
+    space.addArc(stop, streamAtComment, doNothing)
+    space.addArc(spaceDelimitedArg, alwaysPasses, readSpaceDelimitedArg)
+    // reading expressions for space delimited args will already skip past spaces
+    // so don't need to specifically require a space between args
+    spaceDelimitedArg.addArc(stop, streamAtNewLineOrSemicolon, doNothing)
+    spaceDelimitedArg.addArc(stop, streamAtComment, doNothing)
+    spaceDelimitedArg.addArc(spaceDelimitedArg, alwaysPasses, readSpaceDelimitedArg)
+
+    // handle comma delimited arg list
+    commaDelimitedArgList.addArc(stop, alwaysPasses, doNothing)
   }
 
   runStartToStop(ts: TokenStream, nodeToFill: MacroInvocationNode, wholeState: WholeFileParseState): void {
     let parseState = new ParseState(ts, nodeToFill, wholeState)
-    runFsaStartToStop(this, parseState)
+    runFsaStartToStopAllowWhitespace(this, parseState)
   }
 
 }
@@ -107,9 +140,9 @@ function skipOneToken(state: ParseState): void {
   state.ts.read()
 }
 
-function readMacroName(state: ParseState) {
+function readMacroNamePart(state: ParseState) {
   let tok = state.ts.read()
-  state.nodeToFill.name = new IdentifierNode(tok)
+  state.nodeToFill.name.push(new IdentifierNode(tok))
 }
 
 function readCommaArgList(state: ParseState) {
@@ -153,9 +186,6 @@ var fsaMacroCall = new MacroCallFsa()
  * @param wholeState
  */
 export function parseMacroCall(ts: TokenStream, wholeState: WholeFileParseState): MacroInvocationNode {
-  // TODO catch parse errors if the macro was invoked with parentheses
-  // may even be able to catch parse errors if macro invoked with space delimited params
-  // Just keep reading expressions until end of line
   let node = new MacroInvocationNode()
   fsaMacroCall.runStartToStop(ts, node, wholeState)
   return node

@@ -15,8 +15,7 @@ export enum TokenType {
   StringLiteralContents,  // excludes the $ and any () used in demarcating interpolation
   StringInterpolationStart, // unescaped '$' within a string
   CharacterLiteralContents,
-  Macro,           // macro invocation, ie @assert(true)
-  MacroWithSpace,  // macro invocation, ie @assert true. Distinguish at the tokenizer level since we remove whitespace.
+  Macro,           // macro invocation, ie @assert
   Regex,
   Symbol // eg :foo
   //EndAsIndex // the 'end' keyword when inside square brackets is evaluated at runtime as the last index to an array
@@ -138,10 +137,12 @@ export var postFixOperators = createStringSet([
 ])
 
 
-// note, many operators can be assigned to
-// eg + = 5
-// which changes the meaning of + and makes it no longer a binary operator
-// We will ignore such possibilities.
+// note, many operators can be overridden
+//   eg +(a, b) = a + b
+// That is ok, but changing '+' from binary to some other function or a variable is beyond
+// our ability to statically parse.
+//   eg + = 5
+// We will just throw parse errors when that happens.
 
 export var overridableBinaryOperators =
   mergeSets([arithmeticOperators, comparisonOperators, bitshiftOperators, elementWiseOperators, binaryOperatorsLikeIdentifiers])

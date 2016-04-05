@@ -1,5 +1,6 @@
 "use strict"
 
+import {throwErrorFromTimeout} from "../utils/assert";
 import {log_elapsed} from "../utils/taskUtils";
 import {getAllFilesInAllSubDirectories} from "../utils/fileUtils";
 import {resolveScopesInWorkspaceInvolvingFile} from "../nameResolution/resolveFullWorkspace";
@@ -42,7 +43,10 @@ export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
   for (let path in sessionModel.parseSet.errors) {
     let errorSet = sessionModel.parseSet.errors[path]
     for (let err of errorSet.parseErrors) {
-      console.log(path, err)
+      console.log("Parse error in " + path + ":\n", err)
+      //console.error("Parse error in " + path + ":\n", err)
+      //console.error(err.detailedMessage)
+      //throwErrorFromTimeout(err)
     }
   }
 

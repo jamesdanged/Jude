@@ -99,7 +99,7 @@ export class Scope {
 
     for (let idx = 0; idx < multiPartName.length; idx++) {
       let identNode = multiPartName[idx]
-      let namePart = identNode.name
+      let namePart = identNode.str
       let isLastPart = idx === multiPartName.length - 1
 
       let resolve = currScope.tryResolveNameThroughParentScopes(namePart, false)

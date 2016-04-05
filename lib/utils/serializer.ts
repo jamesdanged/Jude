@@ -48,7 +48,7 @@ export class DecyclingSerializer {
 
   storePrototypeInfo(key, value) {
     if (typeof(value) === "object" && value !== null) {
-      let protoName = Object.getPrototypeOf(value).constructor.name
+      let protoName = Object.getPrototypeOf(value).constructor.str
       if (!(protoName in this.classesWhichDontNeedPrototype)) {
         if (!(protoName in this.prototypeLookup)) {
           throw new AssertError("Type " + protoName + " not set up for serialization.")

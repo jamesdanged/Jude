@@ -1,5 +1,6 @@
 "use strict"
 
+import {TokenType} from "../../tokens/operatorsAndKeywords";
 import {AssertError} from "../../utils/assert";
 import {WholeFileParseState} from "./ModuleContentsFsa";
 import {TokenStream} from "../../tokens/TokenStream";
@@ -55,7 +56,9 @@ export class Arc {
    *
    * @param nextState
    * @param condition
-   * @param onSuccessParseStreamCallback  Callback of dynamic type: (T) => void  where T is the parse state
+   * @param onSuccessParseStreamCallback   callback of dynamic type: (T) => void, where
+   *  for full fsa's: T is the parse state.
+   *  for mini fsa's: T is the token stream.
    */
   constructor(public nextState: FsaState, public condition: (TokenStream) => boolean,
               public onSuccessParseStreamCallback) {
@@ -78,30 +81,32 @@ export class Arc {
  * This separates the algorithm for traversing the FSA from the FSA.
  */
 export function runFsaStartToStop(fsa: BaseFsa, parseState: IFsaParseState): void {
-  runFsaHelper(fsa, parseState, null)
+  runFsaStartToStopHelper(fsa, parseState, false)
 }
 
-export function runFsaStartToEarlyExit(fsa: BaseFsa, parseState: IFsaParseState, earlyStopStates: FsaState[]): void {
-  runFsaHelper(fsa, parseState, earlyStopStates)
+export function runFsaStartToStopAllowWhitespace(fsa: BaseFsa, parseState: IFsaParseState): void {
+  runFsaStartToStopHelper(fsa, parseState, true)
 }
 
-function runFsaHelper(fsa: BaseFsa, parseState: IFsaParseState, earlyStopStates: FsaState[]): void {
+export function runFsaStartToStopHelper(fsa: BaseFsa, parseState: IFsaParseState, allowWhitespace: boolean): void {
+
   let currState = fsa.startState
-  //let streamStartIndex = parseState.ts.index
+  let ts = parseState.ts
 
   // track state sequence and corresponding token stream indexes for help when debugging
   let stateSteps: FsaState[] = []
   let tsIndexes: number[] = []
 
   while (currState !== fsa.stopState) {
-    stateSteps.push(currState)
-    tsIndexes.push(parseState.ts.index)
-
-    if (earlyStopStates !== null) {
-      if (earlyStopStates.indexOf(currState) >= 0) {
-        break
+    // skip whitespace
+    if (!allowWhitespace) {
+      while (!ts.eof() && ts.peek().type === TokenType.LineWhiteSpace) {
+        ts.read()
       }
     }
+
+    stateSteps.push(currState)
+    tsIndexes.push(parseState.ts.index)
 
     // find the correct arc to follow
     let foundArc = false

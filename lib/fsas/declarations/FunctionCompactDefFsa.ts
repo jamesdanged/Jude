@@ -18,7 +18,6 @@ import {BaseFsa} from "../general/fsaUtils";
 import {FsaState} from "../general/fsaUtils";
 import {runFsaStartToStop} from "../general/fsaUtils";
 import {IFsaParseState} from "../general/fsaUtils";
-import {runFsaStartToEarlyExit} from "../general/fsaUtils";
 import {TreeToken} from "../../tokens/Token";
 import {streamAtEquals} from "../../tokens/streamConditions";
 import {IdentifierNode} from "../../parseTree/nodes";
@@ -41,14 +40,15 @@ class FunctionCompactDefFsa extends BaseFsa {
     let startState = this.startState
     let stopState = this.stopState
 
-    let functionName = new FsaState('function name')
-    let functionNameDot = new FsaState("function name dot")
+    let name = new FsaState('function name')
+    let nameDot = new FsaState("function name dot")
+    let overridableOperator = new FsaState("overridable operator")
     let typeParams = new FsaState("type params")
     let functionArgList = new FsaState("function arg list")
     let equalsSign = new FsaState("= sign")
     let functionBody = new FsaState("function body")
 
-    let allStatesExceptStop = [startState, functionName, functionNameDot, typeParams, functionArgList, equalsSign, functionBody]
+    let allStatesExceptStop = [startState, name, nameDot, overridableOperator, typeParams, functionArgList, equalsSign, functionBody]
 
     // TODO allow newlines between elements if the def is contained within a parentheses
     // ignore new lines between parts of the function declaration
@@ -62,18 +62,20 @@ class FunctionCompactDefFsa extends BaseFsa {
 
 
     // function name cannot be skipped
-    startState.addArc(functionName, streamAtIdentifier, readFunctionName)
-    startState.addArc(functionName, streamAtOverridableOperator, readFunctionNameAsOverridableOperator)
+    startState.addArc(name, streamAtIdentifier, readFunctionName)
+    startState.addArc(overridableOperator, streamAtOverridableOperator, readFunctionNameAsOverridableOperator)
 
     // name can have multiple parts if referring to a function name in another module
-    functionName.addArc(functionNameDot, streamAtDot, skipOneToken)
-    functionNameDot.addArc(functionName, streamAtIdentifier, readFunctionName)
-    functionNameDot.addArc(functionName, streamAtOverridableOperator, readFunctionNameAsOverridableOperator)
+    name.addArc(nameDot, streamAtDot, skipOneToken)
+    nameDot.addArc(name, streamAtIdentifier, readFunctionName)
+    nameDot.addArc(overridableOperator, streamAtOverridableOperator, readFunctionNameAsOverridableOperator)
 
     // optional type params
-    functionName.addArc(typeParams, streamAtOpenCurlyBraces, readFunctionGenericParams)
+    name.addArc(typeParams, streamAtOpenCurlyBraces, readFunctionGenericParams)
+    overridableOperator.addArc(typeParams, streamAtOpenCurlyBraces, readFunctionGenericParams)
     // must be followed by function arg list
-    functionName.addArc(functionArgList, streamAtOpenParenthesis, readFunctionArgList)
+    name.addArc(functionArgList, streamAtOpenParenthesis, readFunctionArgList)
+    overridableOperator.addArc(functionArgList, streamAtOpenParenthesis, readFunctionArgList)
     typeParams.addArc(functionArgList, streamAtOpenParenthesis, readFunctionArgList)
 
     // require equals sign
