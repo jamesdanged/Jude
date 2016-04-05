@@ -132,7 +132,7 @@ export class LocalModuleResolve extends ModuleResolve {
  * Imported modules should be unwrapped.
  */
 export class ImportedResolve extends Resolve {
-  constructor(public ref: Resolve, public module: ModuleResolve) {
+  constructor(public ref: Resolve) {
     super(ref.name)
     if (!(ref instanceof FunctionResolve || ref instanceof VariableResolve || ref instanceof TypeResolve || ref instanceof MacroResolve)) {
       throw new AssertError("")
@@ -143,7 +143,7 @@ export class ImportedResolve extends Resolve {
     return this.ref.resolvesInWorkspace()
   }
   shallowCopy(): ImportedResolve {
-    return new ImportedResolve(this.ref, this.module)
+    return new ImportedResolve(this.ref)
   }
 
 }

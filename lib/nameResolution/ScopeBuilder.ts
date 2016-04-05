@@ -159,7 +159,7 @@ export class ScopeBuilder {
       if (!(containingModule instanceof ModuleResolve)) throw new AssertError("")
 
       // store the reference
-      this.currScope.names[name] = new ImportedResolve(res, containingModule as ModuleResolve)
+      this.currScope.names[name] = new ImportedResolve(res)
       return
     }
     throw new AssertError("") // should not get here
@@ -180,7 +180,7 @@ export class ScopeBuilder {
     }
 
     let resolve = this.currScope.tryResolveNameThroughParentScopes(name, true)
-    if (resolve === null) {
+    if (resolve === null || resolve instanceof ImportedResolve) {
       this.registerVariable(identNode)
     } else {
       if (!(resolve instanceof VariableResolve)) {
@@ -196,7 +196,7 @@ export class ScopeBuilder {
   registerVariable(identifierNode: IdentifierNode): void {
     let name = identifierNode.str
     let resolve = this.currScope.tryResolveNameThisLevel(name)
-    if (resolve !== null) {
+    if (resolve !== null && !(resolve instanceof ImportedResolve)) {
       this.logNameError(new NameError("'" + name + "' already declared in this scope.", identifierNode.token))
       return
     }
@@ -212,7 +212,7 @@ export class ScopeBuilder {
 
       // register the function definition
       let resolve = this.currScope.tryResolveNameThisLevel(name)
-      if (resolve === null) {
+      if (resolve === null || resolve instanceof ImportedResolve) {
         resolve = new FunctionResolve(identifierNode.str)
         this.currScope.names[name] = resolve
       } else if (resolve instanceof TypeResolve) {
@@ -252,7 +252,7 @@ export class ScopeBuilder {
     let identifierNode = typeDefNode.name
     let name = identifierNode.str
     let resolve = this.currScope.tryResolveNameThisLevel(name)
-    if (resolve !== null) {
+    if (resolve !== null && !(resolve instanceof ImportedResolve)) {
       this.logNameError(new NameError("'" + name + "' already declared as " + getResolveInfoType(resolve) + " in this scope.", identifierNode.token))
       return
     }
@@ -266,7 +266,7 @@ export class ScopeBuilder {
     if (name[0] === "@") throw new AssertError("")
     name = "@" + name
     let resolve = this.currScope.tryResolveNameThisLevel(name)
-    if (resolve !== null) {
+    if (resolve !== null && !(resolve instanceof ImportedResolve)) {
       this.logNameError(new NameError("'" + name + "' already declared as " + getResolveInfoType(resolve) + " in this scope.", nameTok))
       return
     }

@@ -1,5 +1,6 @@
 "use strict"
 
+import {ImportedResolve} from "./Resolve";
 import {throwErrorFromTimeout} from "../utils/assert";
 import {ModuleLineSet} from "../core/ModuleLibrary";
 import {PrefixTreeNode} from "./PrefixTree";
@@ -191,7 +192,7 @@ export class ModuleScope extends Scope {
 
     for (let scope of this._importAllModules) {
       let resolve = scope.tryResolveExportedName(name)
-      if (resolve !== null) return resolve
+      if (resolve !== null) return wrapInImportIfNecessary(resolve)
     }
 
     let matchingUsings: [ModuleScope, Resolve][] = []
@@ -205,7 +206,7 @@ export class ModuleScope extends Scope {
       return null
     }
     if (matchingUsings.length === 1) {
-      return matchingUsings[0][1]
+      return wrapInImportIfNecessary(matchingUsings[0][1])
     }
     // conflicts between multiple usings
     let msg = "Modules used ("
@@ -483,6 +484,12 @@ export class ExternalModuleScope extends ModuleScope {
 }
 
 
+
+function wrapInImportIfNecessary(resolve: Resolve): Resolve {
+  if (resolve instanceof ImportedResolve) return resolve
+  if (resolve instanceof ModuleResolve) return resolve
+  return new ImportedResolve(resolve)
+}
 
 
 export enum ScopeType {
