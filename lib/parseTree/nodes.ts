@@ -1,5 +1,6 @@
 "use strict"
 
+import {operatorsThatAreIdentifiers} from "../tokens/operatorsAndKeywords";
 import {NameDeclType} from "../nameResolution/Resolve";
 import {last} from "../utils/arrayUtils";
 import {Token} from "./../tokens/Token";
@@ -110,7 +111,7 @@ export class IdentifierNode extends Node {
     return this.str === ":"
   }
   isSpecialIdentifier(): boolean {
-    return this.isEndIndex() || this.isColon()
+    return this.isEndIndex() || this.isColon() // || this.str in operatorsThatAreIdentifiers
   }
   toString(): string { return this.str }
 }

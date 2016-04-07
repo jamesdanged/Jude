@@ -1,5 +1,6 @@
 "use strict"
 
+import {operatorsThatAreIdentifiers} from "./operatorsAndKeywords";
 import {TreeToken} from "./Token";
 import {overridableUnaryOperators} from "./operatorsAndKeywords";
 import {overridableBinaryOperators} from "./operatorsAndKeywords";
@@ -209,6 +210,12 @@ export function streamAtOverridableUnaryOperator(ts: TokenStream): boolean {
 export function streamAtOverridableOperator(ts: TokenStream): boolean {
   return streamAtOverridableBinaryOperator(ts) || streamAtOverridableUnaryOperator(ts)
 }
+export function streamAtOperatorThatCanBeIdentifier(ts: TokenStream): boolean {
+  if (ts.eof()) return false
+  let tok = ts.peek()
+  return tok.type === TokenType.Operator && tok.str in operatorsThatAreIdentifiers
+}
+
 export function streamAtRegex(ts: TokenStream): boolean {
   if (ts.eof()) return false
   let tok = ts.peek()

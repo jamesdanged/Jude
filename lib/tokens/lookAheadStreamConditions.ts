@@ -1,5 +1,6 @@
 "use strict"
 
+import {streamAtOperatorThatCanBeIdentifier} from "./streamConditions";
 import {streamAtOverridableOperator} from "./streamConditions";
 import {streamAtMacroIdentifier} from "./streamConditions";
 import {BaseFsa} from "../fsas/general/fsaUtils";
@@ -15,11 +16,15 @@ import {alwaysPasses} from "./streamConditions";
 import {streamAtArrow} from "./streamConditions";
 import {streamAtNewLine} from "./streamConditions";
 import {FsaState} from "../fsas/general/fsaUtils";
+import {streamAtComma} from "./streamConditions";
+import {streamAtEof} from "./streamConditions";
+import {streamAtSemicolon} from "./streamConditions";
 
 
 // For running the stream through a mini fsa to see if it satifies a complex condition.
 // These need look ahead multiple tokens. The other stream conditions just peek ahead one token.
 // Because they are more complex, it's clearer to represent them as mini FSAs.
+// Using these introduces a bit of extra work to every parse, but the effect seems minimal.
 
 
 function doNothing(ts: TokenStream): void { }
@@ -221,3 +226,38 @@ export function streamAtIdentifierEquals(ts: TokenStream): boolean {
   ts = ts.shallowCopy()
   return isAccepted(identifierEqualsFsa, ts)
 }
+
+
+/**
+ * Satisfied if encounters an operator that can be interpreted as an identifier, for situations like
+ *   map(+, arr)
+ *   broadcast(*, arr)
+ */
+class OperatorAsIdentifierFsa extends BaseFsa {
+  constructor() {
+    super()
+    let start = this.startState
+    let stop = this.stopState
+    let operator = new FsaState("operator")
+
+    start.addArc(operator, streamAtOperatorThatCanBeIdentifier, skipOneToken)
+
+    // ignore whitespace and comments
+    operator.addArc(operator, streamAtComment, skipOneToken)
+    operator.addArc(operator, streamAtLineWhitespace, skipOneToken)
+
+    // the operator can be followed by ';' '\n' ',' or eof
+    operator.addArc(stop, streamAtSemicolon, doNothing)
+    operator.addArc(stop, streamAtNewLine, doNothing)
+    operator.addArc(stop, streamAtComma, doNothing)
+    operator.addArc(stop, streamAtEof, doNothing)
+
+  }
+}
+
+let operatorAsIdentifierFsa = new OperatorAsIdentifierFsa()
+export function streamAtOperatorThatIsIdentifier(ts: TokenStream): boolean {
+  ts = ts.shallowCopy()
+  return isAccepted(operatorAsIdentifierFsa, ts)
+}
+

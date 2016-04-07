@@ -155,6 +155,22 @@ export var overridableUnaryOperators =
   mergeSets([unaryOperators])
 
 
+export var operatorsThatAreIdentifiers = mergeSets(
+  [arithmeticOperators, comparisonOperators, bitshiftOperators, elementWiseOperators,
+    binaryOperatorsLikeIdentifiers]
+)
+addToSet(operatorsThatAreIdentifiers, "!")
+addToSet(operatorsThatAreIdentifiers, "&")
+addToSet(operatorsThatAreIdentifiers, "|")
+addToSet(operatorsThatAreIdentifiers, "~")
+addToSet(operatorsThatAreIdentifiers, "$")
+addToSet(operatorsThatAreIdentifiers, ":")
+addToSet(operatorsThatAreIdentifiers, "|>")
+
+
+
+
+
 export var keywords = createStringSet([
   "function", "macro", "quote", //"ccall",
   "module", "baremodule",

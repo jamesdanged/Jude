@@ -114,6 +114,7 @@ import {RegexNode} from "../../parseTree/nodes";
 import {streamAtRegex} from "../../tokens/streamConditions";
 import {Range} from "../../tokens/Token"
 import {Token} from "../../tokens/Token";
+import {streamAtOperatorThatIsIdentifier} from "../../tokens/lookAheadStreamConditions";
 
 /**
  * Automaton used for recognizing expressions.
@@ -312,12 +313,20 @@ export class ExpressionFsa extends BaseFsa {
       }
     }
 
+    // allow certain operators to be treated as identifiers if they appear in isolated circumstances, ie
+    //   preceded by BOF ,
+    //   followed by , \n ; or EOF
+    // This condition must be tested before other arcs out of the start and binary states.
+    for (let state of [startState, binaryMayOmitArg2State]) {
+      state.addArc(identifierState, streamAtOperatorThatIsIdentifier, readOperatorAndConvertToIdentifier)
+    }
+
     // These states must be followed by something that creates a valid expression.
     for (let state of [startState, returnState, unaryState, binaryState, binaryMayOmitArg2State, ternaryState, commaAfterSplatState]) {
+      state.addArc(keywordBlockState, streamAtFunctionCompactDeclaration, readFunctionCompactDef) // must be checked before streamAtIdentifier and streamAtUnaryOp
       state.addArc(unaryState, streamAtUnaryOp, readUnaryOp )  // can have multiple unary in a row
       state.addArc(numberState, streamAtNumber, readNumber )
       state.addArc(symbolState, streamAtSymbol, readSymbol )
-      state.addArc(keywordBlockState, streamAtFunctionCompactDeclaration, readFunctionCompactDef) // must be checked before streamAtIdentifier
       state.addArc(keywordBlockState, streamAtAnonymousFunction, readAnonymousFunctionDef) // must be checked before streamAtIdentifier and streamAtOpenParenthesis
       state.addArc(macroCallState, streamAtMacroInvocation, readMacroInvocation) // must be checked before streamAtIdentifier
       state.addArc(identifierState, streamAtIdentifier, readIdentifier )
@@ -624,6 +633,14 @@ function readRegex(state: ParseState): void {
 
 function readIdentifier(state: ParseState): void {
   let token = state.ts.read()
+  let node = new IdentifierNode(token)
+  node.str = token.str
+  state.nodes.push(node)
+}
+
+function readOperatorAndConvertToIdentifier(state: ParseState): void {
+  let token = state.ts.read()
+  token.type = TokenType.Identifier
   let node = new IdentifierNode(token)
   node.str = token.str
   state.nodes.push(node)
