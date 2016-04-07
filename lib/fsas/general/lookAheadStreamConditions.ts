@@ -3,7 +3,7 @@
 import {streamAtOperatorThatCanBeIdentifier} from "./../../tokens/streamConditions";
 import {streamAtOverridableOperator} from "./../../tokens/streamConditions";
 import {streamAtMacroIdentifier} from "./../../tokens/streamConditions";
-import {BaseFsa} from "fsaUtils";
+import {BaseFsa} from "./fsaUtils";
 import {streamAtIdentifier} from "./../../tokens/streamConditions";
 import {TokenStream} from "./../../tokens/TokenStream";
 import {streamAtDot} from "./../../tokens/streamConditions";
@@ -15,7 +15,7 @@ import {streamAtEquals} from "./../../tokens/streamConditions";
 import {alwaysPasses} from "./../../tokens/streamConditions";
 import {streamAtArrow} from "./../../tokens/streamConditions";
 import {streamAtNewLine} from "./../../tokens/streamConditions";
-import {FsaState} from "fsaUtils";
+import {FsaState} from "./fsaUtils";
 import {streamAtComma} from "./../../tokens/streamConditions";
 import {streamAtEof} from "./../../tokens/streamConditions";
 import {streamAtSemicolon} from "./../../tokens/streamConditions";

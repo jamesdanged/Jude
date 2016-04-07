@@ -13,7 +13,7 @@ import {ProjectFilesHash} from "../core/parseWorkspace";
 import {unmockAll} from "./utils/emptySession";
 
 
-describe("operators", () => {
+describe("variable assignment", () => {
   let j13to20 = jasmine13to20(); let beforeAll = j13to20.beforeAll; let beforeEach = j13to20.beforeEach; let it = j13to20.it; let afterEach = j13to20.afterEach; let afterAll = j13to20.afterAll
 
   let sessionModel = createTestSessionModel()
@@ -21,33 +21,18 @@ describe("operators", () => {
 
   let path1 = "/file1.jl"
   let contents1 =
-    `function map(a, b)
-end
-+(a, b) = a + b
-arr = []
-map(+, arr)
-map(arr, +)
+`a, b = (1, 2)
 `
 
   let path2 = "/file2.jl"
   let contents2 =
-    `
-+(a, b) = a + b
--(a, b) = a - b
-*(a, b) = a * b
-/(a, b) = a / b
-arr = [+, -, *, /]
+`(a, b) = (1, 2)
 `
 
   let path3 = "/file3.jl"
   let contents3 =
-    `
-+(a, b) = a + b
--(a, b) = a - b
-%(a, b) = a % b
-+
--
-%
+` a = []
+a[1], b = 2, 3
 `
 
 
@@ -64,20 +49,20 @@ arr = [+, -, *, /]
   })
 
 
-  it("can be treated as identifiers in function calls", async (done) => {
+  it("should recognize assignment like a,b = (1, 2)", async (done) => {
     await parseFullWorkspaceAsync(sessionModel)
     expect(errors[path1].parseErrors.length).toBe(0)
     expect(errors[path1].nameErrors.length).toBe(0)
     done()
   })
 
-  it("can be identifiers in an array", async (done) => {
+  it("should recognize assignment like (a,b) = (1, 2)", async (done) => {
     expect(errors[path2].parseErrors.length).toBe(0)
     expect(errors[path2].nameErrors.length).toBe(0)
     done()
   })
 
-  it("can be identifiers on their own", async (done) => {
+  it("should recognize assignment to array index", async (done) => {
     expect(errors[path3].parseErrors.length).toBe(0)
     expect(errors[path3].nameErrors.length).toBe(0)
     done()

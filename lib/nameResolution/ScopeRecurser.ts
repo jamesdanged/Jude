@@ -1,5 +1,6 @@
 "use strict"
 
+import {ParenthesesNode} from "../parseTree/nodes";
 import {LetBlockNode} from "../parseTree/nodes";
 import {MacroInvocationNode} from "../parseTree/nodes";
 import {MacroDefNode} from "../parseTree/nodes";
@@ -277,6 +278,19 @@ export class ScopeRecurser {
           } else {
             // do not register a name
             // could be assigning to an index in an array
+          }
+        }
+      } else if (node.arg1 instanceof ParenthesesNode) {
+        let parenNode = node.arg1 as ParenthesesNode
+        if (parenNode.expression instanceof TupleNode) {
+          let tupNode = parenNode.expression as TupleNode
+          for (let item of tupNode.nodes) {
+            if (item instanceof IdentifierNode) {
+              this.builder.createNameByAssignmentIfNecessary(item)
+            } else {
+              // do not register a name
+              // could be assigning to an index in an array
+            }
           }
         }
       } else if (node.arg1 instanceof MultiDotNode) {
