@@ -4,6 +4,7 @@
 /// <reference path="../defs/jasmine/jasmine.d.ts" />
 
 
+import {mockAll} from "./utils/emptySession";
 import {BinaryOpNode} from "../parseTree/nodes";
 import {unmockOpenFiles} from "../utils/atomApi";
 import {jasmine13to20} from "../utils/jasmine13to20";
@@ -15,6 +16,7 @@ import {unmockProjectFiles} from "../core/parseWorkspace";
 import {mockRunDelayed} from "../utils/taskUtils";
 import {mockProjectFiles} from "../core/parseWorkspace";
 import {ProjectFilesHash} from "../core/parseWorkspace";
+import {unmockAll} from "./utils/emptySession";
 
 
 describe("operator overloading", () => {
@@ -39,15 +41,11 @@ end
     let o: ProjectFilesHash = {}
     o[path1] = contents1
     o[path2] = contents2
-    mockProjectFiles(o)
-    mockOpenFiles([path1, path2])
-    mockRunDelayed()
+    mockAll(o)
   })
 
   afterAll(() => {
-    unmockProjectFiles()
-    unmockOpenFiles()
-    unmockRunDelayed()
+    unmockAll()
   })
 
 

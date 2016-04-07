@@ -6,6 +6,12 @@ import {VariableResolve} from "../../nameResolution/Resolve";
 import {LibrarySerialized} from "../../core/ModuleLibrary";
 import {SessionModel} from "../../core/SessionModel";
 import {Token} from "../../tokens/Token";
+import {unmockRunDelayed} from "../../utils/taskUtils";
+import {unmockOpenFiles} from "../../utils/atomApi";
+import {unmockProjectFiles} from "../../core/parseWorkspace";
+import {mockRunDelayed} from "../../utils/taskUtils";
+import {mockOpenFiles} from "../../utils/atomApi";
+import {mockProjectFiles} from "../../core/parseWorkspace";
 
 export var jlFilesDir: string = __dirname + "/../jl"
 
@@ -28,4 +34,21 @@ export function createTestSessionModel(): SessionModel {
   core.exportedNames = createStringSet(namesToAdd)
 
   return sessionModel
+}
+
+
+export function mockAll(filesAndContents: {[path:string]:string}): void {
+  mockProjectFiles(filesAndContents)
+  let paths = []
+  for (let path in filesAndContents) {
+    paths.push(path)
+  }
+  mockOpenFiles(paths)
+  mockRunDelayed()
+}
+
+export function unmockAll(): void {
+  unmockProjectFiles()
+  unmockOpenFiles()
+  unmockRunDelayed()
 }

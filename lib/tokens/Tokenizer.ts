@@ -514,12 +514,16 @@ export class Tokenizer {
 
       if (c === ".") {
         if (foundDecimal) {
-          throw new InvalidParseError("Cannot have two decimals in a number: \"" + str + c + "\"",
-            new Token(c, TokenType.Number, new Range(ss.prevPoint(), ss.prevPoint()) ))
+          ss.unread()
+          break
+          //throw new InvalidParseError("Cannot have two decimals in a number: \"" + str + c + "\"",
+          //  new Token(c, TokenType.Number, new Range(ss.prevPoint(), ss.prevPoint()) ))
         }
         if (foundExp) {
-          throw new InvalidParseError("Cannot have decimal in exponent: \"" + str + c + "\"",
-            new Token(c, TokenType.Number, new Range(ss.prevPoint(), ss.prevPoint()) ))
+          ss.unread()
+          break
+          //throw new InvalidParseError("Cannot have decimal in exponent: \"" + str + c + "\"",
+          //  new Token(c, TokenType.Number, new Range(ss.prevPoint(), ss.prevPoint()) ))
         }
         foundDecimal = true
         str = str + c

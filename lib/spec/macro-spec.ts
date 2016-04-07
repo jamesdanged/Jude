@@ -4,6 +4,7 @@
 /// <reference path="../defs/jasmine/jasmine.d.ts" />
 
 
+import {mockAll} from "./utils/emptySession";
 import {unmockOpenFiles} from "../utils/atomApi";
 import {jasmine13to20} from "../utils/jasmine13to20";
 import {createTestSessionModel} from "./utils/emptySession";
@@ -14,6 +15,7 @@ import {unmockProjectFiles} from "../core/parseWorkspace";
 import {mockRunDelayed} from "../utils/taskUtils";
 import {mockProjectFiles} from "../core/parseWorkspace";
 import {ProjectFilesHash} from "../core/parseWorkspace";
+import {unmockAll} from "./utils/emptySession";
 
 
 describe("macros", () => {
@@ -69,15 +71,11 @@ using Mod
     o[path_macro_1] = contents_macro_1
     o[path_macro_2] = contents_macro_2
     o[path_macro_3] = contents_macro_3
-    mockProjectFiles(o)
-    mockOpenFiles([path_macro_1, path_macro_2, path_macro_3])
-    mockRunDelayed()
+    mockAll(o)
   })
 
   afterAll(() => {
-    unmockProjectFiles()
-    unmockOpenFiles()
-    unmockRunDelayed()
+    unmockAll()
   })
 
 

@@ -204,9 +204,9 @@ export class ExpressionFsa extends BaseFsa {
       state.addArc(state, streamAtComment, skipOneToken)
     }
     // ignore line whitespace everywhere
-    // except immediately after a number
+    // except in certain situations, where the absence of whitespace can imply multiplication
     for (let state of allStatesNotStop) {
-      if (state === numberState) continue
+      if (state === numberState || state === parenthesesState || state === functionCallState) continue
       state.addArc(state, streamAtLineWhitespace, skipOneToken)
     }
 
@@ -330,6 +330,20 @@ export class ExpressionFsa extends BaseFsa {
       state.addArc(regexState, streamAtRegex, readRegex)
     }
 
+    // a number followed immediately by an identifier or an open parentheses (no whitespace in between) implies multiplication
+    numberState.addArc(identifierState, streamAtIdentifier, readImplicitMultiplicationIdentifier)
+    numberState.addArc(parenthesesState, streamAtOpenParenthesis, readImplicitMultiplicationParentheses)
+    // otherwise spaces are ignored
+    numberState.addArc(numberState, streamAtLineWhitespace, skipOneToken)
+
+    // a parentheses followed immediately by an identifier (no whitespace in between) implies multiplication
+    for (let state of [parenthesesState, functionCallState]) {
+      state.addArc(identifierState, streamAtIdentifier, readImplicitMultiplicationIdentifier)
+      // otherwise spaces are ignored
+      state.addArc(state, streamAtLineWhitespace, skipOneToken)
+    }
+
+
     // these states result in expressions that can be invoked as functions or indexed as arrays
     // [] and () are both resolved as function invocations
     // {} is a type parameter qualifier which can be surpisingly applied to any expression
@@ -342,12 +356,6 @@ export class ExpressionFsa extends BaseFsa {
 
       state.addArc(stopState, streamNotAtContinuingOpNorOpenBracket, doNothing) // be sure to add this last as a lot of tokens will trigger it
     }
-
-    // a number followed immediately by an identifier or an open parentheses implies multiplication
-    numberState.addArc(identifierState, streamAtIdentifier, readImplicitMultiplicationIdentifier)
-    numberState.addArc(parenthesesState, streamAtOpenParenthesis, readImplicitMultiplicationParentheses)
-    // otherwise spaces are ignored
-    numberState.addArc(numberState, streamAtLineWhitespace, skipOneToken)
 
     // these states cannot be directly invoked afterwards
     //   (if surrounded in parentheses, they can be though)
@@ -585,11 +593,11 @@ function readImplicitMultiplicationParentheses(state: ParseState): void {
 }
 
 function insertImplicitMultiplication(state: ParseState): void {
-  let numberNode = last(state.nodes) as NumberNode
-  let numberEndPoint = numberNode.token.range.end
+  let nextToken = state.ts.peek()
+  let nextTokenStart = nextToken.range.start
 
   // create a non-existent token for the implied multiplication
-  let rng = new Range(numberEndPoint, numberEndPoint) // position the fake * token at the end of the number token, but with 0 length
+  let rng = new Range(nextTokenStart, nextTokenStart) // position the fake * token at the end of the number token, but with 0 length
   let token = new Token("*", TokenType.Operator, rng)
   state.nodes.push(new BinaryOpNode(token))
 }

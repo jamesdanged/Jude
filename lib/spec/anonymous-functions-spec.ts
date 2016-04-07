@@ -4,6 +4,7 @@
 /// <reference path="../defs/jasmine/jasmine.d.ts" />
 
 
+import {mockAll} from "./utils/emptySession";
 import {BinaryOpNode} from "../parseTree/nodes";
 import {unmockOpenFiles} from "../utils/atomApi";
 import {jasmine13to20} from "../utils/jasmine13to20";
@@ -15,6 +16,7 @@ import {unmockProjectFiles} from "../core/parseWorkspace";
 import {mockRunDelayed} from "../utils/taskUtils";
 import {mockProjectFiles} from "../core/parseWorkspace";
 import {ProjectFilesHash} from "../core/parseWorkspace";
+import {unmockAll} from "./utils/emptySession";
 
 
 describe("anonymous functions", () => {
@@ -34,15 +36,11 @@ map((a, b) -> a + b + 1, arr)
   beforeAll(() => {
     let o: ProjectFilesHash = {}
     o[path] = contents
-    mockProjectFiles(o)
-    mockOpenFiles([path])
-    mockRunDelayed()
+    mockAll(o)
   })
 
   afterAll(() => {
-    unmockProjectFiles()
-    unmockOpenFiles()
-    unmockRunDelayed()
+    unmockAll()
   })
 
 

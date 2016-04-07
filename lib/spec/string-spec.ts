@@ -3,17 +3,12 @@
 /// <reference path="../defs/node/node.d.ts" />
 /// <reference path="../defs/jasmine/jasmine.d.ts" />
 
-
-import {unmockOpenFiles} from "../utils/atomApi";
+import {mockAll} from "./utils/emptySession";
 import {jasmine13to20} from "../utils/jasmine13to20";
 import {createTestSessionModel} from "./utils/emptySession";
-import {mockOpenFiles} from "../utils/atomApi";
 import {parseFullWorkspaceAsync} from "../core/parseWorkspace";
-import {unmockRunDelayed} from "../utils/taskUtils";
-import {unmockProjectFiles} from "../core/parseWorkspace";
-import {mockRunDelayed} from "../utils/taskUtils";
-import {mockProjectFiles} from "../core/parseWorkspace";
 import {ProjectFilesHash} from "../core/parseWorkspace";
+import {unmockAll} from "./utils/emptySession";
 
 
 describe("strings", () => {
@@ -61,15 +56,11 @@ Can have backticks: \`
     o[path2] = contents2
     o[path3] = contents3
     o[path4] = contents4
-    mockProjectFiles(o)
-    mockOpenFiles([path1, path2, path3, path4])
-    mockRunDelayed()
+    mockAll(o)
   })
 
   afterAll(() => {
-    unmockProjectFiles()
-    unmockOpenFiles()
-    unmockRunDelayed()
+    unmockAll()
   })
 
 

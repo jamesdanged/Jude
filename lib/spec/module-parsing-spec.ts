@@ -16,6 +16,8 @@ import {ProjectFilesHash} from "../core/parseWorkspace";
 import {parseFullWorkspaceAsync} from "../core/parseWorkspace";
 import {mockRunDelayed} from "../utils/taskUtils";
 import {unmockRunDelayed} from "../utils/taskUtils";
+import {unmockAll} from "./utils/emptySession";
+import {mockAll} from "./utils/emptySession";
 
 
 describe("basic module parsing", () => {
@@ -60,15 +62,11 @@ baz = 5
     o[modPath] = modFileContents
     o[path1] = contents1
     o[path2] = contents2
-    mockProjectFiles(o)
-    mockOpenFiles([modPath, path1, path2])
-    mockRunDelayed()
+    mockAll(o)
   })
 
   afterAll(() => {
-    unmockProjectFiles()
-    unmockOpenFiles()
-    unmockRunDelayed()
+    unmockAll()
   })
 
 
@@ -113,15 +111,11 @@ Mod2.bar()
   beforeAll(() => {
     let o: ProjectFilesHash = {}
     o[path] = contents
-    mockProjectFiles(o)
-    mockOpenFiles([path])
-    mockRunDelayed()
+    mockAll(o)
   })
 
   afterAll(() => {
-    unmockProjectFiles()
-    unmockOpenFiles()
-    unmockRunDelayed()
+    unmockAll()
   })
 
 

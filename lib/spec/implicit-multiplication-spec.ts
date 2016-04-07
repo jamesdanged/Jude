@@ -4,6 +4,7 @@
 /// <reference path="../defs/jasmine/jasmine.d.ts" />
 
 
+import {mockAll} from "./utils/emptySession";
 import {BinaryOpNode} from "../parseTree/nodes";
 import {unmockOpenFiles} from "../utils/atomApi";
 import {jasmine13to20} from "../utils/jasmine13to20";
@@ -15,6 +16,7 @@ import {unmockProjectFiles} from "../core/parseWorkspace";
 import {mockRunDelayed} from "../utils/taskUtils";
 import {mockProjectFiles} from "../core/parseWorkspace";
 import {ProjectFilesHash} from "../core/parseWorkspace";
+import {unmockAll} from "./utils/emptySession";
 
 
 describe("implicit multiplication", () => {
@@ -29,20 +31,17 @@ describe("implicit multiplication", () => {
 b = 3
 2a+b
 2(a+b)
+(1+a)b
 `
 
   beforeAll(() => {
     let o: ProjectFilesHash = {}
     o[path] = contents
-    mockProjectFiles(o)
-    mockOpenFiles([path])
-    mockRunDelayed()
+    mockAll(o)
   })
 
   afterAll(() => {
-    unmockProjectFiles()
-    unmockOpenFiles()
-    unmockRunDelayed()
+    unmockAll()
   })
 
 
@@ -65,5 +64,13 @@ b = 3
     done()
   })
 
+  it("should parse (1+a)b as ((1+a)*b)", async (done) => {
+    expect(errors[path].parseErrors.length).toBe(0)
+    expect(errors[path].nameErrors.length).toBe(0)
+    let node = sessionModel.parseSet.fileLevelNodes[path]
+    let expr = node.expressions[4]
+    expect(expr.toString()).toBe("((1+a)*b)")
+    done()
+  })
 
 })
