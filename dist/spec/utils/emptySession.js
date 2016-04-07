@@ -17,6 +17,12 @@ var Resolve_1 = require("../../nameResolution/Resolve");
 var ModuleLibrary_1 = require("../../core/ModuleLibrary");
 var SessionModel_1 = require("../../core/SessionModel");
 var Token_1 = require("../../tokens/Token");
+var taskUtils_1 = require("../../utils/taskUtils");
+var atomApi_1 = require("../../utils/atomApi");
+var parseWorkspace_1 = require("../../core/parseWorkspace");
+var taskUtils_2 = require("../../utils/taskUtils");
+var atomApi_2 = require("../../utils/atomApi");
+var parseWorkspace_2 = require("../../core/parseWorkspace");
 exports.jlFilesDir = __dirname + "/../jl";
 function createTestSessionModel() {
     let sessionModel = new SessionModel_1.SessionModel();
@@ -36,4 +42,20 @@ function createTestSessionModel() {
     return sessionModel;
 }
 exports.createTestSessionModel = createTestSessionModel;
+function mockAll(filesAndContents) {
+    parseWorkspace_2.mockProjectFiles(filesAndContents);
+    let paths = [];
+    for (let path in filesAndContents) {
+        paths.push(path);
+    }
+    atomApi_2.mockOpenFiles(paths);
+    taskUtils_2.mockRunDelayed();
+}
+exports.mockAll = mockAll;
+function unmockAll() {
+    parseWorkspace_1.unmockProjectFiles();
+    atomApi_1.unmockOpenFiles();
+    taskUtils_1.unmockRunDelayed();
+}
+exports.unmockAll = unmockAll;
 //# sourceMappingURL=emptySession.js.map

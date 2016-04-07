@@ -101,7 +101,7 @@ class IdentifierNode extends Node {
         return this.str === ":";
     }
     isSpecialIdentifier() {
-        return this.isEndIndex() || this.isColon();
+        return this.isEndIndex() || this.isColon(); // || this.str in operatorsThatAreIdentifiers
     }
     toString() { return this.str; }
 }

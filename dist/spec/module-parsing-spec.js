@@ -14,13 +14,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 };
 var emptySession_1 = require("./utils/emptySession");
 var jasmine13to20_1 = require("../utils/jasmine13to20");
-var atomApi_1 = require("../utils/atomApi");
-var atomApi_2 = require("../utils/atomApi");
 var parseWorkspace_1 = require("../core/parseWorkspace");
-var parseWorkspace_2 = require("../core/parseWorkspace");
-var parseWorkspace_3 = require("../core/parseWorkspace");
-var taskUtils_1 = require("../utils/taskUtils");
-var taskUtils_2 = require("../utils/taskUtils");
+var emptySession_2 = require("./utils/emptySession");
+var emptySession_3 = require("./utils/emptySession");
 describe("basic module parsing", () => {
     let j13to20 = jasmine13to20_1.jasmine13to20();
     let beforeAll = j13to20.beforeAll;
@@ -59,17 +55,13 @@ baz = 5
         o[modPath] = modFileContents;
         o[path1] = contents1;
         o[path2] = contents2;
-        parseWorkspace_1.mockProjectFiles(o);
-        atomApi_1.mockOpenFiles([modPath, path1, path2]);
-        taskUtils_1.mockRunDelayed();
+        emptySession_3.mockAll(o);
     });
     afterAll(() => {
-        parseWorkspace_2.unmockProjectFiles();
-        atomApi_2.unmockOpenFiles();
-        taskUtils_2.unmockRunDelayed();
+        emptySession_2.unmockAll();
     });
     it("should only have 1 parse error for the missing file", (done) => __awaiter(this, void 0, Promise, function* () {
-        yield parseWorkspace_3.parseFullWorkspaceAsync(sessionModel);
+        yield parseWorkspace_1.parseFullWorkspaceAsync(sessionModel);
         expect(errors[modPath].parseErrors.length).toBe(1);
         expect(errors[path1].parseErrors.length).toBe(0);
         expect(errors[path2].parseErrors.length).toBe(0);
@@ -103,17 +95,13 @@ Mod2.bar()
     beforeAll(() => {
         let o = {};
         o[path] = contents;
-        parseWorkspace_1.mockProjectFiles(o);
-        atomApi_1.mockOpenFiles([path]);
-        taskUtils_1.mockRunDelayed();
+        emptySession_3.mockAll(o);
     });
     afterAll(() => {
-        parseWorkspace_2.unmockProjectFiles();
-        atomApi_2.unmockOpenFiles();
-        taskUtils_2.unmockRunDelayed();
+        emptySession_2.unmockAll();
     });
     it("should be able to have multiple modules in a single file", (done) => __awaiter(this, void 0, Promise, function* () {
-        yield parseWorkspace_3.parseFullWorkspaceAsync(sessionModel);
+        yield parseWorkspace_1.parseFullWorkspaceAsync(sessionModel);
         expect(errors[path].parseErrors.length).toBe(0);
         expect(errors[path].nameErrors.length).toBe(0);
         done();

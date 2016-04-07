@@ -12,24 +12,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
-var streamConditions_1 = require("./streamConditions");
-var streamConditions_2 = require("./streamConditions");
-var streamConditions_3 = require("./streamConditions");
-var fsaUtils_1 = require("../fsas/general/fsaUtils");
-var streamConditions_4 = require("./streamConditions");
-var streamConditions_5 = require("./streamConditions");
-var streamConditions_6 = require("./streamConditions");
-var streamConditions_7 = require("./streamConditions");
-var streamConditions_8 = require("./streamConditions");
-var streamConditions_9 = require("./streamConditions");
-var streamConditions_10 = require("./streamConditions");
-var streamConditions_11 = require("./streamConditions");
-var streamConditions_12 = require("./streamConditions");
-var streamConditions_13 = require("./streamConditions");
-var fsaUtils_2 = require("../fsas/general/fsaUtils");
-var streamConditions_14 = require("./streamConditions");
-var streamConditions_15 = require("./streamConditions");
-var streamConditions_16 = require("./streamConditions");
+var streamConditions_1 = require("./../../tokens/streamConditions");
+var streamConditions_2 = require("./../../tokens/streamConditions");
+var streamConditions_3 = require("./../../tokens/streamConditions");
+var fsaUtils_1 = require("./fsaUtils");
+var streamConditions_4 = require("./../../tokens/streamConditions");
+var streamConditions_5 = require("./../../tokens/streamConditions");
+var streamConditions_6 = require("./../../tokens/streamConditions");
+var streamConditions_7 = require("./../../tokens/streamConditions");
+var streamConditions_8 = require("./../../tokens/streamConditions");
+var streamConditions_9 = require("./../../tokens/streamConditions");
+var streamConditions_10 = require("./../../tokens/streamConditions");
+var streamConditions_11 = require("./../../tokens/streamConditions");
+var streamConditions_12 = require("./../../tokens/streamConditions");
+var streamConditions_13 = require("./../../tokens/streamConditions");
+var fsaUtils_2 = require("./fsaUtils");
+var streamConditions_14 = require("./../../tokens/streamConditions");
+var streamConditions_15 = require("./../../tokens/streamConditions");
+var streamConditions_16 = require("./../../tokens/streamConditions");
 // For running the stream through a mini fsa to see if it satifies a complex condition.
 // These need look ahead multiple tokens. The other stream conditions just peek ahead one token.
 // Because they are more complex, it's clearer to represent them as mini FSAs.

@@ -107,12 +107,14 @@ class FunctionDefArgListFsa extends fsaUtils_3.BaseFsa {
         optionalArgDefaultValue.addArc(stopState, streamConditions_4.streamAtEof, doNothing);
         // proceed to next optional arg
         optionalArgComma.addArc(optionalArgName, streamConditions_5.streamAtIdentifier, readOrderedArgName);
-        // the last ordered arg or optional args can be a varargs
+        // the last ordered arg or optional args or keyword arg can be a varargs
         // ie foo(a, b=2, c...)
         orderedArgName.addArc(varArgs, streamConditions_1.streamAtTripleDot, markArgAsVarArgs);
         optionalArgName.addArc(varArgs, streamConditions_1.streamAtTripleDot, markArgAsVarArgs);
+        keywordArgName.addArc(varArgs, streamConditions_1.streamAtTripleDot, markArgAsVarArgs);
         orderedArgType.addArc(varArgs, streamConditions_1.streamAtTripleDot, markArgAsVarArgs);
         optionalArgType.addArc(varArgs, streamConditions_1.streamAtTripleDot, markArgAsVarArgs);
+        keywordArgType.addArc(varArgs, streamConditions_1.streamAtTripleDot, markArgAsVarArgs);
         varArgs.addArc(semicolonState, streamConditions_3.streamAtSemicolon, skipOneToken);
         varArgs.addArc(stopState, streamConditions_4.streamAtEof, doNothing);
         // after semicolon

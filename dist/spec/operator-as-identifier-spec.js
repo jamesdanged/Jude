@@ -19,7 +19,7 @@ var jasmine13to20_1 = require("../utils/jasmine13to20");
 var emptySession_2 = require("./utils/emptySession");
 var parseWorkspace_1 = require("../core/parseWorkspace");
 var emptySession_3 = require("./utils/emptySession");
-describe("implicit multiplication", () => {
+describe("operators", () => {
     let j13to20 = jasmine13to20_1.jasmine13to20();
     let beforeAll = j13to20.beforeAll;
     let beforeEach = j13to20.beforeEach;
@@ -28,45 +28,56 @@ describe("implicit multiplication", () => {
     let afterAll = j13to20.afterAll;
     let sessionModel = emptySession_2.createTestSessionModel();
     let errors = sessionModel.parseSet.errors;
-    let path = "/file.jl";
-    let contents = `a = 5
-b = 3
-2a+b
-2(a+b)
-(1+a)b
+    let path1 = "/file1.jl";
+    let contents1 = `function map(a, b)
+end
++(a, b) = a + b
+arr = []
+map(+, arr)
+map(arr, +)
+`;
+    let path2 = "/file2.jl";
+    let contents2 = `
++(a, b) = a + b
+-(a, b) = a - b
+*(a, b) = a * b
+/(a, b) = a / b
+arr = [+, -, *, /]
+`;
+    let path3 = "/file3.jl";
+    let contents3 = `
++(a, b) = a + b
+-(a, b) = a - b
+%(a, b) = a % b
++
+-
+%
 `;
     beforeAll(() => {
         let o = {};
-        o[path] = contents;
+        o[path1] = contents1;
+        o[path2] = contents2;
+        o[path3] = contents3;
         emptySession_1.mockAll(o);
     });
     afterAll(() => {
         emptySession_3.unmockAll();
     });
-    it("should parse 2a+b as ((2*a)+b)", (done) => __awaiter(this, void 0, Promise, function* () {
+    it("can be treated as identifiers in function calls", (done) => __awaiter(this, void 0, Promise, function* () {
         yield parseWorkspace_1.parseFullWorkspaceAsync(sessionModel);
-        expect(errors[path].parseErrors.length).toBe(0);
-        expect(errors[path].nameErrors.length).toBe(0);
-        let node = sessionModel.parseSet.fileLevelNodes[path];
-        let expr = node.expressions[2];
-        expect(expr.toString()).toBe("((2*a)+b)");
+        expect(errors[path1].parseErrors.length).toBe(0);
+        expect(errors[path1].nameErrors.length).toBe(0);
         done();
     }));
-    it("should parse 2(a+b) as (2*(a+b))", (done) => __awaiter(this, void 0, Promise, function* () {
-        expect(errors[path].parseErrors.length).toBe(0);
-        expect(errors[path].nameErrors.length).toBe(0);
-        let node = sessionModel.parseSet.fileLevelNodes[path];
-        let expr = node.expressions[3];
-        expect(expr.toString()).toBe("(2*(a+b))");
+    it("can be identifiers in an array", (done) => __awaiter(this, void 0, Promise, function* () {
+        expect(errors[path2].parseErrors.length).toBe(0);
+        expect(errors[path2].nameErrors.length).toBe(0);
         done();
     }));
-    it("should parse (1+a)b as ((1+a)*b)", (done) => __awaiter(this, void 0, Promise, function* () {
-        expect(errors[path].parseErrors.length).toBe(0);
-        expect(errors[path].nameErrors.length).toBe(0);
-        let node = sessionModel.parseSet.fileLevelNodes[path];
-        let expr = node.expressions[4];
-        expect(expr.toString()).toBe("((1+a)*b)");
+    it("can be identifiers on their own", (done) => __awaiter(this, void 0, Promise, function* () {
+        expect(errors[path3].parseErrors.length).toBe(0);
+        expect(errors[path3].nameErrors.length).toBe(0);
         done();
     }));
 });
-//# sourceMappingURL=implicit-multiplication-spec.js.map
+//# sourceMappingURL=operator-as-identifier-spec.js.map

@@ -12,15 +12,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
-var atomApi_1 = require("../utils/atomApi");
-var jasmine13to20_1 = require("../utils/jasmine13to20");
+/// <reference path="../defs/node/node.d.ts" />
+/// <reference path="../defs/jasmine/jasmine.d.ts" />
 var emptySession_1 = require("./utils/emptySession");
-var atomApi_2 = require("../utils/atomApi");
+var jasmine13to20_1 = require("../utils/jasmine13to20");
+var emptySession_2 = require("./utils/emptySession");
 var parseWorkspace_1 = require("../core/parseWorkspace");
-var taskUtils_1 = require("../utils/taskUtils");
-var parseWorkspace_2 = require("../core/parseWorkspace");
-var taskUtils_2 = require("../utils/taskUtils");
-var parseWorkspace_3 = require("../core/parseWorkspace");
+var emptySession_3 = require("./utils/emptySession");
 describe("anonymous functions", () => {
     let j13to20 = jasmine13to20_1.jasmine13to20();
     let beforeAll = j13to20.beforeAll;
@@ -28,7 +26,7 @@ describe("anonymous functions", () => {
     let it = j13to20.it;
     let afterEach = j13to20.afterEach;
     let afterAll = j13to20.afterAll;
-    let sessionModel = emptySession_1.createTestSessionModel();
+    let sessionModel = emptySession_2.createTestSessionModel();
     let errors = sessionModel.parseSet.errors;
     let path = "/file.jl";
     let contents = `function map() end
@@ -39,14 +37,10 @@ map((a, b) -> a + b + 1, arr)
     beforeAll(() => {
         let o = {};
         o[path] = contents;
-        parseWorkspace_3.mockProjectFiles(o);
-        atomApi_2.mockOpenFiles([path]);
-        taskUtils_2.mockRunDelayed();
+        emptySession_1.mockAll(o);
     });
     afterAll(() => {
-        parseWorkspace_2.unmockProjectFiles();
-        atomApi_1.unmockOpenFiles();
-        taskUtils_1.unmockRunDelayed();
+        emptySession_3.unmockAll();
     });
     it("should parse arrow functions", (done) => __awaiter(this, void 0, Promise, function* () {
         yield parseWorkspace_1.parseFullWorkspaceAsync(sessionModel);

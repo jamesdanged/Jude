@@ -12,8 +12,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
-var lookAheadStreamConditions_1 = require("../../tokens/lookAheadStreamConditions");
-var arrayUtils_1 = require("../../utils/arrayUtils");
+var lookAheadStreamConditions_1 = require("./lookAheadStreamConditions");
 var streamConditions_1 = require("../../tokens/streamConditions");
 var fsaUtils_1 = require("./fsaUtils");
 var LetBlockFsa_1 = require("../controlFlow/LetBlockFsa");
@@ -29,7 +28,7 @@ var nodes_3 = require("../../parseTree/nodes");
 var streamConditions_6 = require("../../tokens/streamConditions");
 var streamConditions_7 = require("../../tokens/streamConditions");
 var streamConditions_8 = require("../../tokens/streamConditions");
-var lookAheadStreamConditions_2 = require("../../tokens/lookAheadStreamConditions");
+var lookAheadStreamConditions_2 = require("./lookAheadStreamConditions");
 var streamConditions_9 = require("../../tokens/streamConditions");
 var fsaUtils_2 = require("./fsaUtils");
 var fsaUtils_3 = require("./fsaUtils");
@@ -64,7 +63,7 @@ var streamConditions_21 = require("./../../tokens/streamConditions");
 var streamConditions_22 = require("./../../tokens/streamConditions");
 var fsaUtils_4 = require("./fsaUtils");
 var fsaUtils_5 = require("./fsaUtils");
-var lookAheadStreamConditions_3 = require("../../tokens/lookAheadStreamConditions");
+var lookAheadStreamConditions_3 = require("./lookAheadStreamConditions");
 var nodes_12 = require("../../parseTree/nodes");
 var errors_1 = require("../../utils/errors");
 var streamConditions_23 = require("../../tokens/streamConditions");
@@ -101,6 +100,7 @@ var nodes_17 = require("../../parseTree/nodes");
 var streamConditions_29 = require("../../tokens/streamConditions");
 var Token_1 = require("../../tokens/Token");
 var Token_2 = require("../../tokens/Token");
+var lookAheadStreamConditions_4 = require("./lookAheadStreamConditions");
 /**
  * Automaton used for recognizing expressions.
  * In Julia, almost everything is a valid expression, including arithmetic expressions, for loops,
@@ -180,9 +180,9 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
             state.addArc(state, streamConditions_21.streamAtComment, skipOneToken);
         }
         // ignore line whitespace everywhere
-        // except immediately after a number
+        // except in certain situations, where the absence of whitespace can imply multiplication
         for (let state of allStatesNotStop) {
-            if (state === numberState)
+            if (state === numberState || state === parenthesesState || state === functionCallState)
                 continue;
             state.addArc(state, streamConditions_1.streamAtLineWhitespace, skipOneToken);
         }
@@ -262,12 +262,19 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
                 state.addArc(splatState, streamConditions_9.streamAtTripleDot, readPostFixOp); // treat splat as postfix
             }
         }
+        // allow certain operators to be treated as identifiers if they appear in isolated circumstances, ie
+        //   preceded by BOF ,
+        //   followed by , \n ; or EOF
+        // This condition must be tested before other arcs out of the start and binary states.
+        for (let state of [startState, binaryMayOmitArg2State]) {
+            state.addArc(identifierState, lookAheadStreamConditions_4.streamAtOperatorThatIsIdentifier, readOperatorAndConvertToIdentifier);
+        }
         // These states must be followed by something that creates a valid expression.
         for (let state of [startState, returnState, unaryState, binaryState, binaryMayOmitArg2State, ternaryState, commaAfterSplatState]) {
+            state.addArc(keywordBlockState, lookAheadStreamConditions_3.streamAtFunctionCompactDeclaration, readFunctionCompactDef); // must be checked before streamAtIdentifier and streamAtUnaryOp
             state.addArc(unaryState, streamConditions_17.streamAtUnaryOp, readUnaryOp); // can have multiple unary in a row
             state.addArc(numberState, streamConditions_15.streamAtNumber, readNumber);
             state.addArc(symbolState, streamConditions_4.streamAtSymbol, readSymbol);
-            state.addArc(keywordBlockState, lookAheadStreamConditions_3.streamAtFunctionCompactDeclaration, readFunctionCompactDef); // must be checked before streamAtIdentifier
             state.addArc(keywordBlockState, lookAheadStreamConditions_2.streamAtAnonymousFunction, readAnonymousFunctionDef); // must be checked before streamAtIdentifier and streamAtOpenParenthesis
             state.addArc(macroCallState, lookAheadStreamConditions_1.streamAtMacroInvocation, readMacroInvocation); // must be checked before streamAtIdentifier
             state.addArc(identifierState, streamConditions_16.streamAtIdentifier, readIdentifier);
@@ -278,6 +285,17 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
             state.addArc(keywordBlockState, streamConditions_3.streamAtKeywordBlock, readKeywordBlock);
             state.addArc(quoteState, streamConditions_22.streamAtAnyQuote, readAnyQuote);
             state.addArc(regexState, streamConditions_29.streamAtRegex, readRegex);
+        }
+        // a number followed immediately by an identifier or an open parentheses (no whitespace in between) implies multiplication
+        numberState.addArc(identifierState, streamConditions_16.streamAtIdentifier, readImplicitMultiplicationIdentifier);
+        numberState.addArc(parenthesesState, streamConditions_18.streamAtOpenParenthesis, readImplicitMultiplicationParentheses);
+        // otherwise spaces are ignored
+        numberState.addArc(numberState, streamConditions_1.streamAtLineWhitespace, skipOneToken);
+        // a parentheses followed immediately by an identifier (no whitespace in between) implies multiplication
+        for (let state of [parenthesesState, functionCallState]) {
+            state.addArc(identifierState, streamConditions_16.streamAtIdentifier, readImplicitMultiplicationIdentifier);
+            // otherwise spaces are ignored
+            state.addArc(state, streamConditions_1.streamAtLineWhitespace, skipOneToken);
         }
         // these states result in expressions that can be invoked as functions or indexed as arrays
         // [] and () are both resolved as function invocations
@@ -290,11 +308,6 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
             state.addArc(typeParametersState, streamConditions_20.streamAtOpenCurlyBraces, readTypeParameters);
             state.addArc(stopState, streamNotAtContinuingOpNorOpenBracket, doNothing); // be sure to add this last as a lot of tokens will trigger it
         }
-        // a number followed immediately by an identifier or an open parentheses implies multiplication
-        numberState.addArc(identifierState, streamConditions_16.streamAtIdentifier, readImplicitMultiplicationIdentifier);
-        numberState.addArc(parenthesesState, streamConditions_18.streamAtOpenParenthesis, readImplicitMultiplicationParentheses);
-        // otherwise spaces are ignored
-        numberState.addArc(numberState, streamConditions_1.streamAtLineWhitespace, skipOneToken);
         // these states cannot be directly invoked afterwards
         //   (if surrounded in parentheses, they can be though)
         // a new open bracket implies a new expression is being started
@@ -484,10 +497,10 @@ function readImplicitMultiplicationParentheses(state) {
     readGroupingParentheses(state);
 }
 function insertImplicitMultiplication(state) {
-    let numberNode = arrayUtils_1.last(state.nodes);
-    let numberEndPoint = numberNode.token.range.end;
+    let nextToken = state.ts.peek();
+    let nextTokenStart = nextToken.range.start;
     // create a non-existent token for the implied multiplication
-    let rng = new Token_1.Range(numberEndPoint, numberEndPoint); // position the fake * token at the end of the number token, but with 0 length
+    let rng = new Token_1.Range(nextTokenStart, nextTokenStart); // position the fake * token at the end of the number token, but with 0 length
     let token = new Token_2.Token("*", operatorsAndKeywords_3.TokenType.Operator, rng);
     state.nodes.push(new nodes_5.BinaryOpNode(token));
 }
@@ -508,6 +521,13 @@ function readRegex(state) {
 }
 function readIdentifier(state) {
     let token = state.ts.read();
+    let node = new nodes_7.IdentifierNode(token);
+    node.str = token.str;
+    state.nodes.push(node);
+}
+function readOperatorAndConvertToIdentifier(state) {
+    let token = state.ts.read();
+    token.type = operatorsAndKeywords_3.TokenType.Identifier;
     let node = new nodes_7.IdentifierNode(token);
     node.str = token.str;
     state.nodes.push(node);

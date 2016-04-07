@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
     return new Promise(function (resolve, reject) {
         generator = generator.call(thisArg, _arguments);
@@ -11,12 +10,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         }
         step("next", void 0);
     });
-};
-/// <reference path="../defs/node/node.d.ts" />
-/// <reference path="../defs/jasmine/jasmine.d.ts" />
-describe("multi part names", () => {
-    it("should be ok", () => {
-        expect(1).toBe(1);
-    });
-});
+};//"use strict"
+//
+///// <reference path="../defs/node/node.d.ts" />
+///// <reference path="../defs/jasmine/jasmine.d.ts" />
+//
+//
+//describe("multi part names", () => {
+//
+//  it("should be ok", () => {
+//    expect(1).toBe(1)
+//  })
+//
+//})
 //# sourceMappingURL=multi-part-name-spec.js.map

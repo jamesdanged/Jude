@@ -14,15 +14,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 };
 /// <reference path="../defs/node/node.d.ts" />
 /// <reference path="../defs/jasmine/jasmine.d.ts" />
-var atomApi_1 = require("../utils/atomApi");
-var jasmine13to20_1 = require("../utils/jasmine13to20");
 var emptySession_1 = require("./utils/emptySession");
-var atomApi_2 = require("../utils/atomApi");
+var jasmine13to20_1 = require("../utils/jasmine13to20");
+var emptySession_2 = require("./utils/emptySession");
 var parseWorkspace_1 = require("../core/parseWorkspace");
-var taskUtils_1 = require("../utils/taskUtils");
-var parseWorkspace_2 = require("../core/parseWorkspace");
-var taskUtils_2 = require("../utils/taskUtils");
-var parseWorkspace_3 = require("../core/parseWorkspace");
+var emptySession_3 = require("./utils/emptySession");
 describe("macros", () => {
     let j13to20 = jasmine13to20_1.jasmine13to20();
     let beforeAll = j13to20.beforeAll;
@@ -30,7 +26,7 @@ describe("macros", () => {
     let it = j13to20.it;
     let afterEach = j13to20.afterEach;
     let afterAll = j13to20.afterAll;
-    let sessionModel = emptySession_1.createTestSessionModel();
+    let sessionModel = emptySession_2.createTestSessionModel();
     let errors = sessionModel.parseSet.errors;
     let path_macro_1 = "/macro_1.jl";
     let contents_macro_1 = `
@@ -73,14 +69,10 @@ using Mod
         o[path_macro_1] = contents_macro_1;
         o[path_macro_2] = contents_macro_2;
         o[path_macro_3] = contents_macro_3;
-        parseWorkspace_3.mockProjectFiles(o);
-        atomApi_2.mockOpenFiles([path_macro_1, path_macro_2, path_macro_3]);
-        taskUtils_2.mockRunDelayed();
+        emptySession_1.mockAll(o);
     });
     afterAll(() => {
-        parseWorkspace_2.unmockProjectFiles();
-        atomApi_1.unmockOpenFiles();
-        taskUtils_1.unmockRunDelayed();
+        emptySession_3.unmockAll();
     });
     it("should parse Module.@macro without errors", (done) => __awaiter(this, void 0, Promise, function* () {
         yield parseWorkspace_1.parseFullWorkspaceAsync(sessionModel);

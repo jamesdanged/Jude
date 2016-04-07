@@ -453,10 +453,12 @@ class Tokenizer {
             let c = ss.read();
             if (c === ".") {
                 if (foundDecimal) {
-                    throw new errors_1.InvalidParseError("Cannot have two decimals in a number: \"" + str + c + "\"", new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Number, new Token_2.Range(ss.prevPoint(), ss.prevPoint())));
+                    ss.unread();
+                    break;
                 }
                 if (foundExp) {
-                    throw new errors_1.InvalidParseError("Cannot have decimal in exponent: \"" + str + c + "\"", new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Number, new Token_2.Range(ss.prevPoint(), ss.prevPoint())));
+                    ss.unread();
+                    break;
                 }
                 foundDecimal = true;
                 str = str + c;

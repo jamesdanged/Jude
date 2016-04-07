@@ -16,14 +16,14 @@ var nodes_1 = require("../parseTree/nodes");
 var nodes_2 = require("../parseTree/nodes");
 var nodes_3 = require("../parseTree/nodes");
 var nodes_4 = require("../parseTree/nodes");
+var nodes_5 = require("../parseTree/nodes");
 var Token_1 = require("../tokens/Token");
 var ScopeBuilder_1 = require("./ScopeBuilder");
 var nodepath = require("path");
 var arrayUtils_1 = require("../utils/arrayUtils");
 var errors_1 = require("../utils/errors");
-var nodes_5 = require("../parseTree/nodes");
-var Scope_1 = require("./Scope");
 var nodes_6 = require("../parseTree/nodes");
+var Scope_1 = require("./Scope");
 var nodes_7 = require("../parseTree/nodes");
 var nodes_8 = require("../parseTree/nodes");
 var nodes_9 = require("../parseTree/nodes");
@@ -37,12 +37,13 @@ var nodes_16 = require("../parseTree/nodes");
 var nodes_17 = require("../parseTree/nodes");
 var nodes_18 = require("../parseTree/nodes");
 var nodes_19 = require("../parseTree/nodes");
+var nodes_20 = require("../parseTree/nodes");
 var assert_1 = require("../utils/assert");
 var StringSet_1 = require("../utils/StringSet");
 var Resolve_1 = require("./Resolve");
 var Resolve_2 = require("./Resolve");
 var errors_2 = require("../utils/errors");
-var nodes_20 = require("../parseTree/nodes");
+var nodes_21 = require("../parseTree/nodes");
 /**
  * Recursively creates scopes.
  */
@@ -86,16 +87,16 @@ class ScopeRecurser {
         this.scopeStack.push(rootScope);
         this.parseSet.scopes[this.currFile].addScope(rootScope);
         let isBareModule = false;
-        if (rootNode instanceof nodes_6.ModuleDefNode && rootNode.isBareModule)
+        if (rootNode instanceof nodes_7.ModuleDefNode && rootNode.isBareModule)
             isBareModule = true;
         // all modules are based on Core, even bare modules
-        let importAllCore = new nodes_17.ImportAllNode();
-        importAllCore.names.push([new nodes_5.IdentifierNode(Token_1.Token.createEmptyIdentifier("Core"))]);
+        let importAllCore = new nodes_18.ImportAllNode();
+        importAllCore.names.push([new nodes_6.IdentifierNode(Token_1.Token.createEmptyIdentifier("Core"))]);
         this.resolveImportAllNode(importAllCore);
         // modules implicitly import Base
         if (!isBareModule) {
-            let importAllBase = new nodes_17.ImportAllNode();
-            importAllBase.names.push([new nodes_5.IdentifierNode(Token_1.Token.createEmptyIdentifier("Base"))]);
+            let importAllBase = new nodes_18.ImportAllNode();
+            importAllBase.names.push([new nodes_6.IdentifierNode(Token_1.Token.createEmptyIdentifier("Base"))]);
             this.resolveImportAllNode(importAllBase);
         }
         // recurse
@@ -109,64 +110,64 @@ class ScopeRecurser {
         }
     }
     resolveNode(node) {
-        if (node instanceof nodes_6.ModuleDefNode) {
+        if (node instanceof nodes_7.ModuleDefNode) {
             this.resolveModuleDefNode(node);
         }
-        else if (node instanceof nodes_15.IncludeNode) {
+        else if (node instanceof nodes_16.IncludeNode) {
             this.resolveIncludeNode(node);
         }
-        else if (node instanceof nodes_16.ImportNode) {
+        else if (node instanceof nodes_17.ImportNode) {
             this.resolveImportNode(node);
         }
-        else if (node instanceof nodes_17.ImportAllNode) {
+        else if (node instanceof nodes_18.ImportAllNode) {
             this.resolveImportAllNode(node);
         }
-        else if (node instanceof nodes_18.UsingNode) {
+        else if (node instanceof nodes_19.UsingNode) {
             this.resolveUsingNode(node);
         }
         else {
             if (this.onlyRetrieveImports)
                 return;
-            if (node instanceof nodes_19.ExportNode) {
+            if (node instanceof nodes_20.ExportNode) {
                 this.resolveExportNode(node);
             }
-            else if (node instanceof nodes_5.IdentifierNode) {
+            else if (node instanceof nodes_6.IdentifierNode) {
                 this.resolveIdentifierNode(node);
             }
-            else if (node instanceof nodes_7.VarDeclarationNode) {
+            else if (node instanceof nodes_8.VarDeclarationNode) {
                 this.resolveVariableDeclarationNode(node);
             }
-            else if (node instanceof nodes_20.MultiDotNode) {
+            else if (node instanceof nodes_21.MultiDotNode) {
                 this.resolveMultiDotNode(node);
             }
-            else if (node instanceof nodes_8.BinaryOpNode) {
+            else if (node instanceof nodes_9.BinaryOpNode) {
                 this.resolveBinaryOpNode(node);
             }
-            else if (node instanceof nodes_9.ForBlockNode) {
+            else if (node instanceof nodes_10.ForBlockNode) {
                 this.resolveForBlockNode(node);
             }
-            else if (node instanceof nodes_10.WhileBlockNode) {
+            else if (node instanceof nodes_11.WhileBlockNode) {
                 this.resolveWhileBlockNode(node);
             }
-            else if (node instanceof nodes_11.DoBlockNode) {
+            else if (node instanceof nodes_12.DoBlockNode) {
                 this.resolveDoBlockNode(node);
             }
-            else if (node instanceof nodes_1.LetBlockNode) {
+            else if (node instanceof nodes_2.LetBlockNode) {
                 this.resolveLetBlockNode(node);
             }
-            else if (node instanceof nodes_12.TryBlockNode) {
+            else if (node instanceof nodes_13.TryBlockNode) {
                 this.resolveTryBlockNode(node);
             }
-            else if (node instanceof nodes_13.FunctionDefNode) {
+            else if (node instanceof nodes_14.FunctionDefNode) {
                 this.resolveFunctionDefNode(node);
             }
-            else if (node instanceof nodes_14.TypeDefNode) {
+            else if (node instanceof nodes_15.TypeDefNode) {
                 this.resolveTypeDefNode(node);
             }
-            else if (node instanceof nodes_3.MacroDefNode) {
+            else if (node instanceof nodes_4.MacroDefNode) {
                 this.resolveMacroDefNode(node);
             }
-            else if (node instanceof nodes_2.MacroInvocationNode) {
+            else if (node instanceof nodes_3.MacroInvocationNode) {
                 this.resolveMacroInvocationNode(node);
             }
             else {
@@ -221,14 +222,14 @@ class ScopeRecurser {
             throw new assert_1.AssertError("");
         // resolve recursively if any part is a complex expression
         for (let part of node.nodes) {
-            if (!(part instanceof nodes_5.IdentifierNode)) {
+            if (!(part instanceof nodes_6.IdentifierNode)) {
                 this.resolveNode(part);
             }
         }
         // only try to resolve parts which are not dynamic
         let prefix = [];
         for (let part of node.nodes) {
-            if (part instanceof nodes_5.IdentifierNode) {
+            if (part instanceof nodes_6.IdentifierNode) {
                 prefix.push(part);
             }
         }
@@ -256,32 +257,45 @@ class ScopeRecurser {
     }
     resolveBinaryOpNode(node) {
         if (node.op === "=") {
-            if (node.arg1 instanceof nodes_5.IdentifierNode) {
+            if (node.arg1 instanceof nodes_6.IdentifierNode) {
                 let identNode = node.arg1;
                 this.builder.createNameByAssignmentIfNecessary(identNode);
             }
-            else if (node.arg1 instanceof nodes_4.TupleNode) {
+            else if (node.arg1 instanceof nodes_5.TupleNode) {
                 let tupNode = node.arg1;
                 for (let item of tupNode.nodes) {
-                    if (item instanceof nodes_5.IdentifierNode) {
+                    if (item instanceof nodes_6.IdentifierNode) {
                         this.builder.createNameByAssignmentIfNecessary(item);
                     }
                     else {
                     }
                 }
             }
-            else if (node.arg1 instanceof nodes_20.MultiDotNode) {
+            else if (node.arg1 instanceof nodes_1.ParenthesesNode) {
+                let parenNode = node.arg1;
+                if (parenNode.expression instanceof nodes_5.TupleNode) {
+                    let tupNode = parenNode.expression;
+                    for (let item of tupNode.nodes) {
+                        if (item instanceof nodes_6.IdentifierNode) {
+                            this.builder.createNameByAssignmentIfNecessary(item);
+                        }
+                        else {
+                        }
+                    }
+                }
+            }
+            else if (node.arg1 instanceof nodes_21.MultiDotNode) {
                 let multiDotNode = node.arg1;
-                if (!multiDotNode.nodes.every((o) => { return o instanceof nodes_5.IdentifierNode; })) {
+                if (!multiDotNode.nodes.every((o) => { return o instanceof nodes_6.IdentifierNode; })) {
                     this.logParseError(new errors_2.InvalidParseError("Expected a variable name to be assigned to.", node.token));
                 }
                 else {
                 }
             }
-            else if (node.arg1 instanceof nodes_8.BinaryOpNode) {
+            else if (node.arg1 instanceof nodes_9.BinaryOpNode) {
                 // type assertion + assignment
                 let arg1Op = node.arg1;
-                if (arg1Op.op === "::" && arg1Op.arg1 instanceof nodes_5.IdentifierNode) {
+                if (arg1Op.op === "::" && arg1Op.arg1 instanceof nodes_6.IdentifierNode) {
                     let identNode = arg1Op.arg1;
                     this.builder.createNameByAssignmentIfNecessary(identNode);
                 }

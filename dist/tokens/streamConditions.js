@@ -12,13 +12,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
-var Token_1 = require("./Token");
 var operatorsAndKeywords_1 = require("./operatorsAndKeywords");
+var Token_1 = require("./Token");
 var operatorsAndKeywords_2 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_3 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_4 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_5 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_6 = require("./operatorsAndKeywords");
+var operatorsAndKeywords_7 = require("./operatorsAndKeywords");
 // Helper methods for conditions.
 function alwaysPasses(ts) {
     return true;
@@ -32,119 +33,119 @@ function streamAtComment(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Comment;
+    return tok.type === operatorsAndKeywords_7.TokenType.Comment;
 }
 exports.streamAtComment = streamAtComment;
 function streamAtLineWhitespace(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.LineWhiteSpace;
+    return tok.type === operatorsAndKeywords_7.TokenType.LineWhiteSpace;
 }
 exports.streamAtLineWhitespace = streamAtLineWhitespace;
 function streamAtReturn(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "return";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "return";
 }
 exports.streamAtReturn = streamAtReturn;
 function streamAtBreak(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "break";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "break";
 }
 exports.streamAtBreak = streamAtBreak;
 function streamAtContinue(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "continue";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "continue";
 }
 exports.streamAtContinue = streamAtContinue;
 function streamAtUnaryOp(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && (tok.str in operatorsAndKeywords_4.unaryOperators);
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && (tok.str in operatorsAndKeywords_5.unaryOperators);
 }
 exports.streamAtUnaryOp = streamAtUnaryOp;
 function streamAtTernaryOp(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === "?";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === "?";
 }
 exports.streamAtTernaryOp = streamAtTernaryOp;
 function streamAtPostFixOp(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && (tok.str in operatorsAndKeywords_3.postFixOperators);
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && (tok.str in operatorsAndKeywords_4.postFixOperators);
 }
 exports.streamAtPostFixOp = streamAtPostFixOp;
 function streamAtNumber(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Number;
+    return tok.type === operatorsAndKeywords_7.TokenType.Number;
 }
 exports.streamAtNumber = streamAtNumber;
 function streamAtSymbol(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Symbol;
+    return tok.type === operatorsAndKeywords_7.TokenType.Symbol;
 }
 exports.streamAtSymbol = streamAtSymbol;
 function streamAtIdentifier(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Identifier;
+    return tok.type === operatorsAndKeywords_7.TokenType.Identifier;
 }
 exports.streamAtIdentifier = streamAtIdentifier;
 function streamAtMacroIdentifier(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Macro;
+    return tok.type === operatorsAndKeywords_7.TokenType.Macro;
 }
 exports.streamAtMacroIdentifier = streamAtMacroIdentifier;
 function streamAtOpenParenthesis(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Bracket && tok.str === "(";
+    return tok.type === operatorsAndKeywords_7.TokenType.Bracket && tok.str === "(";
 }
 exports.streamAtOpenParenthesis = streamAtOpenParenthesis;
 function streamAtOpenSquareBracket(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Bracket && tok.str === "[";
+    return tok.type === operatorsAndKeywords_7.TokenType.Bracket && tok.str === "[";
 }
 exports.streamAtOpenSquareBracket = streamAtOpenSquareBracket;
 function streamAtOpenCurlyBraces(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Bracket && tok.str === "{";
+    return tok.type === operatorsAndKeywords_7.TokenType.Bracket && tok.str === "{";
 }
 exports.streamAtOpenCurlyBraces = streamAtOpenCurlyBraces;
 function streamAtOpenBlockKeyword(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && (tok.str in operatorsAndKeywords_5.keywordsNeedEnd);
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && (tok.str in operatorsAndKeywords_6.keywordsNeedEnd);
 }
 exports.streamAtOpenBlockKeyword = streamAtOpenBlockKeyword;
 function streamAtKeywordBlock(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    if (tok.type !== operatorsAndKeywords_6.TokenType.Keyword)
+    if (tok.type !== operatorsAndKeywords_7.TokenType.Keyword)
         return false;
     if (!(tok instanceof Token_1.TreeToken))
         return false;
@@ -156,42 +157,42 @@ function streamAtAnyQuote(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Quote;
+    return tok.type === operatorsAndKeywords_7.TokenType.Quote;
 }
 exports.streamAtAnyQuote = streamAtAnyQuote;
 function streamAtStringLiteral(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.StringLiteralContents;
+    return tok.type === operatorsAndKeywords_7.TokenType.StringLiteralContents;
 }
 exports.streamAtStringLiteral = streamAtStringLiteral;
 function streamAtInterpolationStart(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.StringInterpolationStart;
+    return tok.type === operatorsAndKeywords_7.TokenType.StringInterpolationStart;
 }
 exports.streamAtInterpolationStart = streamAtInterpolationStart;
 function streamAtNewLine(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.NewLine;
+    return tok.type === operatorsAndKeywords_7.TokenType.NewLine;
 }
 exports.streamAtNewLine = streamAtNewLine;
 function streamAtSemicolon(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.SemiColon;
+    return tok.type === operatorsAndKeywords_7.TokenType.SemiColon;
 }
 exports.streamAtSemicolon = streamAtSemicolon;
 function streamAtDoubleColon(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === "::";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === "::";
 }
 exports.streamAtDoubleColon = streamAtDoubleColon;
 function streamAtNewLineOrSemicolon(ts) {
@@ -202,235 +203,242 @@ function streamAtEquals(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === "=";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === "=";
 }
 exports.streamAtEquals = streamAtEquals;
 function streamAtComma(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === ",";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === ",";
 }
 exports.streamAtComma = streamAtComma;
 function streamAtDot(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === ".";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === ".";
 }
 exports.streamAtDot = streamAtDot;
 function streamAtColon(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === ":";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === ":";
 }
 exports.streamAtColon = streamAtColon;
 function streamAtLessThanColon(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === "<:";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === "<:";
 }
 exports.streamAtLessThanColon = streamAtLessThanColon;
 function streamAtArrow(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === "->";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === "->";
 }
 exports.streamAtArrow = streamAtArrow;
 function streamAtIn(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === "in";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === "in";
 }
 exports.streamAtIn = streamAtIn;
 function streamAtTripleDot(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str === "...";
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str === "...";
 }
 exports.streamAtTripleDot = streamAtTripleDot;
 function streamAtOverridableBinaryOperator(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str in operatorsAndKeywords_2.overridableBinaryOperators;
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str in operatorsAndKeywords_3.overridableBinaryOperators;
 }
 exports.streamAtOverridableBinaryOperator = streamAtOverridableBinaryOperator;
 function streamAtOverridableUnaryOperator(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Operator && tok.str in operatorsAndKeywords_1.overridableUnaryOperators;
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str in operatorsAndKeywords_2.overridableUnaryOperators;
 }
 exports.streamAtOverridableUnaryOperator = streamAtOverridableUnaryOperator;
 function streamAtOverridableOperator(ts) {
     return streamAtOverridableBinaryOperator(ts) || streamAtOverridableUnaryOperator(ts);
 }
 exports.streamAtOverridableOperator = streamAtOverridableOperator;
+function streamAtOperatorThatCanBeIdentifier(ts) {
+    if (ts.eof())
+        return false;
+    let tok = ts.peek();
+    return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str in operatorsAndKeywords_1.operatorsThatAreIdentifiers;
+}
+exports.streamAtOperatorThatCanBeIdentifier = streamAtOperatorThatCanBeIdentifier;
 function streamAtRegex(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Regex;
+    return tok.type === operatorsAndKeywords_7.TokenType.Regex;
 }
 exports.streamAtRegex = streamAtRegex;
 function streamAtLocal(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "local";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "local";
 }
 exports.streamAtLocal = streamAtLocal;
 function streamAtGlobal(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "global";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "global";
 }
 exports.streamAtGlobal = streamAtGlobal;
 function streamAtConst(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "const";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "const";
 }
 exports.streamAtConst = streamAtConst;
 function streamAtFor(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "for";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "for";
 }
 exports.streamAtFor = streamAtFor;
 function streamAtElseIf(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "elseif";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "elseif";
 }
 exports.streamAtElseIf = streamAtElseIf;
 function streamAtElse(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "else";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "else";
 }
 exports.streamAtElse = streamAtElse;
 function streamAtCatch(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "catch";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "catch";
 }
 exports.streamAtCatch = streamAtCatch;
 function streamAtFinally(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "finally";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "finally";
 }
 exports.streamAtFinally = streamAtFinally;
 function streamAtDo(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "do";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "do";
 }
 exports.streamAtDo = streamAtDo;
 function streamAtMacroKeyword(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "macro";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "macro";
 }
 exports.streamAtMacroKeyword = streamAtMacroKeyword;
 function streamAtModule(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "module";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "module";
 }
 exports.streamAtModule = streamAtModule;
 function streamAtBareModule(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "baremodule";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "baremodule";
 }
 exports.streamAtBareModule = streamAtBareModule;
 function streamAtType(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "type";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "type";
 }
 exports.streamAtType = streamAtType;
 function streamAtImmutable(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "immutable";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "immutable";
 }
 exports.streamAtImmutable = streamAtImmutable;
 function streamAtAbstract(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "abstract";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "abstract";
 }
 exports.streamAtAbstract = streamAtAbstract;
 function streamAtBitsType(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "bitstype";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "bitstype";
 }
 exports.streamAtBitsType = streamAtBitsType;
 function streamAtTypeAlias(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "typealias";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "typealias";
 }
 exports.streamAtTypeAlias = streamAtTypeAlias;
 function streamAtImport(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "import";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "import";
 }
 exports.streamAtImport = streamAtImport;
 function streamAtImportAll(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "importall";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "importall";
 }
 exports.streamAtImportAll = streamAtImportAll;
 function streamAtExport(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "export";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "export";
 }
 exports.streamAtExport = streamAtExport;
 function streamAtUsing(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Keyword && tok.str === "using";
+    return tok.type === operatorsAndKeywords_7.TokenType.Keyword && tok.str === "using";
 }
 exports.streamAtUsing = streamAtUsing;
 function streamAtInclude(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_6.TokenType.Identifier && tok.str === "include";
+    return tok.type === operatorsAndKeywords_7.TokenType.Identifier && tok.str === "include";
 }
 exports.streamAtInclude = streamAtInclude;
 //

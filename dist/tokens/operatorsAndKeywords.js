@@ -137,6 +137,15 @@ StringSet_3.addToSet(exports.overridableBinaryOperators, "&");
 StringSet_3.addToSet(exports.overridableBinaryOperators, "|");
 StringSet_3.addToSet(exports.overridableBinaryOperators, "$");
 exports.overridableUnaryOperators = StringSet_2.mergeSets([exports.unaryOperators]);
+exports.operatorsThatAreIdentifiers = StringSet_2.mergeSets([exports.arithmeticOperators, exports.comparisonOperators, exports.bitshiftOperators, exports.elementWiseOperators,
+    exports.binaryOperatorsLikeIdentifiers]);
+StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, "!");
+StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, "&");
+StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, "|");
+StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, "~");
+StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, "$");
+StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, ":");
+StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, "|>");
 exports.keywords = StringSet_1.createStringSet([
     "function", "macro", "quote",
     "module", "baremodule",
