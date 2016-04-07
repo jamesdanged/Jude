@@ -123,12 +123,14 @@ class FunctionDefArgListFsa extends BaseFsa {
     // proceed to next optional arg
     optionalArgComma.addArc(optionalArgName, streamAtIdentifier, readOrderedArgName)
 
-    // the last ordered arg or optional args can be a varargs
+    // the last ordered arg or optional args or keyword arg can be a varargs
     // ie foo(a, b=2, c...)
     orderedArgName.addArc(varArgs, streamAtTripleDot, markArgAsVarArgs)
     optionalArgName.addArc(varArgs, streamAtTripleDot, markArgAsVarArgs)
+    keywordArgName.addArc(varArgs, streamAtTripleDot, markArgAsVarArgs)
     orderedArgType.addArc(varArgs, streamAtTripleDot, markArgAsVarArgs)
     optionalArgType.addArc(varArgs, streamAtTripleDot, markArgAsVarArgs)
+    keywordArgType.addArc(varArgs, streamAtTripleDot, markArgAsVarArgs)
 
     varArgs.addArc(semicolonState, streamAtSemicolon, skipOneToken)
     varArgs.addArc(stopState, streamAtEof, doNothing)
