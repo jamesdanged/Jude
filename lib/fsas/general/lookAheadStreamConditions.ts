@@ -1,24 +1,24 @@
 "use strict"
 
-import {streamAtOperatorThatCanBeIdentifier} from "./streamConditions";
-import {streamAtOverridableOperator} from "./streamConditions";
-import {streamAtMacroIdentifier} from "./streamConditions";
-import {BaseFsa} from "../fsas/general/fsaUtils";
-import {streamAtIdentifier} from "./streamConditions";
-import {TokenStream} from "./TokenStream";
-import {streamAtDot} from "./streamConditions";
-import {streamAtLineWhitespace} from "./streamConditions";
-import {streamAtComment} from "./streamConditions";
-import {streamAtOpenCurlyBraces} from "./streamConditions";
-import {streamAtOpenParenthesis} from "./streamConditions";
-import {streamAtEquals} from "./streamConditions";
-import {alwaysPasses} from "./streamConditions";
-import {streamAtArrow} from "./streamConditions";
-import {streamAtNewLine} from "./streamConditions";
-import {FsaState} from "../fsas/general/fsaUtils";
-import {streamAtComma} from "./streamConditions";
-import {streamAtEof} from "./streamConditions";
-import {streamAtSemicolon} from "./streamConditions";
+import {streamAtOperatorThatCanBeIdentifier} from "./../../tokens/streamConditions";
+import {streamAtOverridableOperator} from "./../../tokens/streamConditions";
+import {streamAtMacroIdentifier} from "./../../tokens/streamConditions";
+import {BaseFsa} from "fsaUtils";
+import {streamAtIdentifier} from "./../../tokens/streamConditions";
+import {TokenStream} from "./../../tokens/TokenStream";
+import {streamAtDot} from "./../../tokens/streamConditions";
+import {streamAtLineWhitespace} from "./../../tokens/streamConditions";
+import {streamAtComment} from "./../../tokens/streamConditions";
+import {streamAtOpenCurlyBraces} from "./../../tokens/streamConditions";
+import {streamAtOpenParenthesis} from "./../../tokens/streamConditions";
+import {streamAtEquals} from "./../../tokens/streamConditions";
+import {alwaysPasses} from "./../../tokens/streamConditions";
+import {streamAtArrow} from "./../../tokens/streamConditions";
+import {streamAtNewLine} from "./../../tokens/streamConditions";
+import {FsaState} from "fsaUtils";
+import {streamAtComma} from "./../../tokens/streamConditions";
+import {streamAtEof} from "./../../tokens/streamConditions";
+import {streamAtSemicolon} from "./../../tokens/streamConditions";
 
 
 // For running the stream through a mini fsa to see if it satifies a complex condition.

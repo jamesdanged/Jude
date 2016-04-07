@@ -1,6 +1,6 @@
 "use strict"
 
-import {streamAtMacroInvocation} from "../../tokens/lookAheadStreamConditions";
+import {streamAtMacroInvocation} from "lookAheadStreamConditions";
 import {last} from "../../utils/arrayUtils";
 import {streamAtLineWhitespace} from "../../tokens/streamConditions";
 import {runFsaStartToStopAllowWhitespace} from "./fsaUtils";
@@ -17,7 +17,7 @@ import {ContinueNode} from "../../parseTree/nodes";
 import {streamAtContinue} from "../../tokens/streamConditions";
 import {streamAtBreak} from "../../tokens/streamConditions";
 import {streamAtTypeAlias} from "../../tokens/streamConditions";
-import {streamAtAnonymousFunction} from "../../tokens/lookAheadStreamConditions";
+import {streamAtAnonymousFunction} from "lookAheadStreamConditions";
 import {streamAtTripleDot} from "../../tokens/streamConditions";
 import {parseWholeMacroDef} from "../declarations/MacroDefFsa";
 import {expectNoMoreExpressions} from "./fsaUtils";
@@ -74,7 +74,7 @@ import {FsaState} from "./fsaUtils";
 import {runFsaStartToStop} from "./fsaUtils";
 import {IFsaParseState} from "./fsaUtils";
 import {TreeToken} from "../../tokens/Token";
-import {streamAtFunctionCompactDeclaration} from "../../tokens/lookAheadStreamConditions";
+import {streamAtFunctionCompactDeclaration} from "lookAheadStreamConditions";
 import {TernaryOpNode} from "../../parseTree/nodes";
 import {InvalidParseError} from "../../utils/errors";
 import {streamAtNewLineOrSemicolon} from "../../tokens/streamConditions";
@@ -114,7 +114,7 @@ import {RegexNode} from "../../parseTree/nodes";
 import {streamAtRegex} from "../../tokens/streamConditions";
 import {Range} from "../../tokens/Token"
 import {Token} from "../../tokens/Token";
-import {streamAtOperatorThatIsIdentifier} from "../../tokens/lookAheadStreamConditions";
+import {streamAtOperatorThatIsIdentifier} from "lookAheadStreamConditions";
 
 /**
  * Automaton used for recognizing expressions.

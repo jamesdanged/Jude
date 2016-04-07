@@ -11,7 +11,7 @@ import {streamAtSemicolon} from "./../../tokens/streamConditions";
 import {streamAtIdentifier} from "./../../tokens/streamConditions";
 import {alwaysPasses} from "./../../tokens/streamConditions";
 import {streamAtComma} from "./../../tokens/streamConditions";
-import {streamAtIdentifierEquals} from "./../../tokens/lookAheadStreamConditions";
+import {streamAtIdentifierEquals} from "./../general/lookAheadStreamConditions";
 import {streamAtEquals} from "./../../tokens/streamConditions";
 import {streamAtNewLine} from "./../../tokens/streamConditions";
 import {parseIntoTreeByOrderOfOperations} from "./../../parseTree/orderOfOperations";
