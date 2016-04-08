@@ -31,6 +31,9 @@ class MainObject {
         }));
     }
     serialize() {
+        if (gParseController.initializedPromise === false) {
+            return gParseController.serializedState;
+        }
         let libState = gParseController.sessionModel.moduleLibrary.serialize();
         return { moduleLibrary: libState };
     }

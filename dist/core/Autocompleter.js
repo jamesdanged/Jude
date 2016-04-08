@@ -14,15 +14,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 };
 /// <reference path="./../defs/atom/atom.d.ts" />
 var Resolve_1 = require("../nameResolution/Resolve");
+var Resolve_2 = require("../nameResolution/Resolve");
 var arrayUtils_1 = require("../utils/arrayUtils");
 var assert_1 = require("../utils/assert");
 var assert_2 = require("../utils/assert");
 var atomApi_1 = require("../utils/atomApi");
 var Scope_1 = require("../nameResolution/Scope");
-var Resolve_2 = require("../nameResolution/Resolve");
 var Resolve_3 = require("../nameResolution/Resolve");
 var Resolve_4 = require("../nameResolution/Resolve");
 var Resolve_5 = require("../nameResolution/Resolve");
+var Resolve_6 = require("../nameResolution/Resolve");
 var Token_1 = require("../tokens/Token");
 var nodepath = require("path");
 // TODO need to warn/document that the file tree panel may interfere with autocomplete
@@ -81,7 +82,11 @@ class Autocompleter {
         if (identNode === null)
             return [];
         let resolve = identifiers.map.get(identNode);
-        if (!(resolve instanceof Resolve_5.FunctionResolve))
+        if (resolve instanceof Resolve_1.ImportedResolve) {
+            let impResolve = resolve;
+            resolve = impResolve.ref;
+        }
+        if (!(resolve instanceof Resolve_6.FunctionResolve))
             return [];
         let funcResolve = resolve;
         let suggestions = [];
@@ -132,7 +137,7 @@ class Autocompleter {
             if (identNode === null)
                 return [];
             let resolve = identifiers.map.get(identNode);
-            if (!(resolve instanceof Resolve_2.ModuleResolve))
+            if (!(resolve instanceof Resolve_3.ModuleResolve))
                 return [];
             isModuleDot = true;
             moduleScope = resolve.moduleRootScope;
@@ -148,7 +153,7 @@ class Autocompleter {
                 if (identNode === null)
                     return [];
                 let resolve = identifiers.map.get(identNode);
-                if (!(resolve instanceof Resolve_2.ModuleResolve))
+                if (!(resolve instanceof Resolve_3.ModuleResolve))
                     return [];
                 isModuleDot = true;
                 moduleScope = resolve.moduleRootScope;
@@ -221,15 +226,15 @@ exports.Autocompleter = Autocompleter;
  */
 function createSuggestion(name, moduleName, resolve) {
     let suggestionType = "";
-    if (resolve instanceof Resolve_5.FunctionResolve)
+    if (resolve instanceof Resolve_6.FunctionResolve)
         suggestionType = "function";
-    if (resolve instanceof Resolve_1.MacroResolve)
+    if (resolve instanceof Resolve_2.MacroResolve)
         suggestionType = "function";
-    if (resolve instanceof Resolve_4.VariableResolve)
+    if (resolve instanceof Resolve_5.VariableResolve)
         suggestionType = "variable";
-    if (resolve instanceof Resolve_3.TypeResolve)
+    if (resolve instanceof Resolve_4.TypeResolve)
         suggestionType = "class";
-    if (resolve instanceof Resolve_2.ModuleResolve)
+    if (resolve instanceof Resolve_3.ModuleResolve)
         suggestionType = "import";
     return {
         text: name,

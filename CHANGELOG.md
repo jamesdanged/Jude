@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.2.6]
+Bugfix for autocomplete signature.
+
 ## [0.2.5]
 Additional parsing fixes.
 
