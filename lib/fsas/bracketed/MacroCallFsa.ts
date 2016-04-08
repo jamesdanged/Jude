@@ -85,6 +85,7 @@ class MacroCallFsa extends BaseFsa {
     // so don't need to specifically require a space between args
     spaceDelimitedArg.addArc(stop, streamAtNewLineOrSemicolon, doNothing)
     spaceDelimitedArg.addArc(stop, streamAtComment, doNothing)
+    spaceDelimitedArg.addArc(stop, streamAtEof, doNothing)
     spaceDelimitedArg.addArc(spaceDelimitedArg, alwaysPasses, readSpaceDelimitedArg)
 
     // handle comma delimited arg list

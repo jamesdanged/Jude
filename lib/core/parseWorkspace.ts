@@ -44,6 +44,7 @@ export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
     let errorSet = sessionModel.parseSet.errors[path]
     for (let err of errorSet.parseErrors) {
       console.log("Parse error in " + path + ":\n", err)
+      //console.log(err.detailedMessage)
       //console.error("Parse error in " + path + ":\n", err)
       //console.error(err.detailedMessage)
       //throwErrorFromTimeout(err)
@@ -78,6 +79,17 @@ export async function refreshFileAsync(path: string, fileContents: string, sessi
   } else {
     await resolveScopesInWorkspaceInvolvingFile(path, sessionModel)
   }
+
+  // report parse errors to console
+  let errorSet = sessionModel.parseSet.errors[path]
+  for (let err of errorSet.parseErrors) {
+    console.log("Parse error in " + path + ":\n", err)
+    //console.log(err.detailedMessage)
+    //console.error("Parse error in " + path + ":\n", err)
+    //console.error(err.detailedMessage)
+    //throwErrorFromTimeout(err)
+  }
+
 }
 
 
