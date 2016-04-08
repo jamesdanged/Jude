@@ -62,6 +62,8 @@ import * as atomModule from "atom"
 // Handle situation where an external library was added into workspace, but still treated as external
 // Ctrl space should display signature information for functions that have info in methods(...), but don't have a file location, eg mmap
 // Seems to not be running reparse until save, eg type a little, then try to jump to definition of word just typed. Make sure lint on fly is always on.
+// when remove folder from workspace, need to remove from module library
+// Limit autocomplete results to exported names
 
 /**
  * Handles interactions with the editor. Responds to user activity and file system changes.

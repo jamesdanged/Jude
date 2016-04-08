@@ -29,7 +29,7 @@ import {unmockOpenFiles} from "../utils/atomApi";
 // test for ccall
 // should not throw error in promise when
 //   resolve recursing a macro/type/function node with no name
-
+// autocomplete should show when trying to get function signature, even if function in a used module, eg println
 
 describe("basic function parsing", () => {
   let j13to20 = jasmine13to20(); let beforeAll = j13to20.beforeAll; let beforeEach = j13to20.beforeEach; let it = j13to20.it; let afterEach = j13to20.afterEach; let afterAll = j13to20.afterAll

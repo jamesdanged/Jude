@@ -2,6 +2,7 @@
 
 /// <reference path="./../defs/atom/atom.d.ts" />
 
+import {ImportedResolve} from "../nameResolution/Resolve";
 import {MacroResolve} from "../nameResolution/Resolve";
 import {Node} from "../parseTree/nodes";
 import {FileIdentifiers} from "./SessionModel";
@@ -89,6 +90,10 @@ export class Autocompleter {
     let identNode: IdentifierNode = identifiers.getIdentifierForPoint(point)
     if (identNode === null) return []
     let resolve: Resolve = identifiers.map.get(identNode)
+    if (resolve instanceof ImportedResolve) {
+      let impResolve = resolve as ImportedResolve
+      resolve = impResolve.ref
+    }
     if (!(resolve instanceof FunctionResolve)) return []
     let funcResolve = resolve as FunctionResolve
 
