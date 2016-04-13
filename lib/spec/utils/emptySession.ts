@@ -26,8 +26,9 @@ export function createTestSessionModel(): SessionModel {
   moduleLibrary.initializeFromSerialized(state)
 
   // put some basic types in
+  // Simply declare these as variables rather than functions or types, just as a shortcut.
   let core = moduleLibrary.modules["Core"]
-  let namesToAdd = ["Int", "Float64", "println"]
+  let namesToAdd = ["Int", "Float64", "println", "Tuple", "Dict"]
   for (let name of namesToAdd) {
     core.names[name] = new VariableResolve(Token.createEmptyIdentifier(name), null)
   }

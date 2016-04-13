@@ -42,7 +42,8 @@ class GenericArgListFsa extends BaseFsa {
       state.addArc(state, streamAtComment, skipOneToken)
     }
 
-    // at least 1 type
+    // 0 or more types
+    startState.addArc(stopState, streamAtEof, doNothing)
     startState.addArc(typeExpression, alwaysPasses, readTypeExpression)
 
     typeExpression.addArc(stopState, streamAtEof, doNothing)

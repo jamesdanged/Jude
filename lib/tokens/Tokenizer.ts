@@ -1,5 +1,6 @@
 "use strict"
 
+import {regexFlags} from "./operatorsAndKeywords";
 import {keywordValues} from "./operatorsAndKeywords";
 import {binaryOperatorsLikeIdentifiers} from "./operatorsAndKeywords";
 import {AssertError} from "../utils/assert";
@@ -89,11 +90,32 @@ export class Tokenizer {
 
     // comments
     if (c === "#") {
-      let str = ss.readUntil(charUtils.isNewLine)
-      str = "#" + str // leave the '#' in front in order to distinguish the str from operators/keywords
-      let rng = new Range(pointStart, ss.currPoint())
-      this._tokens.push(new Token(str, TokenType.Comment, rng))
-      return
+      if (!ss.eof() && ss.peek() === "=") {
+        // multi line comment
+        ss.read()
+        let str = "#="
+        while (!ss.eof()) {
+          let next2 = ss.peekUpToX(2)
+          if (next2 === "=#") {
+            ss.read()
+            ss.read()
+            str += "=#"
+            break
+          } else {
+            str += ss.read()
+          }
+        }
+        let rng = new Range(pointStart, ss.currPoint())
+        this._tokens.push(new Token(str, TokenType.Comment, rng))
+        return
+      } else {
+        // single line comment
+        let str = ss.readUntil(charUtils.isNewLine)
+        str = "#" + str // leave the '#' in front in order to distinguish the str from operators/keywords
+        let rng = new Range(pointStart, ss.currPoint())
+        this._tokens.push(new Token(str, TokenType.Comment, rng))
+        return
+      }
     }
 
     // whitespace
@@ -328,8 +350,21 @@ export class Tokenizer {
             let iChar2 = ss.read()
             regexContents += "\\" + iChar2
           } else if (iChar === "\"") {
-            // terminate
-            this._tokens.push(new Token("r\"" + regexContents + "\"", TokenType.Regex, new Range(pointStart, ss.currPoint())))
+            // ready to terminate regex
+
+            // read any flags
+            let flags = ""
+            while (!ss.eof()) {
+              let c3 = ss.peek()
+              if (c3 in regexFlags) {
+                ss.read()
+                flags += c3
+              } else {
+                break
+              }
+            }
+
+            this._tokens.push(new Token("r\"" + regexContents + "\"" + flags, TokenType.Regex, new Range(pointStart, ss.currPoint())))
             return
           } else {
             regexContents += iChar

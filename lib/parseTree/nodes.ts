@@ -317,8 +317,8 @@ export class FunctionCallNode extends MayBeUnparsedNode {
 }
 
 export class SquareBracketNode extends MayBeUnparsedNode {
-  arrayObject: Node  // null if this is interpreted as an array literal
-  contents: Node[]
+  arrayObject: Node  // The object being indexed. null if this is interpreted as an array literal
+  contents: Node[]   // Contents of the array or of the indexing expressions. For array literals, the delimiters (eg , space or ;) are currently not retained.
   isAnyArray: boolean  // The contents of a {...} block denotes an Any array literal.
   constructor() {
     super()
@@ -326,7 +326,31 @@ export class SquareBracketNode extends MayBeUnparsedNode {
     this.contents = []
     this.isAnyArray = false
   }
-  toString(): string { return "[ ... ]" }
+  toString(): string {
+    let s = ""
+    if (this.arrayObject !== null) {
+      s += this.arrayObject.toString()
+    }
+
+    if (this.isAnyArray) {
+      s += "{"
+    } else {
+      s += "["
+    }
+
+    // delimiters not retained. Just report ',' for now.
+    for (let i = 0; i < this.contents.length; i++) {
+      s += this.contents[i].toString()
+      if (i !== this.contents.length - 1) s += ","
+    }
+
+    if (this.isAnyArray) {
+      s += "}"
+    } else {
+      s += "]"
+    }
+    return s
+  }
 }
 
 //export class ArrayLiteralNode extends MayBeUnparsedNode {

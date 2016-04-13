@@ -169,6 +169,8 @@ addToSet(operatorsThatAreIdentifiers, "|>")
 
 
 
+export var regexFlags = createStringSet((["i", "m", "s", "x"]))
+
 
 
 export var keywords = createStringSet([

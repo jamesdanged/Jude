@@ -11,50 +11,58 @@ import {ProjectFilesHash} from "../core/parseWorkspace";
 import {unmockAll} from "./utils/emptySession";
 
 
-describe("strings", () => {
+describe("generics", () => {
   let j13to20 = jasmine13to20(); let beforeAll = j13to20.beforeAll; let beforeEach = j13to20.beforeEach; let it = j13to20.it; let afterEach = j13to20.afterEach; let afterAll = j13to20.afterAll
 
   let sessionModel = createTestSessionModel()
   let errors = sessionModel.parseSet.errors
 
-  let path1 = "/string_1.jl"
+  let path1 = "/generics_1.jl"
   let contents1 = `
-a = 3
-s = "hello world $a  singlequote: ' backtick: \`"
+d = Dict{Int, Int}()
 `
 
-  let path2 = "/string_2.jl"
+  let path2 = "/generics_2.jl"
   let contents2 = `
-println(s) = s
-add(a, b) = a + b
-println("a + b is $(add(1, 3)) single quote: ' backtick: \` ")
+Tuple{}
 `
 
-  let path3 = "/string_3.jl"
-  let contents3 = "val = 5; `a command $val 3 4`"
+  let path3 = "/generics_3.jl"
+  let contents3 = `
+function foo{T}(val::T)
+  val
+end
 
-  let path4 = "/string_4.jl"
+# can have 0 args
+function foo{}(val)
+  val
+end
+
+
+`
+
+  let path4 = "/generics_4.jl"
   let contents4 = `
-a = 5
-rand() = 1.0
-
-s = """
-A very long string. Could be a docstring.
-$(rand()) $a
-
-Can have double quotes: "this is a also just a string"
-
-Can have unclosed double quotes: "
-Can have backticks: \`
-
-"""
+type Bar{T}
+  a::T
+  b::Int
+end
 `
 
-  let path5 = "/string_5.jl"
+  let path5 = "/generics_5.jl"
   let contents5 = `
-regex = r"^[foo]+"isx
-arr = [r"^[foo]+"isx, r"(0-9){3}"]
+type Bar{T}
+  a::T
+  b::Int
+  function Bar()
+    obj = new(1, 2)
+    obj.a = T(1)
+    obj.b = 2
+    obj
+  end
+end
 `
+
 
   beforeAll(() => {
     let o: ProjectFilesHash = {}
@@ -71,32 +79,32 @@ arr = [r"^[foo]+"isx, r"(0-9){3}"]
   })
 
 
-  it("should parse simple interpolation", async (done) => {
+  it("should parse generic type usages", async (done) => {
     await parseFullWorkspaceAsync(sessionModel)
     expect(errors[path1].parseErrors.length).toBe(0)
     expect(errors[path1].nameErrors.length).toBe(0)
     done()
   })
 
-  it("should parse interpolated expression", async (done) => {
+  it("should parse empty generics", async (done) => {
     expect(errors[path2].parseErrors.length).toBe(0)
     expect(errors[path2].nameErrors.length).toBe(0)
     done()
   })
 
-  it("should parse backtick strings", async (done) => {
+  it("should parse generic functions", async (done) => {
     expect(errors[path3].parseErrors.length).toBe(0)
     expect(errors[path3].nameErrors.length).toBe(0)
     done()
   })
 
-  it("should parse triple quoted strings", async (done) => {
+  it("should parse generic types", async (done) => {
     expect(errors[path4].parseErrors.length).toBe(0)
     expect(errors[path4].nameErrors.length).toBe(0)
     done()
   })
 
-  it("should parse regexes", async (done) => {
+  it("should parse functions inside generic types", async (done) => {
     expect(errors[path5].parseErrors.length).toBe(0)
     expect(errors[path5].nameErrors.length).toBe(0)
     done()

@@ -49,7 +49,8 @@ class GenericDefArgListFsa extends BaseFsa {
       state.addArc(state, streamAtComment, skipOneToken)
     }
 
-    // at least one arg
+    // 0 or more args
+    startState.addArc(stopState, streamAtEof, doNothing)
     startState.addArc(argName, streamAtIdentifier, readArgName)
 
     // type restriction is optional
