@@ -77,6 +77,11 @@ function refreshFileAsync(path, fileContents, sessionModel) {
         else {
             yield resolveFullWorkspace_1.resolveScopesInWorkspaceInvolvingFile(path, sessionModel);
         }
+        // report parse errors to console
+        let errorSet = sessionModel.parseSet.errors[path];
+        for (let err of errorSet.parseErrors) {
+            console.log("Parse error in " + path + ":\n", err);
+        }
     });
 }
 exports.refreshFileAsync = refreshFileAsync;

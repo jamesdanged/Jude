@@ -14,15 +14,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 };
 var operatorsAndKeywords_1 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_2 = require("./operatorsAndKeywords");
+var operatorsAndKeywords_3 = require("./operatorsAndKeywords");
 var assert_1 = require("../utils/assert");
 var charUtils = require("./../utils/charUtils");
 var errors_1 = require("./../utils/errors");
-var operatorsAndKeywords_3 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_4 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_5 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_6 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_7 = require("./operatorsAndKeywords");
 var operatorsAndKeywords_8 = require("./operatorsAndKeywords");
+var operatorsAndKeywords_9 = require("./operatorsAndKeywords");
 var StringStream_1 = require("./../utils/StringStream");
 var Token_1 = require("./Token");
 var Token_2 = require("./Token");
@@ -84,23 +85,46 @@ class Tokenizer {
         let c = ss.read();
         // comments
         if (c === "#") {
-            let str = ss.readUntil(charUtils.isNewLine);
-            str = "#" + str; // leave the '#' in front in order to distinguish the str from operators/keywords
-            let rng = new Token_2.Range(pointStart, ss.currPoint());
-            this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Comment, rng));
-            return;
+            if (!ss.eof() && ss.peek() === "=") {
+                // multi line comment
+                ss.read();
+                let str = "#=";
+                while (!ss.eof()) {
+                    let next2 = ss.peekUpToX(2);
+                    if (next2 === "=#") {
+                        ss.read();
+                        ss.read();
+                        str += "=#";
+                        break;
+                    }
+                    else {
+                        str += ss.read();
+                    }
+                }
+                let rng = new Token_2.Range(pointStart, ss.currPoint());
+                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Comment, rng));
+                return;
+            }
+            else {
+                // single line comment
+                let str = ss.readUntil(charUtils.isNewLine);
+                str = "#" + str; // leave the '#' in front in order to distinguish the str from operators/keywords
+                let rng = new Token_2.Range(pointStart, ss.currPoint());
+                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Comment, rng));
+                return;
+            }
         }
         // whitespace
         if (charUtils.isWhiteSpaceNotNewLine(c)) {
             let str = ss.readWhile(charUtils.isWhiteSpaceNotNewLine);
             str = c + str;
             let rng = new Token_2.Range(pointStart, ss.currPoint());
-            this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.LineWhiteSpace, rng));
+            this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.LineWhiteSpace, rng));
             return;
         }
         if (charUtils.isNewLine(c)) {
             let rng = new Token_2.Range(pointStart, ss.currPoint());
-            this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_8.TokenType.NewLine, rng));
+            this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_9.TokenType.NewLine, rng));
             //this._currRow++
             return;
         }
@@ -125,13 +149,13 @@ class Tokenizer {
                 ss.read();
                 ss.read();
             }
-            this._tokens.push(new Token_1.Token(openQuote, operatorsAndKeywords_8.TokenType.Quote, new Token_2.Range(pointStart, ss.currPoint())));
+            this._tokens.push(new Token_1.Token(openQuote, operatorsAndKeywords_9.TokenType.Quote, new Token_2.Range(pointStart, ss.currPoint())));
             let str = "";
             let pointCurrStringLiteralStart = ss.currPoint();
             let storeCurrentStringLiteral = () => {
                 if (str.length > 0) {
                     let rng = new Token_2.Range(pointCurrStringLiteralStart, ss.currPoint());
-                    this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.StringLiteralContents, rng));
+                    this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.StringLiteralContents, rng));
                 }
                 str = "";
             };
@@ -144,7 +168,7 @@ class Tokenizer {
                     // escape the next character
                     // especially if it is \$
                     if (ss.eof()) {
-                        throw new errors_1.InvalidParseError("Unexpected EOF", new Token_1.Token(ch, operatorsAndKeywords_8.TokenType.StringLiteralContents, new Token_2.Range(chPoint, ss.currPoint())));
+                        throw new errors_1.InvalidParseError("Unexpected EOF", new Token_1.Token(ch, operatorsAndKeywords_9.TokenType.StringLiteralContents, new Token_2.Range(chPoint, ss.currPoint())));
                     }
                     let ch2 = ss.read();
                     str += "\\" + ch2;
@@ -171,28 +195,28 @@ class Tokenizer {
                     // terminate the string
                     storeCurrentStringLiteral();
                     // store close quote
-                    this._tokens.push(new Token_1.Token(openQuote, operatorsAndKeywords_8.TokenType.Quote, new Token_2.Range(chPoint, ss.currPoint())));
+                    this._tokens.push(new Token_1.Token(openQuote, operatorsAndKeywords_9.TokenType.Quote, new Token_2.Range(chPoint, ss.currPoint())));
                     stringClosedSuccessfully = true;
                     break; // while
                 }
                 if (ch === "$") {
                     if (ss.eof()) {
-                        throw new errors_1.InvalidParseError("Unexpected EOF", new Token_1.Token(ch, operatorsAndKeywords_8.TokenType.StringLiteralContents, new Token_2.Range(chPoint, ss.currPoint())));
+                        throw new errors_1.InvalidParseError("Unexpected EOF", new Token_1.Token(ch, operatorsAndKeywords_9.TokenType.StringLiteralContents, new Token_2.Range(chPoint, ss.currPoint())));
                     }
                     let pointAfterDollar = ss.currPoint();
                     let ch2 = ss.read();
                     if (charUtils.isValidIdentifierStart(ch2)) {
                         storeCurrentStringLiteral();
-                        this._tokens.push(new Token_1.Token("$", operatorsAndKeywords_8.TokenType.StringInterpolationStart, new Token_2.Range(chPoint, pointAfterDollar)));
+                        this._tokens.push(new Token_1.Token("$", operatorsAndKeywords_9.TokenType.StringInterpolationStart, new Token_2.Range(chPoint, pointAfterDollar)));
                         let str = ss.readWhile(charUtils.isValidIdentifierContinuation);
-                        this._tokens.push(new Token_1.Token(ch2 + str, operatorsAndKeywords_8.TokenType.Identifier, new Token_2.Range(pointAfterDollar, ss.currPoint())));
+                        this._tokens.push(new Token_1.Token(ch2 + str, operatorsAndKeywords_9.TokenType.Identifier, new Token_2.Range(pointAfterDollar, ss.currPoint())));
                     }
                     else if (ch2 === "(") {
                         // major string interpolation
                         // need to recurse
                         storeCurrentStringLiteral();
-                        this._tokens.push(new Token_1.Token("$", operatorsAndKeywords_8.TokenType.StringInterpolationStart, new Token_2.Range(chPoint, pointAfterDollar)));
-                        this._tokens.push(new Token_1.Token("(", operatorsAndKeywords_8.TokenType.Bracket, new Token_2.Range(pointAfterDollar, ss.currPoint())));
+                        this._tokens.push(new Token_1.Token("$", operatorsAndKeywords_9.TokenType.StringInterpolationStart, new Token_2.Range(chPoint, pointAfterDollar)));
+                        this._tokens.push(new Token_1.Token("(", operatorsAndKeywords_9.TokenType.Bracket, new Token_2.Range(pointAfterDollar, ss.currPoint())));
                         let origParenthesisLevel = this._currParenthesisLevel;
                         this._currParenthesisLevel++;
                         while (!ss.eof() && this._currParenthesisLevel != origParenthesisLevel) {
@@ -203,7 +227,7 @@ class Tokenizer {
                         }
                     }
                     else {
-                        throw new errors_1.InvalidParseError("Invalid interpolation syntax: $" + ch2, new Token_1.Token(ch2, operatorsAndKeywords_8.TokenType.StringLiteralContents, new Token_2.Range(chPoint, ss.currPoint())));
+                        throw new errors_1.InvalidParseError("Invalid interpolation syntax: $" + ch2, new Token_1.Token(ch2, operatorsAndKeywords_9.TokenType.StringLiteralContents, new Token_2.Range(chPoint, ss.currPoint())));
                     }
                     continue;
                 }
@@ -219,13 +243,13 @@ class Tokenizer {
             if (c === "(") {
                 this._currParenthesisLevel++;
                 let rng = new Token_2.Range(pointStart, ss.currPoint());
-                this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Bracket, rng));
+                this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_9.TokenType.Bracket, rng));
                 return;
             }
             if (c === ")") {
                 this._currParenthesisLevel--;
                 let rng = new Token_2.Range(pointStart, ss.currPoint());
-                this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Bracket, rng));
+                this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_9.TokenType.Bracket, rng));
                 return;
             }
         }
@@ -236,10 +260,10 @@ class Tokenizer {
             // no spacing allowed
             if (this._tokens.length > 0) {
                 let lastToken = arrayUtils_1.last(this._tokens);
-                if (lastToken.type === operatorsAndKeywords_8.TokenType.Identifier ||
-                    (lastToken.type === operatorsAndKeywords_8.TokenType.Bracket && (lastToken.str === ")" || lastToken.str === "]"))) {
+                if (lastToken.type === operatorsAndKeywords_9.TokenType.Identifier ||
+                    (lastToken.type === operatorsAndKeywords_9.TokenType.Bracket && (lastToken.str === ")" || lastToken.str === "]"))) {
                     let rng = new Token_2.Range(pointStart, ss.currPoint());
-                    this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Operator, rng));
+                    this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_9.TokenType.Operator, rng));
                     return;
                 }
             }
@@ -249,11 +273,11 @@ class Tokenizer {
                 let c1 = next2[0];
                 let c2 = next2[1];
                 if (c1 !== "'" && c1 !== "\\" && c2 === "'") {
-                    this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Quote, new Token_2.Range(pointStart, ss.currPoint())));
+                    this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_9.TokenType.Quote, new Token_2.Range(pointStart, ss.currPoint())));
                     ss.read();
-                    this._tokens.push(new Token_1.Token(c1, operatorsAndKeywords_8.TokenType.StringLiteralContents, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
+                    this._tokens.push(new Token_1.Token(c1, operatorsAndKeywords_9.TokenType.StringLiteralContents, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
                     ss.read();
-                    this._tokens.push(new Token_1.Token(c2, operatorsAndKeywords_8.TokenType.Quote, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
+                    this._tokens.push(new Token_1.Token(c2, operatorsAndKeywords_9.TokenType.Quote, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
                     return;
                 }
                 // escaped chars, ie \'  \n  \t  \r
@@ -261,16 +285,16 @@ class Tokenizer {
                     let next3 = ss.peekUpToX(3);
                     let c3 = next3[2];
                     if (c3 === "'") {
-                        this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Quote, new Token_2.Range(pointStart, ss.currPoint())));
+                        this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_9.TokenType.Quote, new Token_2.Range(pointStart, ss.currPoint())));
                         ss.read();
                         ss.read();
-                        this._tokens.push(new Token_1.Token("'", operatorsAndKeywords_8.TokenType.StringLiteralContents, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
+                        this._tokens.push(new Token_1.Token("'", operatorsAndKeywords_9.TokenType.StringLiteralContents, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
                         ss.read();
-                        this._tokens.push(new Token_1.Token(c3, operatorsAndKeywords_8.TokenType.Quote, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
+                        this._tokens.push(new Token_1.Token(c3, operatorsAndKeywords_9.TokenType.Quote, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
                         return;
                     }
                 }
-                throw new errors_1.InvalidParseError("Character literal must have only one character.", new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Quote, new Token_2.Range(pointStart, ss.currPoint())));
+                throw new errors_1.InvalidParseError("Character literal must have only one character.", new Token_1.Token(c, operatorsAndKeywords_9.TokenType.Quote, new Token_2.Range(pointStart, ss.currPoint())));
             }
         }
         // regex
@@ -287,21 +311,33 @@ class Tokenizer {
                     if (iChar === "\\") {
                         // escape the next character
                         if (ss.eof()) {
-                            throw new errors_1.InvalidParseError("Unexpected EOF", new Token_1.Token(iChar, operatorsAndKeywords_8.TokenType.StringLiteralContents, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
+                            throw new errors_1.InvalidParseError("Unexpected EOF", new Token_1.Token(iChar, operatorsAndKeywords_9.TokenType.StringLiteralContents, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
                         }
                         let iChar2 = ss.read();
                         regexContents += "\\" + iChar2;
                     }
                     else if (iChar === "\"") {
-                        // terminate
-                        this._tokens.push(new Token_1.Token("r\"" + regexContents + "\"", operatorsAndKeywords_8.TokenType.Regex, new Token_2.Range(pointStart, ss.currPoint())));
+                        // ready to terminate regex
+                        // read any flags
+                        let flags = "";
+                        while (!ss.eof()) {
+                            let c3 = ss.peek();
+                            if (c3 in operatorsAndKeywords_1.regexFlags) {
+                                ss.read();
+                                flags += c3;
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        this._tokens.push(new Token_1.Token("r\"" + regexContents + "\"" + flags, operatorsAndKeywords_9.TokenType.Regex, new Token_2.Range(pointStart, ss.currPoint())));
                         return;
                     }
                     else {
                         regexContents += iChar;
                     }
                 }
-                throw new errors_1.InvalidParseError("Unexpected EOF", new Token_1.Token(lastChar, operatorsAndKeywords_8.TokenType.StringLiteralContents, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
+                throw new errors_1.InvalidParseError("Unexpected EOF", new Token_1.Token(lastChar, operatorsAndKeywords_9.TokenType.StringLiteralContents, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
             }
         }
         // symbols
@@ -320,20 +356,20 @@ class Tokenizer {
             if (charUtils.isValidIdentifierStart(c2)) {
                 let str = ss.readWhile(charUtils.isValidIdentifierContinuation);
                 str = c + c2 + str;
-                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Symbol, new Token_2.Range(pointStart, ss.currPoint())));
+                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Symbol, new Token_2.Range(pointStart, ss.currPoint())));
                 return;
             }
             ss.unread();
             if (this._streamAtNumber()) {
                 let str = this._readNumber();
                 str = c + str;
-                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Symbol, new Token_2.Range(pointStart, ss.currPoint())));
+                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Symbol, new Token_2.Range(pointStart, ss.currPoint())));
                 return;
             }
             if (this._streamAtOperator()) {
                 let str = this._readOperator();
                 str = c + str;
-                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Symbol, new Token_2.Range(pointStart, ss.currPoint())));
+                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Symbol, new Token_2.Range(pointStart, ss.currPoint())));
                 return;
             }
             // what other symbol could it be?
@@ -349,7 +385,7 @@ class Tokenizer {
         if (this._streamAtOperator()) {
             let str = this._readOperator();
             let rng = new Token_2.Range(pointStart, ss.currPoint());
-            this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Operator, rng));
+            this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Operator, rng));
             return;
         }
         else {
@@ -361,19 +397,19 @@ class Tokenizer {
             str = c + str;
             let rng = new Token_2.Range(pointStart, ss.currPoint());
             // make sure not a keyword
-            if (str in operatorsAndKeywords_6.keywords) {
-                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Keyword, rng));
+            if (str in operatorsAndKeywords_7.keywords) {
+                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Keyword, rng));
                 return;
             }
-            if (str in operatorsAndKeywords_1.keywordValues) {
-                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Number, rng)); // can treat like a number for parse purposes
+            if (str in operatorsAndKeywords_2.keywordValues) {
+                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Number, rng)); // can treat like a number for parse purposes
                 return;
             }
-            if (str in operatorsAndKeywords_2.binaryOperatorsLikeIdentifiers) {
-                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Operator, rng));
+            if (str in operatorsAndKeywords_3.binaryOperatorsLikeIdentifiers) {
+                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Operator, rng));
                 return;
             }
-            this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Identifier, rng));
+            this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Identifier, rng));
             return;
         }
         // macro invocations
@@ -390,11 +426,11 @@ class Tokenizer {
                 //}
                 //let tokType = TokenType.Macro
                 //if (followedBySpace) tokType = TokenType.MacroWithSpace
-                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Macro, rng));
+                this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Macro, rng));
                 return;
             }
             else {
-                throw new errors_1.InvalidParseError("Expecting a macro name, but got '..." + ss.getContext() + "...'", new Token_1.Token(c + c2, operatorsAndKeywords_8.TokenType.Macro, new Token_2.Range(pointStart, ss.currPoint())));
+                throw new errors_1.InvalidParseError("Expecting a macro name, but got '..." + ss.getContext() + "...'", new Token_1.Token(c + c2, operatorsAndKeywords_9.TokenType.Macro, new Token_2.Range(pointStart, ss.currPoint())));
             }
         }
         // numbers
@@ -402,23 +438,23 @@ class Tokenizer {
         if (this._streamAtNumber()) {
             let str = this._readNumber();
             let rng = new Token_2.Range(pointStart, ss.currPoint());
-            this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_8.TokenType.Number, rng));
+            this._tokens.push(new Token_1.Token(str, operatorsAndKeywords_9.TokenType.Number, rng));
             return;
         }
         else {
             ss.read();
         }
-        if (c in operatorsAndKeywords_7.allBrackets) {
+        if (c in operatorsAndKeywords_8.allBrackets) {
             let rng = new Token_2.Range(pointStart, ss.currPoint());
-            this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Bracket, rng));
+            this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_9.TokenType.Bracket, rng));
             return;
         }
         if (c === ";") {
             let rng = new Token_2.Range(pointStart, ss.currPoint());
-            this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_8.TokenType.SemiColon, rng));
+            this._tokens.push(new Token_1.Token(c, operatorsAndKeywords_9.TokenType.SemiColon, rng));
             return;
         }
-        throw new errors_1.InvalidParseError("Unexpected character: '" + c + "'. Context: '" + ss.getContext() + "'.", new Token_1.Token(c, operatorsAndKeywords_8.TokenType.Identifier, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
+        throw new errors_1.InvalidParseError("Unexpected character: '" + c + "'. Context: '" + ss.getContext() + "'.", new Token_1.Token(c, operatorsAndKeywords_9.TokenType.Identifier, new Token_2.Range(ss.prevPoint(), ss.currPoint())));
     }
     /**
      * Reads a complete operator from the stream.
@@ -428,11 +464,11 @@ class Tokenizer {
     _readOperator() {
         let ss = this._ss;
         let str = ss.read();
-        while (!ss.eof() && str.length < operatorsAndKeywords_4.longestOperatorLength) {
+        while (!ss.eof() && str.length < operatorsAndKeywords_5.longestOperatorLength) {
             str += ss.read();
         }
         // trim down to longest valid operator
-        while (!(str in operatorsAndKeywords_5.allOperators)) {
+        while (!(str in operatorsAndKeywords_6.allOperators)) {
             str = str.substring(0, str.length - 1);
             ss.unread();
         }
@@ -502,7 +538,7 @@ class Tokenizer {
         if (ss.eof())
             return false;
         let c = ss.peek();
-        return c in operatorsAndKeywords_5.allOperators; // assumes first char of all operators is an operator
+        return c in operatorsAndKeywords_6.allOperators; // assumes first char of all operators is an operator
     }
     _streamAtSymbol() {
         let ss = this._ss;
@@ -527,11 +563,11 @@ class Tokenizer {
         // check prev char
         let prevTokenIsOk = false;
         let isTokenOkForPrev = (tok) => {
-            if (tok.type === operatorsAndKeywords_8.TokenType.NewLine)
+            if (tok.type === operatorsAndKeywords_9.TokenType.NewLine)
                 return true;
-            if (tok.type === operatorsAndKeywords_8.TokenType.Bracket && (tok.str === "(" || tok.str === "[" || tok.str === "{"))
+            if (tok.type === operatorsAndKeywords_9.TokenType.Bracket && (tok.str === "(" || tok.str === "[" || tok.str === "{"))
                 return true;
-            if (tok.type === operatorsAndKeywords_8.TokenType.Operator && tok.str in operatorsAndKeywords_3.binaryOperators)
+            if (tok.type === operatorsAndKeywords_9.TokenType.Operator && tok.str in operatorsAndKeywords_4.binaryOperators)
                 return true;
             return false;
         };
@@ -542,7 +578,7 @@ class Tokenizer {
             let prevToken = arrayUtils_1.last(this._tokens);
             if (isTokenOkForPrev(prevToken))
                 prevTokenIsOk = true;
-            if (!prevTokenIsOk && prevToken.type === operatorsAndKeywords_8.TokenType.LineWhiteSpace && this._tokens.length > 1) {
+            if (!prevTokenIsOk && prevToken.type === operatorsAndKeywords_9.TokenType.LineWhiteSpace && this._tokens.length > 1) {
                 // check token before that
                 let prevToken2 = this._tokens[this._tokens.length - 2];
                 if (isTokenOkForPrev(prevToken2))

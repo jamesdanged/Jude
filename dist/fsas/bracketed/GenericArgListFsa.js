@@ -45,7 +45,8 @@ class GenericArgListFsa extends fsaUtils_2.BaseFsa {
             state.addArc(state, streamConditions_1.streamAtNewLine, skipOneToken);
             state.addArc(state, streamConditions_2.streamAtComment, skipOneToken);
         }
-        // at least 1 type
+        // 0 or more types
+        startState.addArc(stopState, streamConditions_4.streamAtEof, doNothing);
         startState.addArc(typeExpression, streamConditions_3.alwaysPasses, readTypeExpression);
         typeExpression.addArc(stopState, streamConditions_4.streamAtEof, doNothing);
         typeExpression.addArc(comma, streamConditions_5.streamAtComma, skipOneToken);

@@ -289,7 +289,31 @@ class SquareBracketNode extends MayBeUnparsedNode {
         this.contents = [];
         this.isAnyArray = false;
     }
-    toString() { return "[ ... ]"; }
+    toString() {
+        let s = "";
+        if (this.arrayObject !== null) {
+            s += this.arrayObject.toString();
+        }
+        if (this.isAnyArray) {
+            s += "{";
+        }
+        else {
+            s += "[";
+        }
+        // delimiters not retained. Just report ',' for now.
+        for (let i = 0; i < this.contents.length; i++) {
+            s += this.contents[i].toString();
+            if (i !== this.contents.length - 1)
+                s += ",";
+        }
+        if (this.isAnyArray) {
+            s += "}";
+        }
+        else {
+            s += "]";
+        }
+        return s;
+    }
 }
 exports.SquareBracketNode = SquareBracketNode;
 //export class ArrayLiteralNode extends MayBeUnparsedNode {

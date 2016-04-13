@@ -146,6 +146,7 @@ StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, "~");
 StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, "$");
 StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, ":");
 StringSet_3.addToSet(exports.operatorsThatAreIdentifiers, "|>");
+exports.regexFlags = StringSet_1.createStringSet((["i", "m", "s", "x"]));
 exports.keywords = StringSet_1.createStringSet([
     "function", "macro", "quote",
     "module", "baremodule",

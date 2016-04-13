@@ -83,6 +83,7 @@ class MacroCallFsa extends fsaUtils_2.BaseFsa {
         // so don't need to specifically require a space between args
         spaceDelimitedArg.addArc(stop, streamConditions_6.streamAtNewLineOrSemicolon, doNothing);
         spaceDelimitedArg.addArc(stop, streamConditions_4.streamAtComment, doNothing);
+        spaceDelimitedArg.addArc(stop, streamConditions_7.streamAtEof, doNothing);
         spaceDelimitedArg.addArc(spaceDelimitedArg, streamConditions_5.alwaysPasses, readSpaceDelimitedArg);
         // handle comma delimited arg list
         commaDelimitedArgList.addArc(stop, streamConditions_5.alwaysPasses, doNothing);
