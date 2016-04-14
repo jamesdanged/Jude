@@ -63,7 +63,22 @@ using Mod
 @foo
 `
 
+  let path_macro_4 = "/macro_4.jl"
+  let contents_macro_4 = `
+macro abc_str(s1, s2)
+  s1 + s2
+end
+abc"some text"xyz + 2
+`
 
+  let path_macro_5 = "/macro_5.jl"
+  let contents_macro_5 = `
+macro a123_str(s1, s2)
+  foo
+end
+
+a123"some text"xyz() + 2
+`
 
 
   beforeAll(() => {
@@ -71,6 +86,8 @@ using Mod
     o[path_macro_1] = contents_macro_1
     o[path_macro_2] = contents_macro_2
     o[path_macro_3] = contents_macro_3
+    o[path_macro_4] = contents_macro_4
+    o[path_macro_5] = contents_macro_5
     mockAll(o)
   })
 
@@ -98,6 +115,16 @@ using Mod
     done()
   })
 
+  it("should parse usage of string macros", async (done) => {
+    expect(errors[path_macro_4].parseErrors.length).toBe(0)
+    expect(errors[path_macro_4].nameErrors.length).toBe(0)
+    done()
+  })
 
+  it("should parse usage of string macros allowing invocation of macro result", async (done) => {
+    expect(errors[path_macro_5].parseErrors.length).toBe(0)
+    expect(errors[path_macro_5].nameErrors.length).toBe(0)
+    done()
+  })
 
 })

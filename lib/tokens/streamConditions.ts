@@ -216,10 +216,10 @@ export function streamAtOperatorThatCanBeIdentifier(ts: TokenStream): boolean {
   return tok.type === TokenType.Operator && tok.str in operatorsThatAreIdentifiers
 }
 
-export function streamAtRegex(ts: TokenStream): boolean {
+export function streamAtStringMacro(ts: TokenStream): boolean {
   if (ts.eof()) return false
   let tok = ts.peek()
-  return tok.type === TokenType.Regex
+  return tok.type === TokenType.StringMacro
 }
 export function streamAtLocal(ts: TokenStream): boolean {
   if (ts.eof()) return false

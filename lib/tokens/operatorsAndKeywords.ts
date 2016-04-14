@@ -16,7 +16,7 @@ export enum TokenType {
   StringInterpolationStart, // unescaped '$' within a string
   CharacterLiteralContents,
   Macro,           // macro invocation, ie @assert
-  Regex,
+  StringMacro,     // eg regexes, byte string literals
   Symbol // eg :foo
   //EndAsIndex // the 'end' keyword when inside square brackets is evaluated at runtime as the last index to an array
   //Unexpected

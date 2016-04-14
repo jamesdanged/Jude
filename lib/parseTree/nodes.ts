@@ -161,7 +161,10 @@ export class StringLiteralNode extends Node {
   }
 }
 
-export class RegexNode extends Node {
+/**
+ * eg regex r"" or bytestring b""
+ */
+export class StringMacroNode extends Node {
   constructor(public token: Token) {
     super()
   }
