@@ -134,7 +134,7 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
         let keywordBlockState = new fsaUtils_5.FsaState("keyword block"); // ie if...end, for...end, try...end
         let doBlockState = new fsaUtils_5.FsaState("do block");
         let quoteState = new fsaUtils_5.FsaState("quote");
-        let regexState = new fsaUtils_5.FsaState("regex");
+        let stringMacroState = new fsaUtils_5.FsaState("string macro"); // eg regex r""
         let macroCallState = new fsaUtils_5.FsaState("macro invocation");
         let returnState = new fsaUtils_5.FsaState("return");
         let breakState = new fsaUtils_5.FsaState("break");
@@ -155,7 +155,7 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
             parenthesesState, functionCallState,
             squareBracketState,
             anyArrayLiteralState, typeParametersState,
-            keywordBlockState, doBlockState, quoteState, regexState, macroCallState,
+            keywordBlockState, doBlockState, quoteState, stringMacroState, macroCallState,
             returnState, breakState, continueState, singleColonState, localVarState, globalVarState, constVarState,
             splatState, commaAfterSplatState, typeAliasKeyword, typeAliasName, typeAliasGenericParamList, typeAliasRefersTo];
         // filter down valid binary ops
@@ -251,7 +251,7 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
         // a new identifier or number also implies termination
         for (let state of [identifierState, parenthesesState, functionCallState, squareBracketState,
             anyArrayLiteralState, typeParametersState, postFixState, numberState, symbolState, keywordBlockState, doBlockState,
-            quoteState, regexState,
+            quoteState, stringMacroState,
             macroCallState]) {
             state.addArc(binaryState, streamAtBinaryOpRequireArg2, readBinaryOp);
             state.addArc(binaryMayOmitArg2State, streamAtBinaryOpMayOmitArg2, readBinaryOp);
@@ -284,7 +284,7 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
             state.addArc(anyArrayLiteralState, streamConditions_20.streamAtOpenCurlyBraces, readAnyArrayLiteral);
             state.addArc(keywordBlockState, streamConditions_3.streamAtKeywordBlock, readKeywordBlock);
             state.addArc(quoteState, streamConditions_22.streamAtAnyQuote, readAnyQuote);
-            state.addArc(regexState, streamConditions_29.streamAtRegex, readRegex);
+            state.addArc(stringMacroState, streamConditions_29.streamAtStringMacro, readStringMacro);
         }
         // a number followed immediately by an identifier or an open parentheses (no whitespace in between) implies multiplication
         numberState.addArc(identifierState, streamConditions_16.streamAtIdentifier, readImplicitMultiplicationIdentifier);
@@ -301,7 +301,7 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
         // [] and () are both resolved as function invocations
         // {} is a type parameter qualifier which can be surpisingly applied to any expression
         for (let state of [identifierState, postFixState, parenthesesState, functionCallState, squareBracketState,
-            anyArrayLiteralState, typeParametersState, quoteState, regexState, macroCallState]) {
+            anyArrayLiteralState, typeParametersState, quoteState, stringMacroState, macroCallState]) {
             state.addArc(functionCallState, streamConditions_18.streamAtOpenParenthesis, readFunctionCallParentheses);
             state.addArc(squareBracketState, streamConditions_19.streamAtOpenSquareBracket, readSquareBracket);
             //state.addArc(indexingState, streamAtOpenSquareBracket, readIndexingArgs )
@@ -514,9 +514,9 @@ function readSymbol(state) {
     let node = new nodes_16.SymbolNode(token);
     state.nodes.push(node);
 }
-function readRegex(state) {
+function readStringMacro(state) {
     let token = state.ts.read();
-    let node = new nodes_17.RegexNode(token);
+    let node = new nodes_17.StringMacroNode(token);
     state.nodes.push(node);
 }
 function readIdentifier(state) {

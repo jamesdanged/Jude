@@ -2,7 +2,7 @@
   "name": "Jude",
   "main": "./dist/core/main.js",
   "version": "0.2.7",
-  "description": "Autocomplete and jump to definition for Julia",
+  "description": "Julia Development Extensions",
   "keywords": [],
   "repository": "https://github.com/jamesdanged/Jude",
   "license": "MIT",

@@ -31,7 +31,7 @@ var assert_1 = require("../utils/assert");
     TokenType[TokenType["StringInterpolationStart"] = 11] = "StringInterpolationStart";
     TokenType[TokenType["CharacterLiteralContents"] = 12] = "CharacterLiteralContents";
     TokenType[TokenType["Macro"] = 13] = "Macro";
-    TokenType[TokenType["Regex"] = 14] = "Regex";
+    TokenType[TokenType["StringMacro"] = 14] = "StringMacro";
     TokenType[TokenType["Symbol"] = 15] = "Symbol"; // eg :foo
 })(exports.TokenType || (exports.TokenType = {}));
 var TokenType = exports.TokenType;

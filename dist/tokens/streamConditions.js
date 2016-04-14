@@ -280,13 +280,13 @@ function streamAtOperatorThatCanBeIdentifier(ts) {
     return tok.type === operatorsAndKeywords_7.TokenType.Operator && tok.str in operatorsAndKeywords_1.operatorsThatAreIdentifiers;
 }
 exports.streamAtOperatorThatCanBeIdentifier = streamAtOperatorThatCanBeIdentifier;
-function streamAtRegex(ts) {
+function streamAtStringMacro(ts) {
     if (ts.eof())
         return false;
     let tok = ts.peek();
-    return tok.type === operatorsAndKeywords_7.TokenType.Regex;
+    return tok.type === operatorsAndKeywords_7.TokenType.StringMacro;
 }
-exports.streamAtRegex = streamAtRegex;
+exports.streamAtStringMacro = streamAtStringMacro;
 function streamAtLocal(ts) {
     if (ts.eof())
         return false;

@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.2.8]
+Parsing string macros.
+
 ## [0.2.7]
 Parsing regex flags, empty generic params, multi line comments.
 

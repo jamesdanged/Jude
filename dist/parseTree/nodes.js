@@ -143,13 +143,16 @@ class StringLiteralNode extends Node {
     }
 }
 exports.StringLiteralNode = StringLiteralNode;
-class RegexNode extends Node {
+/**
+ * eg regex r"" or bytestring b""
+ */
+class StringMacroNode extends Node {
     constructor(token) {
         super();
         this.token = token;
     }
 }
-exports.RegexNode = RegexNode;
+exports.StringMacroNode = StringMacroNode;
 class EmptyTupleNode extends Node {
     constructor() {
         super();
