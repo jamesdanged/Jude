@@ -671,6 +671,7 @@ export class Tokenizer {
       if (tok.type === TokenType.NewLine) return true
       if (tok.type === TokenType.Bracket && (tok.str === "(" || tok.str === "[" || tok.str === "{")) return true
       if (tok.type === TokenType.Operator && tok.str in binaryOperators) return true
+      if (tok.type === TokenType.Keyword) return true
       return false
     }
     if (this.tokens.length === 0) {

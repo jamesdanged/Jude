@@ -12,7 +12,7 @@ import {ProjectFilesHash} from "../core/parseWorkspace";
 import {unmockAll} from "./utils/emptySession";
 
 
-describe("anonymous functions", () => {
+describe("':' symbols", () => {
   let j13to20 = jasmine13to20(); let beforeAll = j13to20.beforeAll; let beforeEach = j13to20.beforeEach; let it = j13to20.it; let afterEach = j13to20.afterEach; let afterAll = j13to20.afterAll
 
   let sessionModel = createTestSessionModel()
@@ -20,10 +20,10 @@ describe("anonymous functions", () => {
 
   let path = "/file.jl"
   let contents =
-`function map() end
-arr = []
-map(o -> o + 1, arr)
-map((a, b) -> a + b + 1, arr)
+    `if :asdf == :asdf
+end
+
+val = :asdf
 `
 
   beforeAll(() => {
@@ -37,7 +37,7 @@ map((a, b) -> a + b + 1, arr)
   })
 
 
-  it("should parse arrow functions", async (done) => {
+  it("should not be a parse error to have a symbol after a keyword", async (done) => {
     await parseFullWorkspaceAsync(sessionModel)
     expect(errors[path].parseErrors.length).toBe(0)
     expect(errors[path].nameErrors.length).toBe(0)

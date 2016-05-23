@@ -767,7 +767,7 @@ function readKeywordBlock(state: ParseState): void {
     case "quote":
       throw new InvalidParseError("Unimplemented", unparsedTree)
       //node = new CodeQuoteNode()
-      break
+      // break
     case "begin":
       node = parseWholeBeginBlock(unparsedTree, state.wholeState)
       break

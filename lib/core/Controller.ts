@@ -86,7 +86,7 @@ export class Controller {
     this.sessionModel = new SessionModel()
     this.linter = new Linter(this.sessionModel)
     this.jumper = new JumpController(this.sessionModel)
-    this.autocompleter = new Autocompleter(this.sessionModel, this.jumper)
+    this.autocompleter = new Autocompleter(this.sessionModel, this.jumper, this)
     this.subscriptions = new atomModule.CompositeDisposable()
     this.dirWatcher = null
     this.taskQueue = new TaskQueue()

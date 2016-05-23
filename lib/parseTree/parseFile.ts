@@ -8,11 +8,9 @@ import {Token} from "../tokens/Token";
 import {TokenType} from "../tokens/operatorsAndKeywords";
 import {Point} from "../tokens/Token";
 import {Range} from "../tokens/Token";
-import {Indent} from "../tokens/Token";
 import {TokenStream} from "../tokens/TokenStream";
 import {BracketGrouper} from "./BracketGrouper";
 import {parseWholeFileContents} from "../fsas/general/ModuleContentsFsa";
-import {MultiDotNode} from "./nodes";
 
 export function parseFile(path: string, fileContents: string, sessionModel: SessionModel): void {
   let parseSet = sessionModel.parseSet

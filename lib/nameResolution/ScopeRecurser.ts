@@ -17,7 +17,6 @@ import {ModuleLibrary} from "./../core/ModuleLibrary";
 import {last} from "../utils/arrayUtils";
 import {NameError} from "../utils/errors";
 import {IdentifierNode} from "../parseTree/nodes";
-import {ModuleContentsNode} from "../parseTree/nodes";
 import {ScopeType} from "./Scope";
 import {ModuleDefNode} from "../parseTree/nodes";
 import {VarDeclarationNode} from "../parseTree/nodes";
@@ -35,11 +34,9 @@ import {ImportAllNode} from "../parseTree/nodes";
 import {UsingNode} from "../parseTree/nodes";
 import {ExportNode} from "../parseTree/nodes";
 import {AssertError} from "../utils/assert";
-import {getFromHash} from "../utils/arrayUtils";
 import {addToSet} from "../utils/StringSet";
 import {NameDeclType} from "./Resolve";
 import {Resolve} from "./Resolve";
-import {LocalModuleResolve} from "./Resolve";
 import {ModuleResolve} from "./Resolve";
 import {InvalidParseError} from "../utils/errors";
 import {MultiDotNode} from "../parseTree/nodes";
@@ -235,6 +232,8 @@ export class ScopeRecurser {
     for (let part of node.nodes) {
       if (part instanceof IdentifierNode) {
         prefix.push(part)
+      } else {
+        break
       }
     }
     if (prefix.length > 0) {
@@ -296,7 +295,9 @@ export class ScopeRecurser {
       } else if (node.arg1 instanceof MultiDotNode) {
         let multiDotNode = node.arg1 as MultiDotNode
         if (!multiDotNode.nodes.every((o) => { return o instanceof IdentifierNode })) {
-          this.logParseError(new InvalidParseError("Expected a variable name to be assigned to.", node.token))
+          // possible that we have
+          //   arr[i].prop = val
+          // this.logParseError(new InvalidParseError("Expected a variable name to be assigned to.", node.token))
         } else {
           // do not register a name
           // either it is a property of an object or a variable inside another module,

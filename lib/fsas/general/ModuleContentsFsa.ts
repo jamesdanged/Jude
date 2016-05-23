@@ -67,7 +67,7 @@ import {overridableBinaryOperators} from "../../tokens/operatorsAndKeywords";
  * Can be used for statements in the top level module or
  * for contents of a file which are included in a module
  * (both of which aren't surrounded by module...end).
- * This is the only FSA allowed to recognize import, importall, export, and using statements.
+ * This is the only FSA allowed to recognize include, import, importall, export, and using statements.
  */
 class ModuleContentsFsa extends BaseFsa {
   constructor() {
