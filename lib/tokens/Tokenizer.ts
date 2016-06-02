@@ -670,7 +670,7 @@ export class Tokenizer {
     let isTokenOkForPrev = (tok: Token): boolean => {
       if (tok.type === TokenType.NewLine) return true
       if (tok.type === TokenType.Bracket && (tok.str === "(" || tok.str === "[" || tok.str === "{")) return true
-      if (tok.type === TokenType.Operator && tok.str in binaryOperators) return true
+      if (tok.type === TokenType.Operator && (tok.str in binaryOperators || tok.str === "?")) return true
       if (tok.type === TokenType.Keyword) return true
       return false
     }

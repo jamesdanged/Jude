@@ -1,6 +1,6 @@
 "use strict"
 
-import {ParenthesesNode} from "../parseTree/nodes";
+import {ParenthesesNode, GenericArgListNode} from "../parseTree/nodes";
 import {LetBlockNode} from "../parseTree/nodes";
 import {MacroInvocationNode} from "../parseTree/nodes";
 import {MacroDefNode} from "../parseTree/nodes";
@@ -221,24 +221,46 @@ export class ScopeRecurser {
   resolveMultiDotNode(node: MultiDotNode): void {
     if (node.nodes.length === 0) throw new AssertError("")
 
-    // resolve recursively if any part is a complex expression
-    for (let part of node.nodes) {
-      if (!(part instanceof IdentifierNode)) {
-        this.resolveNode(part)
-      }
-    }
-    // only try to resolve parts which are not dynamic
-    let prefix: MultiPartName = []
+    // Gather the parts that can be resolved via module lookup
+    //   ie Foo.Bar.Baz
+    //   but not after the 'Foo' in Foo.(a || b).Baz
+    // Also gather any parts which are expressions which need to be resolved in the current context
+    // instead of another module.
+    let multiPartName: MultiPartName = []
+    let toResolveInContext: Node[] = []
+    let continueMultiPartName = true
     for (let part of node.nodes) {
       if (part instanceof IdentifierNode) {
-        prefix.push(part)
+        if (continueMultiPartName) {
+          multiPartName.push(part)
+        }
+      } else if (part instanceof GenericArgListNode && part.typeName instanceof IdentifierNode) {
+        if (continueMultiPartName) {
+          multiPartName.push(part.typeName as IdentifierNode)
+        }
+        for (let iparam of part.params) {
+          toResolveInContext.push(iparam)
+        }
+        continueMultiPartName = false
       } else {
-        break
+        // some sort of compound expression
+        // ie foo.(A || B).bar
+        // resolve the expression within this context
+        toResolveInContext.push(part)
+        continueMultiPartName = false
       }
     }
-    if (prefix.length > 0) {
-      this.resolveMultiPartName(prefix)
+
+    // resolve the multi part name by looking up in modules
+    if (multiPartName.length > 0) {
+      this.resolveMultiPartName(multiPartName)
     }
+
+    // resolve anything that should be resolved in the current context
+    for (let toResolve of toResolveInContext) {
+      this.resolveNode(toResolve)
+    }
+
   }
 
   resolveMultiPartName(multiPartName: MultiPartName): void {
