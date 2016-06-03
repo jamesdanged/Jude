@@ -52,7 +52,8 @@ export class ScopeBuilder {
   logUnresolvedImport(moduleName: string): void {
     addToSet(this.moduleLibrary.toQueryFromJulia, moduleName)
   }
-  logImport(moduleName: string): void {
+  logSingleImportName(moduleName: string): void {
+    if (moduleName.split(".").length > 1) throw new AssertError("")
     let importList = this._recurser.currModuleResolveInfo.imports
     if (importList.indexOf(moduleName) < 0) {
       importList.push(moduleName)
@@ -160,7 +161,7 @@ export class ScopeBuilder {
    */
   registerSingleNameImport(singlePartName: IdentifierNode): boolean {
     let name = singlePartName.str
-    this.logImport(name)
+    this.logSingleImportName(name)
 
     let resolve = this.currScope.tryResolveNameThisLevel(name)
     if (resolve !== null) {

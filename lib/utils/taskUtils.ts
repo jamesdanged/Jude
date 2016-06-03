@@ -82,9 +82,9 @@ export class TaskQueue {
 
 
 
-var show_timings = false
-export function log_elapsed(msg: string): void{
-  if (show_timings) {
+var showTimings = false
+export function logElapsed(msg: string): void{
+  if (showTimings) {
     console.log(msg)
   }
 }

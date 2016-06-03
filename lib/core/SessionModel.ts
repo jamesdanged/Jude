@@ -60,7 +60,8 @@ export class ParseSet {
   identifiers: {[file:string]: FileIdentifiers}
   errors: {[file:string]:FileErrors}
 
-  moduleResolveInfos: ModuleResolveInfo[]
+  moduleResolveInfos: ModuleResolveInfo[]  // one for every module and top level file
+  compileRoots: ModuleResolveInfo[]  // only the top level files
 
   constructor() {
     this.fileLevelNodes = {}
@@ -68,6 +69,7 @@ export class ParseSet {
     this.identifiers = {}
     this.errors = {}
     this.moduleResolveInfos = []
+    this.compileRoots = []
   }
 
   createEntriesForFile(path: string): void {
@@ -83,6 +85,7 @@ export class ParseSet {
     resetHash(this.identifiers)
     resetHash(this.errors)
     clearArray(this.moduleResolveInfos)
+    clearArray(this.compileRoots)
   }
 
   /**
@@ -137,7 +140,7 @@ export class ModuleResolveInfo {
   relateds: FileLevelNode[]  // any file referenced via 'include'. Not the root file.
   containingFile: string
   scope: ModuleScope
-  imports: string[]
+  imports: string[]  // Names imported by this module. Only holds the first name of any multi-part name.
   parentModule: ModuleContentsNode  // null for top level files, but not for anything else
   childrenModules: ModuleContentsNode[]
 

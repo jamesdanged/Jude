@@ -1,7 +1,7 @@
 "use strict"
 
 import {throwErrorFromTimeout} from "../utils/assert";
-import {log_elapsed} from "../utils/taskUtils";
+import {logElapsed} from "../utils/taskUtils";
 import {getAllFilesInAllSubDirectories} from "../utils/fileUtils";
 import {resolveScopesInWorkspaceInvolvingFile} from "../nameResolution/resolveFullWorkspace";
 import * as nodepath from "path"
@@ -21,7 +21,7 @@ export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
   let t0 = Date.now()
   let allContents = await loadProjectFiles()
   let t1 = Date.now()
-  log_elapsed("Successfully read project files from disk: " + (t1 - t0) + " ms")
+  logElapsed("Successfully read project files from disk: " + (t1 - t0) + " ms")
 
   // parse all the files into expression trees
   t0 = Date.now()
@@ -35,7 +35,7 @@ export async function parseFullWorkspaceAsync(sessionModel: SessionModel) {
     })
   }
   t1 = Date.now()
-  log_elapsed("Parsed expression trees: " + (t1 - t0) + " ms")
+  logElapsed("Parsed expression trees: " + (t1 - t0) + " ms")
 
   await resolveFullWorkspaceAsync(sessionModel)
 
@@ -68,7 +68,7 @@ export async function refreshFileAsync(path: string, fileContents: string, sessi
   let t0 = Date.now()
   parseFile(path, fileContents, sessionModel)
   let t1 = Date.now()
-  log_elapsed("Reparsed one file: " + (t1 - t0) + " ms")
+  logElapsed("Reparsed one file: " + (t1 - t0) + " ms")
 
   // If module declaration involved after, also must reparse whole workspace.
   // The node object stays the same, just its contents changed.

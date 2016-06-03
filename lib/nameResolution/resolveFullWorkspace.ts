@@ -1,6 +1,6 @@
 "use strict"
 
-import {log_elapsed} from "../utils/taskUtils";
+import {logElapsed} from "../utils/taskUtils";
 import {StringSet} from "../utils/StringSet";
 import * as nodepath from "path"
 import {SessionModel} from "../core/SessionModel";
@@ -30,17 +30,15 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
   let t0 = Date.now()
   populateModuleResolveInfos(sessionModel)
   let t1 = Date.now()
-  log_elapsed("Mapped inclusion trees: " + (t1 - t0) + " ms")
+  logElapsed("Mapped inclusion trees: " + (t1 - t0) + " ms")
 
   // This pass will get a list of imports each module has.
   // Variable, function, type names are not resolved yet.
   t0 = Date.now()
   moduleLibrary.toQueryFromJulia = {}
   let alreadyInitializedRoots: ModuleScope[] = []
-  for (let mri of parseSet.moduleResolveInfos) {
+  for (let mri of parseSet.compileRoots) {
     // already done in one of the previous recursive buildouts.
-    // A file level scope which is a root is by definition not included anywhere, so is not a problem for
-    // being included in multiple places.
     if (alreadyInitializedRoots.indexOf(mri.scope) >= 0) {
       continue
     }
@@ -48,7 +46,7 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
     recurser.resolveRecursively(mri)
   }
   t1 = Date.now()
-  log_elapsed("Gather import list: " + (t1 - t0) + " ms")
+  logElapsed("Gather import list: " + (t1 - t0) + " ms")
 
 
   // refresh julia load paths if necessary
@@ -56,7 +54,7 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
     t0 = Date.now()
     await moduleLibrary.refreshLoadPathsAsync()
     t1 = Date.now()
-    log_elapsed("Refreshed load paths from Julia: " + (t1 - t0) + " ms")
+    logElapsed("Refreshed load paths from Julia: " + (t1 - t0) + " ms")
   }
 
 
@@ -67,42 +65,18 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
     await resolveModuleForLibrary(moduleName, sessionModel)
   }
   t1 = Date.now()
-  log_elapsed("Loaded unresolved modules: " + (t1 - t0) + " ms")
+  logElapsed("Loaded unresolved modules: " + (t1 - t0) + " ms")
 
 
 
-  // now resolve all the scopes
+  // now that all available external modules from Julia have been loaded,
+  // resolve all the scopes
+  //
+  // Need to determine which modules in the workspace are dependent on other modules
+  // so they are resolved in correct order.
+
   t0 = Date.now()
-
-  // determine sequence to resolve, starting with dependencies first
-  let isDependencyOf = (mod1: ModuleResolveInfo, mod2: ModuleResolveInfo): boolean => {
-    for (let importName of mod2.imports) {
-      if (importName in moduleLibrary.modules) {
-        let scope = moduleLibrary.modules[importName]
-        if (mod1.scope === scope) return true
-      } else {
-        // may be error in locating the module or may be an inner module
-        // just skip
-      }
-    }
-    return false
-  }
-  let rootsOrderedByDependencies: ModuleResolveInfo[] = []
-  for (let mri of parseSet.moduleResolveInfos) {
-    // search for any dependencies
-    // be sure to insert after the last dependency found
-    let indexToInsert = 0
-    for (let i = 0; i < rootsOrderedByDependencies.length; i++) {
-      let iRoot = rootsOrderedByDependencies[i]
-      if (isDependencyOf(iRoot, mri)) {
-        indexToInsert = i + 1
-      }
-    }
-    rootsOrderedByDependencies.splice(indexToInsert, 0, mri)
-  }
-  // store them back in that order
-  parseSet.moduleResolveInfos = rootsOrderedByDependencies
-
+  sortCompileRootsByDependencyOrder(sessionModel)
 
   await resolveRepeatedlyAsync(sessionModel)
   parseSet.moduleResolveInfos.forEach((o) => { o.scope.refreshPrefixTree() })
@@ -110,17 +84,108 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
   sessionModel.partiallyResolved = false
 
   t1 = Date.now()
-  log_elapsed("Resolve names fully: " + (t1 - t0) + " ms")
+  logElapsed("Resolve names fully: " + (t1 - t0) + " ms")
 }
+
+
+
+
+function sortCompileRootsByDependencyOrder(sessionModel: SessionModel): void {
+  let parseSet = sessionModel.parseSet
+  let moduleLibrary = sessionModel.moduleLibrary
+
+  // gather all descendent mri's for each compile root
+  let mapNodeToModuleResolveInfo: Map<ModuleContentsNode, ModuleResolveInfo> = new Map()
+  let mapCompileRootToAllDescendents: Map<ModuleResolveInfo, ModuleResolveInfo[]> = new Map()
+  for (let mri of parseSet.moduleResolveInfos) {
+    mapNodeToModuleResolveInfo.set(mri.root, mri)
+  }
+  for (let compileRoot of parseSet.compileRoots) {
+    let descendents: ModuleResolveInfo[] = []
+    mapCompileRootToAllDescendents.set(compileRoot, descendents)
+
+    let toRecurse: ModuleResolveInfo[] = []
+    toRecurse.push(compileRoot)
+    while (toRecurse.length > 0) {
+      let mri = toRecurse.shift()
+      for (let childModuleNode of mri.childrenModules) {
+        let childMri = mapNodeToModuleResolveInfo.get(childModuleNode)
+        if (!childMri) throw new AssertError("")
+        descendents.push(childMri)
+        toRecurse.push(childMri)
+      }
+    }
+  }
+
+  // what global module name (if any) is each compile root associated with
+  let nameToCompileRoot: {[name: string]: ModuleResolveInfo} = {}
+  for (let moduleFullName in moduleLibrary.modules) {
+    if (moduleFullName.split(".").length != 1) continue
+
+    let scope = moduleLibrary.modules[moduleFullName]
+
+    let foundMatchingCompileRoot = false
+    for (let compileRoot of parseSet.compileRoots) {
+      let descendents = mapCompileRootToAllDescendents.get(compileRoot)
+      for (let mri of descendents) {
+        if (mri.scope === scope) {
+          nameToCompileRoot[moduleFullName] = compileRoot
+          foundMatchingCompileRoot = true
+          break
+        }
+      }
+
+      if (foundMatchingCompileRoot) break
+    }
+  }
+
+  let mapCompileRootToAllImportedNames: Map<ModuleResolveInfo, string[]> = new Map()
+  for (let compileRoot of parseSet.compileRoots) {
+    let names: string[] = []
+    mapCompileRootToAllImportedNames.set(compileRoot, names)
+    for (let iimport of compileRoot.imports) names.push(iimport)
+    for (let desc of mapCompileRootToAllDescendents.get(compileRoot)) {
+      for (let iimport of desc.imports) names.push(iimport)
+    }
+  }
+
+
+  let isDependencyOf = (compileRoot1: ModuleResolveInfo, compileRoot2: ModuleResolveInfo): boolean => {
+    for (let iimport of mapCompileRootToAllImportedNames.get(compileRoot2)) {
+      if (nameToCompileRoot[iimport] === compileRoot1) {
+        return true
+      }
+    }
+    return false
+  }
+  let compileRootsOrderedByDependencies: ModuleResolveInfo[] = []
+  for (let mri of parseSet.compileRoots) {
+    // search for any dependencies
+    // be sure to insert after the last dependency found
+    let indexToInsert = 0
+    for (let i = 0; i < compileRootsOrderedByDependencies.length; i++) {
+      let iRoot = compileRootsOrderedByDependencies[i]
+      if (isDependencyOf(iRoot, mri)) {
+        indexToInsert = i + 1
+      }
+    }
+    compileRootsOrderedByDependencies.splice(indexToInsert, 0, mri)
+  }
+  // store them back in that order
+  parseSet.compileRoots = compileRootsOrderedByDependencies
+}
+
+
+
 
 /**
  * Runs a resolve, then if any modules outside of workspace are needed, loads them from Julia, then
  * repeats.
  *
- * This progressively will properly resolve inner modules.
+ * This progressively will properly resolve inner modules, ie Base.LinAlg.
  * It allows us to only query from Julia the modules actively used in the workspace.
  *
- * The resolve roots need to already be set up.
+ * The compileRoots and moduleResolveInfos need to already be set up.
  */
 async function resolveRepeatedlyAsync(sessionModel: SessionModel) {
   let parseSet = sessionModel.parseSet
@@ -142,7 +207,7 @@ async function resolveRepeatedlyAsync(sessionModel: SessionModel) {
 
     // resolve
     let alreadyInitializedRoots = []
-    for (let mri of parseSet.moduleResolveInfos) {
+    for (let mri of parseSet.compileRoots) {
       if (alreadyInitializedRoots.indexOf(mri.scope) >= 0) {
         continue
       }
@@ -170,9 +235,12 @@ function populateModuleResolveInfos(sessionModel: SessionModel): void {
   let fileLevelNodes: {[file:string]: FileLevelNode} = parseSet.fileLevelNodes
   let moduleResolveInfos: ModuleResolveInfo[] = []
 
-  // All module declarations are roots.
-  // All files not included by another file are roots.
-  // A file may contain a module declaration. Then the module is not considered a child of the file, but forming its own root.
+  // ModuleContentsNodes can be broken down into three sets:
+  //   ModuleDefNodes: There will be a ModuleResolveInfo for all modules.
+  //   FileLevelNodes: There will also be a ModuleResolveInfo for all top level files (ie files not included by any other file)
+  //   FileLevelNodes: if included by any other file, not considered top level.
+  // A file may contain a module declaration. Then the module is not considered a child of the file,
+  // but will have its own info.
 
 
   let modulesToSearchQueue: [ModuleContentsNode, string, ModuleContentsNode][] = [] // [root node, containing file path, parent module]
@@ -189,7 +257,7 @@ function populateModuleResolveInfos(sessionModel: SessionModel): void {
   // and also which includes are duplicates or create a circular inclusion loop
   let badIncludeNodes: IncludeNode[] = []
 
-  // recurse through each root, finding any inner modules which will then be new roots
+  // recurse through each file or module, finding any inner modules which will then be new roots
   // as well as finding any inclusions, which define relateds
   while (modulesToSearchQueue.length > 0) {
 
@@ -282,6 +350,13 @@ function populateModuleResolveInfos(sessionModel: SessionModel): void {
   }
 
   parseSet.moduleResolveInfos = moduleResolveInfos
+  parseSet.compileRoots = []
+  for (let mri of parseSet.moduleResolveInfos) {
+    if (mri.parentModule === null) {
+      if (!(mri.root instanceof FileLevelNode)) throw new AssertError("")
+      parseSet.compileRoots.push(mri)
+    }
+  }
 
   // update the module library
   let moduleLibrary = sessionModel.moduleLibrary
@@ -364,7 +439,7 @@ export async function resolveScopesInWorkspaceInvolvingFile(path: string, sessio
   sessionModel.partiallyResolved = true
 
   let t1 = Date.now()
-  log_elapsed("Refreshed related scopes: " + (t1 - t0) + " ms")
+  logElapsed("Refreshed related scopes: " + (t1 - t0) + " ms")
 }
 
 
