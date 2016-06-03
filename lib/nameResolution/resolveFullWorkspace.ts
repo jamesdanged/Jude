@@ -168,16 +168,16 @@ async function resolveRepeatedlyAsync(sessionModel: SessionModel) {
 function populateRoots(sessionModel: SessionModel): void {
   let parseSet = sessionModel.parseSet
   let fileLevelNodes: {[file:string]: FileLevelNode} = parseSet.fileLevelNodes
-  let candidateRoots: ResolveRoot[] = []
+  let resolveRoots: ResolveRoot[] = []
 
   // All module declarations are roots.
   // All files not included by another file are roots.
   // A file may contain a module declaration. Then the module is not considered a child of the file, but forming its own root.
 
 
-  let startNodesQueue: [ModuleContentsNode, string][] = [] // [node, containing file path]
+  let rootsToSearchQueue: [ModuleContentsNode, string, ModuleContentsNode][] = [] // [root node, containing file path, parent module]
   for (let file in fileLevelNodes) {
-    startNodesQueue.push([fileLevelNodes[file], file])
+    rootsToSearchQueue.push([fileLevelNodes[file], file, null])
   }
 
   let fileIsRoot: {[file:string]: boolean} = {}
@@ -185,17 +185,22 @@ function populateRoots(sessionModel: SessionModel): void {
     fileIsRoot[file] = true
   }
 
+  // track which includes point to files which don't exist
+  // and also which includes are duplicates or create a circular inclusion loop
   let badIncludeNodes: IncludeNode[] = []
 
   // recurse through each root, finding any inner modules which will then be new roots
   // as well as finding any inclusions, which define relateds
-  while (startNodesQueue.length > 0) {
+  while (rootsToSearchQueue.length > 0) {
 
-    let tup = startNodesQueue.shift()
-    let startNode: ModuleContentsNode = tup[0]
-    let startPath: string = tup[1]
+    let tup = rootsToSearchQueue.shift()
+    let rootNode: ModuleContentsNode = tup[0]
+    let rootContainingFile: string = tup[1]
+    let parent: ModuleContentsNode = tup[2]
+
     let relateds: FileLevelNode[] = []
     let inclusionsToSearchQueue: FileLevelNode[] = []
+    let children: ModuleContentsNode[] = []
 
     let findInclusions = (nodeToSearch: ModuleContentsNode, containingFilePath: string) => {
       for (let expr of nodeToSearch.expressions) {
@@ -204,20 +209,26 @@ function populateRoots(sessionModel: SessionModel): void {
           if (badIncludeNodes.indexOf(inclNode) >= 0) continue
 
           let inclFullPath = nodepath.resolve(nodepath.dirname(containingFilePath), inclNode.relativePath) // these nodepath calls do not fail regardless of string
+
+          // mark if included file doesn't exist
           if (!(inclFullPath in fileLevelNodes)) {
             badIncludeNodes.push(inclNode)
             parseSet.errors[containingFilePath].parseErrors.push(new InvalidParseError("File not found in workspace: " + inclFullPath, inclNode.includeString.token))
             continue
           }
 
+          // mark if include file is duplicate or circular
           let inclFileNode = fileLevelNodes[inclFullPath]
-          if (relateds.indexOf(inclFileNode) >= 0 || inclFullPath === startPath) {
+          if (relateds.indexOf(inclFileNode) >= 0 || inclFullPath === rootContainingFile) {
             badIncludeNodes.push(inclNode)
-            parseSet.errors[containingFilePath].parseErrors.push(new InvalidParseError("Circular includes.", inclNode.includeString.token))
+            parseSet.errors[containingFilePath].parseErrors.push(new InvalidParseError("Duplicate or circular include.", inclNode.includeString.token))
             continue
           }
 
+          // the included file is considered related to the current root
           relateds.push(inclFileNode)
+
+          // mark that the included file is not itself a root
           fileIsRoot[inclFullPath] = false
 
           // queue up to later recurse through this included file
@@ -225,12 +236,16 @@ function populateRoots(sessionModel: SessionModel): void {
         } else if (expr instanceof ModuleDefNode) {
           // an inner module
           // this is a new root which must be searched separately
-          startNodesQueue.push([expr, containingFilePath])
+          let innerModule = expr
+          rootsToSearchQueue.push([innerModule, containingFilePath, rootNode])  // parent of the inner module is this root
+          children.push(innerModule)
         }
       }
     }
 
-    findInclusions(startNode, startPath)
+    // find inclusions
+    // initialize
+    findInclusions(rootNode, rootContainingFile)
     // recurse
     while (inclusionsToSearchQueue.length > 0) {
       let fileNode: FileLevelNode = inclusionsToSearchQueue.shift()
@@ -238,29 +253,35 @@ function populateRoots(sessionModel: SessionModel): void {
     }
 
     let resolveRoot = new ResolveRoot()
-    resolveRoot.root = startNode
-    resolveRoot.containingFile = startPath
+    resolveRoot.root = rootNode
+    resolveRoot.containingFile = rootContainingFile
     resolveRoot.relateds = relateds
     resolveRoot.scope = new ModuleScope()
-    resolveRoot.scope.tokenStart = startNode.scopeStartToken
-    resolveRoot.scope.tokenEnd = startNode.scopeEndToken
-    if (startNode instanceof ModuleDefNode) resolveRoot.scope.moduleShortName = startNode.name.str
+    resolveRoot.scope.tokenStart = rootNode.scopeStartToken
+    resolveRoot.scope.tokenEnd = rootNode.scopeEndToken
+    resolveRoot.parentModule = parent
+    resolveRoot.childrenModules = children
+    if (rootNode instanceof ModuleDefNode) resolveRoot.scope.moduleShortName = rootNode.name.str
+
+    resolveRoots.push(resolveRoot)
 
     // leave resolving imports for later
-    candidateRoots.push(resolveRoot)
   }
 
-  // remove any non roots
+  // The above recursions would have encountered a file more than once if it was not really a root, but rather
+  // was included by other roots.
+  // Remove these non roots.
+  // This should deduplicate all files.
   for (let filePath in fileIsRoot) {
     if (!fileIsRoot[filePath]) {
       let fileLevelNode = fileLevelNodes[filePath]
-      let index = candidateRoots.findIndex((item) => { return item.root === fileLevelNode })
+      let index = resolveRoots.findIndex((item) => { return item.root === fileLevelNode })
       if (index < 0) throw new AssertError("")
-      candidateRoots.splice(index, 1)
+      resolveRoots.splice(index, 1)
     }
   }
 
-  parseSet.resolveRoots = candidateRoots
+  parseSet.resolveRoots = resolveRoots
 
   // update the module library
   let moduleLibrary = sessionModel.moduleLibrary

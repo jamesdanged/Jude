@@ -137,6 +137,8 @@ export class ResolveRoot {
   containingFile: string
   scope: ModuleScope
   imports: string[]
+  parentModule: ModuleContentsNode  // null for top level files, but not for anything else
+  childrenModules: ModuleContentsNode[]
 
   constructor() {
     this.root = null
@@ -144,6 +146,8 @@ export class ResolveRoot {
     this.containingFile = null
     this.scope = null
     this.imports = []
+    this.parentModule = null
+    this.childrenModules = []
   }
 
   reset(): void {
