@@ -60,14 +60,14 @@ export class ParseSet {
   identifiers: {[file:string]: FileIdentifiers}
   errors: {[file:string]:FileErrors}
 
-  resolveRoots: ResolveRoot[]
+  moduleResolveInfos: ModuleResolveInfo[]
 
   constructor() {
     this.fileLevelNodes = {}
     this.scopes = {}
     this.identifiers = {}
     this.errors = {}
-    this.resolveRoots = []
+    this.moduleResolveInfos = []
   }
 
   createEntriesForFile(path: string): void {
@@ -82,7 +82,7 @@ export class ParseSet {
     resetHash(this.scopes)
     resetHash(this.identifiers)
     resetHash(this.errors)
-    clearArray(this.resolveRoots)
+    clearArray(this.moduleResolveInfos)
   }
 
   /**
@@ -108,17 +108,17 @@ export class ParseSet {
     this.errors[path].nameErrors = []
   }
 
-  getResolveRoot(rootNode: ModuleContentsNode): ResolveRoot {
-    let res = this.tryGetResolveRoot(rootNode)
+  getModuleResolveInfo(rootNode: ModuleContentsNode): ModuleResolveInfo {
+    let res = this.tryGetModuleResolveInfo(rootNode)
     if (res === null) {
       throw new AssertError("")
     }
     return res
   }
-  tryGetResolveRoot(rootNode: ModuleContentsNode): ResolveRoot {
-    let idx = this.resolveRoots.findIndex((pr: ResolveRoot) => { return pr.root === rootNode})
+  tryGetModuleResolveInfo(rootNode: ModuleContentsNode): ModuleResolveInfo {
+    let idx = this.moduleResolveInfos.findIndex((pr: ModuleResolveInfo) => { return pr.root === rootNode})
     if (idx < 0) return null
-    return this.resolveRoots[idx]
+    return this.moduleResolveInfos[idx]
   }
 
 
@@ -126,12 +126,13 @@ export class ParseSet {
 }
 
 /**
- * A parse root corresponds to a module.
- * Every declared module...end is a root.
- * Top level files (ie not included in any other files) are themselves roots.
+ * All contextual information needed to resolve a module.
+ *
+ * There is one of these for every declared module...end.
+ * There is also one of these for every top level file (ie a file not included in any other files).
  *
  */
-export class ResolveRoot {
+export class ModuleResolveInfo {
   root: ModuleContentsNode  // the module node or the top level file
   relateds: FileLevelNode[]  // any file referenced via 'include'. Not the root file.
   containingFile: string

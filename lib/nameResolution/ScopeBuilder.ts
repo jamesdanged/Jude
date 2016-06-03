@@ -53,7 +53,7 @@ export class ScopeBuilder {
     addToSet(this.moduleLibrary.toQueryFromJulia, moduleName)
   }
   logImport(moduleName: string): void {
-    let importList = this._recurser.currResolveRoot.imports
+    let importList = this._recurser.currModuleResolveInfo.imports
     if (importList.indexOf(moduleName) < 0) {
       importList.push(moduleName)
     }
@@ -182,12 +182,12 @@ export class ScopeBuilder {
 
     // register the imported module
     // get corresponding node if in the workspace
-    let resolveRoot = this.parseSet.resolveRoots.find((o) => { return o.scope === rootScope})
-    if (resolveRoot) {
-      let rootNode = resolveRoot.root
+    let mri = this.parseSet.moduleResolveInfos.find((o) => { return o.scope === rootScope})
+    if (mri) {
+      let rootNode = mri.root
       if (!(rootNode instanceof ModuleDefNode)) throw new AssertError("")  // cannot be in the module library if it is a file level node
       let moduleDefNode = rootNode as ModuleDefNode
-      this.currScope.names[name] = new LocalModuleResolve(moduleDefNode, resolveRoot.containingFile, rootScope)
+      this.currScope.names[name] = new LocalModuleResolve(moduleDefNode, mri.containingFile, rootScope)
     } else {
       this.currScope.names[name] = new ExternalModuleResolve(name, rootScope)
     }

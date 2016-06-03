@@ -144,8 +144,8 @@ export async function resolveModuleForLibrary(fullModuleName: string, sessionMod
           let moduleDefNode = expr as ModuleDefNode
           if (moduleDefNode.name.str === outerModuleName) {
             // get the matching scope
-            let resolveRoot = sessionModel.parseSet.getResolveRoot(moduleDefNode)
-            let moduleScope = resolveRoot.scope
+            let moduleResolveInfo = sessionModel.parseSet.getModuleResolveInfo(moduleDefNode)
+            let moduleScope = moduleResolveInfo.scope
 
             // register it in the module library
             //console.log("Registering workspace module '" + moduleName + "' in the library." )

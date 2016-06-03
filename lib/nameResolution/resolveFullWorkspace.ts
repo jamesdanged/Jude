@@ -10,7 +10,7 @@ import {ScopeRecurser} from "./ScopeRecurser";
 import {createStringSet} from "../utils/StringSet";
 import {addToSet} from "../utils/StringSet";
 import {resolveModuleForLibrary} from "../core/ModuleLibrary";
-import {ResolveRoot} from "../core/SessionModel";
+import {ModuleResolveInfo} from "../core/SessionModel";
 import {ModuleDefNode} from "../parseTree/nodes";
 import {AssertError} from "../utils/assert";
 import {FileLevelNode} from "../parseTree/nodes";
@@ -28,7 +28,7 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
 
   // map out the inclusion trees
   let t0 = Date.now()
-  populateRoots(sessionModel)
+  populateModuleResolveInfos(sessionModel)
   let t1 = Date.now()
   log_elapsed("Mapped inclusion trees: " + (t1 - t0) + " ms")
 
@@ -37,15 +37,15 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
   t0 = Date.now()
   moduleLibrary.toQueryFromJulia = {}
   let alreadyInitializedRoots: ModuleScope[] = []
-  for (let resolveRoot of parseSet.resolveRoots) {
+  for (let mri of parseSet.moduleResolveInfos) {
     // already done in one of the previous recursive buildouts.
     // A file level scope which is a root is by definition not included anywhere, so is not a problem for
     // being included in multiple places.
-    if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) {
+    if (alreadyInitializedRoots.indexOf(mri.scope) >= 0) {
       continue
     }
     let recurser = new ScopeRecurser(parseSet, moduleLibrary, true, alreadyInitializedRoots, [])
-    recurser.resolveRecursively(resolveRoot)
+    recurser.resolveRecursively(mri)
   }
   t1 = Date.now()
   log_elapsed("Gather import list: " + (t1 - t0) + " ms")
@@ -75,7 +75,7 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
   t0 = Date.now()
 
   // determine sequence to resolve, starting with dependencies first
-  let isDependencyOf = (mod1: ResolveRoot, mod2: ResolveRoot): boolean => {
+  let isDependencyOf = (mod1: ModuleResolveInfo, mod2: ModuleResolveInfo): boolean => {
     for (let importName of mod2.imports) {
       if (importName in moduleLibrary.modules) {
         let scope = moduleLibrary.modules[importName]
@@ -87,25 +87,25 @@ export async function resolveFullWorkspaceAsync(sessionModel: SessionModel) {
     }
     return false
   }
-  let rootsOrderedByDependencies: ResolveRoot[] = []
-  for (let resolveRoot of parseSet.resolveRoots) {
+  let rootsOrderedByDependencies: ModuleResolveInfo[] = []
+  for (let mri of parseSet.moduleResolveInfos) {
     // search for any dependencies
     // be sure to insert after the last dependency found
     let indexToInsert = 0
     for (let i = 0; i < rootsOrderedByDependencies.length; i++) {
       let iRoot = rootsOrderedByDependencies[i]
-      if (isDependencyOf(iRoot, resolveRoot)) {
+      if (isDependencyOf(iRoot, mri)) {
         indexToInsert = i + 1
       }
     }
-    rootsOrderedByDependencies.splice(indexToInsert, 0, resolveRoot)
+    rootsOrderedByDependencies.splice(indexToInsert, 0, mri)
   }
   // store them back in that order
-  parseSet.resolveRoots = rootsOrderedByDependencies
+  parseSet.moduleResolveInfos = rootsOrderedByDependencies
 
 
   await resolveRepeatedlyAsync(sessionModel)
-  parseSet.resolveRoots.forEach((o) => { o.scope.refreshPrefixTree() })
+  parseSet.moduleResolveInfos.forEach((o) => { o.scope.refreshPrefixTree() })
 
   sessionModel.partiallyResolved = false
 
@@ -136,18 +136,18 @@ async function resolveRepeatedlyAsync(sessionModel: SessionModel) {
     for (let fileName in parseSet.fileLevelNodes) {
       parseSet.resetNamesForFile(fileName)
     }
-    for (let resolveRoot of parseSet.resolveRoots) {
-      resolveRoot.reset()
+    for (let mri of parseSet.moduleResolveInfos) {
+      mri.reset()
     }
 
     // resolve
     let alreadyInitializedRoots = []
-    for (let resolveRoot of parseSet.resolveRoots) {
-      if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) {
+    for (let mri of parseSet.moduleResolveInfos) {
+      if (alreadyInitializedRoots.indexOf(mri.scope) >= 0) {
         continue
       }
       let recurser = new ScopeRecurser(parseSet, moduleLibrary, false, alreadyInitializedRoots, openFiles)
-      recurser.resolveRecursively(resolveRoot)
+      recurser.resolveRecursively(mri)
     }
 
     // if any modules need to load from Julia, load them, and then do another round of resolving
@@ -165,19 +165,19 @@ async function resolveRepeatedlyAsync(sessionModel: SessionModel) {
 
 
 
-function populateRoots(sessionModel: SessionModel): void {
+function populateModuleResolveInfos(sessionModel: SessionModel): void {
   let parseSet = sessionModel.parseSet
   let fileLevelNodes: {[file:string]: FileLevelNode} = parseSet.fileLevelNodes
-  let resolveRoots: ResolveRoot[] = []
+  let moduleResolveInfos: ModuleResolveInfo[] = []
 
   // All module declarations are roots.
   // All files not included by another file are roots.
   // A file may contain a module declaration. Then the module is not considered a child of the file, but forming its own root.
 
 
-  let rootsToSearchQueue: [ModuleContentsNode, string, ModuleContentsNode][] = [] // [root node, containing file path, parent module]
+  let modulesToSearchQueue: [ModuleContentsNode, string, ModuleContentsNode][] = [] // [root node, containing file path, parent module]
   for (let file in fileLevelNodes) {
-    rootsToSearchQueue.push([fileLevelNodes[file], file, null])
+    modulesToSearchQueue.push([fileLevelNodes[file], file, null])
   }
 
   let fileIsRoot: {[file:string]: boolean} = {}
@@ -191,9 +191,9 @@ function populateRoots(sessionModel: SessionModel): void {
 
   // recurse through each root, finding any inner modules which will then be new roots
   // as well as finding any inclusions, which define relateds
-  while (rootsToSearchQueue.length > 0) {
+  while (modulesToSearchQueue.length > 0) {
 
-    let tup = rootsToSearchQueue.shift()
+    let tup = modulesToSearchQueue.shift()
     let rootNode: ModuleContentsNode = tup[0]
     let rootContainingFile: string = tup[1]
     let parent: ModuleContentsNode = tup[2]
@@ -237,7 +237,7 @@ function populateRoots(sessionModel: SessionModel): void {
           // an inner module
           // this is a new root which must be searched separately
           let innerModule = expr
-          rootsToSearchQueue.push([innerModule, containingFilePath, rootNode])  // parent of the inner module is this root
+          modulesToSearchQueue.push([innerModule, containingFilePath, rootNode])  // parent of the inner module is this root
           children.push(innerModule)
         }
       }
@@ -252,18 +252,18 @@ function populateRoots(sessionModel: SessionModel): void {
       findInclusions(fileNode, fileNode.path)
     }
 
-    let resolveRoot = new ResolveRoot()
-    resolveRoot.root = rootNode
-    resolveRoot.containingFile = rootContainingFile
-    resolveRoot.relateds = relateds
-    resolveRoot.scope = new ModuleScope()
-    resolveRoot.scope.tokenStart = rootNode.scopeStartToken
-    resolveRoot.scope.tokenEnd = rootNode.scopeEndToken
-    resolveRoot.parentModule = parent
-    resolveRoot.childrenModules = children
-    if (rootNode instanceof ModuleDefNode) resolveRoot.scope.moduleShortName = rootNode.name.str
+    let moduleResolveInfo = new ModuleResolveInfo()
+    moduleResolveInfo.root = rootNode
+    moduleResolveInfo.containingFile = rootContainingFile
+    moduleResolveInfo.relateds = relateds
+    moduleResolveInfo.scope = new ModuleScope()
+    moduleResolveInfo.scope.tokenStart = rootNode.scopeStartToken
+    moduleResolveInfo.scope.tokenEnd = rootNode.scopeEndToken
+    moduleResolveInfo.parentModule = parent
+    moduleResolveInfo.childrenModules = children
+    if (rootNode instanceof ModuleDefNode) moduleResolveInfo.scope.moduleShortName = rootNode.name.str
 
-    resolveRoots.push(resolveRoot)
+    moduleResolveInfos.push(moduleResolveInfo)
 
     // leave resolving imports for later
   }
@@ -275,25 +275,25 @@ function populateRoots(sessionModel: SessionModel): void {
   for (let filePath in fileIsRoot) {
     if (!fileIsRoot[filePath]) {
       let fileLevelNode = fileLevelNodes[filePath]
-      let index = resolveRoots.findIndex((item) => { return item.root === fileLevelNode })
+      let index = moduleResolveInfos.findIndex((item) => { return item.root === fileLevelNode })
       if (index < 0) throw new AssertError("")
-      resolveRoots.splice(index, 1)
+      moduleResolveInfos.splice(index, 1)
     }
   }
 
-  parseSet.resolveRoots = resolveRoots
+  parseSet.moduleResolveInfos = moduleResolveInfos
 
   // update the module library
   let moduleLibrary = sessionModel.moduleLibrary
-  for (let resolveRoot of parseSet.resolveRoots) {
-    let path = resolveRoot.containingFile
+  for (let mri of parseSet.moduleResolveInfos) {
+    let path = mri.containingFile
     if (path in moduleLibrary.workspaceModulePaths) {
       let moduleName = moduleLibrary.workspaceModulePaths[path]
-      if (resolveRoot.root instanceof ModuleDefNode) {
-        let moduleDefNode = resolveRoot.root as ModuleDefNode
+      if (mri.root instanceof ModuleDefNode) {
+        let moduleDefNode = mri.root as ModuleDefNode
         if (moduleDefNode.name.str === moduleName) {
           // is a match
-          moduleLibrary.modules[moduleName] = resolveRoot.scope
+          moduleLibrary.modules[moduleName] = mri.scope
         }
       }
     }
@@ -324,22 +324,22 @@ export async function resolveScopesInWorkspaceInvolvingFile(path: string, sessio
   if (!fileLevelNode) throw new AssertError("")
 
   // gather list of roots involving the file
-  let rootsInvolvingFile: ResolveRoot[] = []
-  for (let resolveRoot of parseSet.resolveRoots) {
-    if (resolveRoot.containingFile === path) {
-      rootsInvolvingFile.push(resolveRoot)
+  let modulesInvolvingFile: ModuleResolveInfo[] = []
+  for (let mri of parseSet.moduleResolveInfos) {
+    if (mri.containingFile === path) {
+      modulesInvolvingFile.push(mri)
     } else {
-      if (resolveRoot.relateds.indexOf(fileLevelNode) >= 0) {
-        rootsInvolvingFile.push(resolveRoot)
+      if (mri.relateds.indexOf(fileLevelNode) >= 0) {
+        modulesInvolvingFile.push(mri)
       }
     }
   }
 
   // reset modules that involve the file directly
-  for (let resolveRoot of rootsInvolvingFile) {
-    resolveRoot.scope.reset()
-    parseSet.resetNamesForFile(resolveRoot.containingFile)
-    for (let relatedFileNode of resolveRoot.relateds) {
+  for (let mri of modulesInvolvingFile) {
+    mri.scope.reset()
+    parseSet.resetNamesForFile(mri.containingFile)
+    for (let relatedFileNode of mri.relateds) {
       parseSet.resetNamesForFile(relatedFileNode.path)
     }
   }
@@ -348,17 +348,17 @@ export async function resolveScopesInWorkspaceInvolvingFile(path: string, sessio
   // re resolve them
   let openFiles = atomGetOpenFiles()
   let alreadyInitializedRoots: ModuleScope[] = []
-  for (let resolveRoot of rootsInvolvingFile) {
-    if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) continue
+  for (let mri of modulesInvolvingFile) {
+    if (alreadyInitializedRoots.indexOf(mri.scope) >= 0) continue
     let recurser = new ScopeRecurser(parseSet, sessionModel.moduleLibrary, false, alreadyInitializedRoots, openFiles)
-    recurser.resolveRecursively(resolveRoot)
-    resolveRoot.scope.refreshPrefixTree()
+    recurser.resolveRecursively(mri)
+    mri.scope.refreshPrefixTree()
   }
 
   // if any inner modules newly need to be queried from julia, retrieve them
   if (stringSetToArray(sessionModel.moduleLibrary.toQueryFromJulia).length > 0) {
     await resolveRepeatedlyAsync(sessionModel)
-    parseSet.resolveRoots.forEach((o) => { o.scope.refreshPrefixTree() })
+    parseSet.moduleResolveInfos.forEach((o) => { o.scope.refreshPrefixTree() })
   }
 
   sessionModel.partiallyResolved = true

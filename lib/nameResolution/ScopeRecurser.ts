@@ -8,7 +8,7 @@ import {MultiPartName} from "../parseTree/nodes";
 import {TupleNode} from "../parseTree/nodes";
 import {ModuleScope} from "./Scope";
 import {Token} from "../tokens/Token";
-import {ResolveRoot} from "../core/SessionModel";
+import {ModuleResolveInfo} from "../core/SessionModel";
 import {ParseSet} from "../core/SessionModel";
 import {ScopeBuilder} from "./ScopeBuilder";
 import * as nodepath from "path"
@@ -47,7 +47,7 @@ import {MultiDotNode} from "../parseTree/nodes";
  */
 export class ScopeRecurser {
 
-  resolveRootStack: ResolveRoot[]
+  moduleResolveInfoStack: ModuleResolveInfo[]
   scopeStack: Scope[]
   fileStack: string[]
   deferredFunctionsToResolve // callbacks: () => void
@@ -60,14 +60,14 @@ export class ScopeRecurser {
 
     this.alreadyInitializedRoots = alreadyInitializedRoots
     this.openFiles = openFiles
-    this.resolveRootStack = []
+    this.moduleResolveInfoStack = []
     this.scopeStack = []
     this.fileStack = []
     this.deferredFunctionsToResolve = []
     this.builder = new ScopeBuilder(this)
   }
 
-  get currResolveRoot(): ResolveRoot { return last(this.resolveRootStack) }
+  get currModuleResolveInfo(): ModuleResolveInfo { return last(this.moduleResolveInfoStack) }
   get currFile(): string { return last(this.fileStack); }
   get currScope(): Scope { return last(this.scopeStack); }
 
@@ -76,9 +76,9 @@ export class ScopeRecurser {
    * Recursively resolves all scopes within the module.
    * Also recurses through included files.
    */
-  resolveRecursively(resolveRoot: ResolveRoot): void {
-    this.fileStack.push(resolveRoot.containingFile)
-    this.resolveRootScope(resolveRoot)
+  resolveRecursively(moduleResolveInfo: ModuleResolveInfo): void {
+    this.fileStack.push(moduleResolveInfo.containingFile)
+    this.resolveModuleScope(moduleResolveInfo)
     this.fileStack.pop()
 
     // resolve bodies of functions after the enclosing module has been resolved
@@ -88,11 +88,11 @@ export class ScopeRecurser {
     }
   }
 
-  resolveRootScope(resolveRoot: ResolveRoot): void {
-    this.resolveRootStack.push(resolveRoot)
+  resolveModuleScope(moduleResolveInfo: ModuleResolveInfo): void {
+    this.moduleResolveInfoStack.push(moduleResolveInfo)
 
-    let rootNode = resolveRoot.root
-    let rootScope = resolveRoot.scope
+    let rootNode = moduleResolveInfo.root
+    let rootScope = moduleResolveInfo.scope
 
     if (this.alreadyInitializedRoots.indexOf(rootScope) >= 0) throw new AssertError("")
     this.alreadyInitializedRoots.push(rootScope)
@@ -116,7 +116,7 @@ export class ScopeRecurser {
     // recurse
     this.resolveNodeSequence(rootNode.expressions)
     this.scopeStack.pop()
-    this.resolveRootStack.pop()
+    this.moduleResolveInfoStack.pop()
   }
 
   resolveNodeSequence(nodes: Node[]): void {
@@ -510,11 +510,11 @@ export class ScopeRecurser {
 
   resolveModuleDefNode(node: ModuleDefNode): void {
     // recurse into the inner module
-    let resolveRoot = this.parseSet.getResolveRoot(node)
-    if (this.alreadyInitializedRoots.indexOf(resolveRoot.scope) < 0) {
-      this.resolveRootScope(resolveRoot)
+    let mri = this.parseSet.getModuleResolveInfo(node)
+    if (this.alreadyInitializedRoots.indexOf(mri.scope) < 0) {
+      this.resolveModuleScope(mri)
     }
-    this.builder.registerModule(node, resolveRoot.scope)
+    this.builder.registerModule(node, mri.scope)
   }
 
   resolveIncludeNode(node: IncludeNode): void {
@@ -576,13 +576,13 @@ export class ScopeRecurser {
 
     let scopeStackSnapshot = this.scopeStack.slice()
     let fileStackSnapshot = this.fileStack.slice()
-    let resolveRootStackSnapshot = this.resolveRootStack.slice()
+    let moduleResolveInfoStackSnapshot = this.moduleResolveInfoStack.slice()
     let that = this
     let cb = () => {
       // restore stacks
       that.scopeStack = scopeStackSnapshot
       that.fileStack = fileStackSnapshot
-      that.resolveRootStack = resolveRootStackSnapshot
+      that.moduleResolveInfoStack = moduleResolveInfoStackSnapshot
 
       // register generic arg names
       if (functionDefNode.genericArgs !== null) {

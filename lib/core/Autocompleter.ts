@@ -198,18 +198,18 @@ export class Autocompleter {
       if (matchingScope === null) {
 
         // is the file level node a root or an included file
-        let idx = parseSet.resolveRoots.findIndex((o) => { return o.root === fileLevelNode })
+        let idx = parseSet.moduleResolveInfos.findIndex((o) => { return o.root === fileLevelNode })
         if (idx >= 0) {
-          matchingScope = parseSet.resolveRoots[idx].scope
+          matchingScope = parseSet.moduleResolveInfos[idx].scope
         } else {
-          let idxWithRelateds = parseSet.resolveRoots.findIndex((o) => { return o.relateds.indexOf(fileLevelNode) >= 0 })
+          let idxWithRelateds = parseSet.moduleResolveInfos.findIndex((o) => { return o.relateds.indexOf(fileLevelNode) >= 0 })
           if (idxWithRelateds < 0) {
             // this can happen while initial parse is still running
             //throw new AssertError("")
             resolveCb([])
             return
           }
-          matchingScope = parseSet.resolveRoots[idxWithRelateds].scope
+          matchingScope = parseSet.moduleResolveInfos[idxWithRelateds].scope
         }
       }
 
