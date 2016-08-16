@@ -303,8 +303,8 @@ export class ScopeRecurser {
         }
       } else if (node.arg1 instanceof ParenthesesNode) {
         let parenNode = node.arg1 as ParenthesesNode
-        if (parenNode.expression instanceof TupleNode) {
-          let tupNode = parenNode.expression as TupleNode
+        if (parenNode.expressions.length == 1 && parenNode.expressions[0] instanceof TupleNode) {
+          let tupNode = parenNode.expressions[0] as TupleNode
           for (let item of tupNode.nodes) {
             if (item instanceof IdentifierNode) {
               this.builder.createNameByAssignmentIfNecessary(item)

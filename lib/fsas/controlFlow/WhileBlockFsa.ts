@@ -48,7 +48,7 @@ class WhileBlockFsa extends BaseFsa {
     condition.addArc(body, alwaysPasses, doNothing)
 
     body.addArc(stopState, streamAtEof, doNothing)
-    body.addArc(body, streamAtSemicolon, doNothing)
+    body.addArc(body, streamAtSemicolon, skipOneToken)  // can have extra semicolons in body
     body.addArc(betweenExpressions, alwaysPasses, readBodyExpression)
 
     betweenExpressions.addArc(stopState, streamAtEof, doNothing)

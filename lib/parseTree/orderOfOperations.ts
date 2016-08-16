@@ -7,7 +7,6 @@ import {mergeSets} from "../utils/StringSet";
 import {unaryOperators} from "../tokens/operatorsAndKeywords";
 import {PostFixOpNode} from "./nodes";
 import {WholeFileParseState} from "../fsas/general/ModuleContentsFsa";
-import {ReturnNode} from "./nodes";
 import {AssertError} from "../utils/assert";
 import {stringSetToArray} from "./../utils/StringSet";
 import {assignmentOperators} from "./../tokens/operatorsAndKeywords";
@@ -18,7 +17,6 @@ import {BinaryOpNode} from "./nodes";
 import {UnaryOpNode} from "./nodes";
 import {TernaryOpNode} from "./nodes";
 import {InvalidParseError} from "./../utils/errors";
-import {IdentifierNode} from "./nodes";
 import {FunctionCallNode} from "./nodes";
 import {GenericArgListNode} from "./nodes";
 import {binaryOperators} from "../tokens/operatorsAndKeywords";
@@ -26,8 +24,6 @@ import {binaryOperatorsMayOmitArg2} from "../tokens/operatorsAndKeywords";
 import {postFixOperators} from "../tokens/operatorsAndKeywords";
 import {elementWiseAssignmentOperators} from "../tokens/operatorsAndKeywords";
 import {TupleNode} from "./nodes";
-//import {ArrayLiteralNode} from "./nodes";
-//import {IndexingNode} from "./nodes";
 import {SquareBracketNode} from "./nodes";
 
 
@@ -190,16 +186,6 @@ export function parseIntoTreeByOrderOfOperations(nodes: Node[], wholeState: Whol
 
   } // for iOrderLevel
 
-
-  // may be a return statement
-  if (nodes[0] instanceof ReturnNode) {
-    if (nodes.length > 1) {
-      let retNode = nodes[0] as ReturnNode
-      let retValue = nodes[1]
-      retNode.returnValue = retValue
-      nodes.splice(0, 2, retNode)
-    }
-  }
 
   if (nodes.length !== 1) {
     let msg = "Failed to sort by order of operations! Still has " + nodes.length + " nodes in the sequence. Nodes are:\n"

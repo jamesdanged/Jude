@@ -5,8 +5,6 @@ import {WholeFileParseState} from "./ModuleContentsFsa";
 import {handleParseErrorOnly} from "./fsaUtils";
 import {FsaState} from "./fsaUtils";
 import {BaseFsa} from "./fsaUtils";
-import {streamAtComment} from "../../tokens/streamConditions";
-import {streamAtNewLine} from "../../tokens/streamConditions";
 import {alwaysPasses} from "../../tokens/streamConditions";
 import {TokenStream} from "../../tokens/TokenStream";
 import {runFsaStartToStop} from "./fsaUtils";
@@ -21,7 +19,8 @@ import {streamAtEof} from "../../tokens/streamConditions";
 import {IdentifierNode} from "../../parseTree/nodes";
 import {TreeToken} from "../../tokens/Token";
 import {AssertError} from "../../utils/assert";
-import {parseGroupingParenthesisExpression} from "./ExpressionFsa";
+import {parseGroupingParentheses} from "../bracketed/ParenthesesFsa"
+
 
 /**
  * Handles interpolated strings and simple strings.
@@ -87,7 +86,7 @@ function readInterpolationVariable(state: ParseState): void {
 function readInterpolationExpression(state: ParseState): void {
   let tok = state.ts.read()
   if (tok instanceof TreeToken) {
-    let exprNode = parseGroupingParenthesisExpression(tok, state.wholeState)
+    let exprNode = parseGroupingParentheses(tok, state.wholeState)
     state.nodeToFill.contents.push(exprNode)
   } else {
     throw new AssertError("")

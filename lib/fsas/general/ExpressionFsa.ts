@@ -19,59 +19,38 @@ import {streamAtBreak} from "../../tokens/streamConditions";
 import {streamAtTypeAlias} from "../../tokens/streamConditions";
 import {streamAtAnonymousFunction} from "./lookAheadStreamConditions";
 import {streamAtTripleDot} from "../../tokens/streamConditions";
-import {parseWholeMacroDef} from "../declarations/MacroDefFsa";
-import {expectNoMoreExpressions} from "./fsaUtils";
 import {WholeFileParseState} from "./ModuleContentsFsa";
-import {handleParseErrorOnly} from "./fsaUtils";
 import {parseString} from "./StringFsa";
 import {parseFunctionCallArgs} from "../bracketed/FunctionCallFsa";
 import {streamAtColon} from "../../tokens/streamConditions";
 import {streamAtReturn} from "../../tokens/streamConditions";
 import {AssertError} from "../../utils/assert";
-import {Escapes} from "./../../tokens/operatorsAndKeywords";
-import {toEscapeString} from "./../../tokens/operatorsAndKeywords";
 import {addToSet} from "../../utils/StringSet";
-import {createStringSet} from "../../utils/StringSet";
 import {StringSet} from "../../utils/StringSet";
 import {binaryOperators} from "./../../tokens/operatorsAndKeywords";
 import {TokenType} from "./../../tokens/operatorsAndKeywords";
 import {streamAtEof} from "./../../tokens/streamConditions";
 import {streamAtTernaryOp} from "./../../tokens/streamConditions";
 import {streamAtNewLine} from "./../../tokens/streamConditions";
-import {streamAtSemicolon} from "./../../tokens/streamConditions";
 import {streamAtNumber} from "./../../tokens/streamConditions";
 import {streamAtIdentifier} from "./../../tokens/streamConditions";
 import {streamAtUnaryOp} from "./../../tokens/streamConditions";
 import {streamAtOpenParenthesis} from "./../../tokens/streamConditions";
 import {streamAtOpenSquareBracket} from "./../../tokens/streamConditions";
-import {streamAtOpenBlockKeyword} from "./../../tokens/streamConditions";
 import {TokenStream} from "./../../tokens/TokenStream";
 import {UnaryOpNode} from "./../../parseTree/nodes";
 import {BinaryOpNode} from "./../../parseTree/nodes";
 import {NumberNode} from "./../../parseTree/nodes";
 import {IdentifierNode} from "./../../parseTree/nodes";
-import {ParenthesesNode} from "./../../parseTree/nodes";
-import {EmptyTupleNode} from "./../../parseTree/nodes";
 import {parseIntoTreeByOrderOfOperations} from "./../../parseTree/orderOfOperations";
-import {FunctionCallNode} from "./../../parseTree/nodes";
 import {FunctionDefNode} from "./../../parseTree/nodes";
-import {Node, MacroDefNode} from "./../../parseTree/nodes";
-import {CodeQuoteNode} from "./../../parseTree/nodes";
+import {Node} from "./../../parseTree/nodes";
 import {TypeDefNode} from "./../../parseTree/nodes";
-import {WhileBlockNode} from "./../../parseTree/nodes";
-import {ForBlockNode} from "./../../parseTree/nodes";
-import {IfBlockNode} from "./../../parseTree/nodes";
-import {BeginBlockNode} from "./../../parseTree/nodes";
-import {DoBlockNode} from "./../../parseTree/nodes";
-import {TryBlockNode} from "./../../parseTree/nodes";
-import {ModuleDefNode} from "./../../parseTree/nodes";
 import {streamAtOpenCurlyBraces} from "./../../tokens/streamConditions";
-import {GenericArgListNode} from "./../../parseTree/nodes";
 import {streamAtComment} from "./../../tokens/streamConditions";
 import {streamAtAnyQuote} from "./../../tokens/streamConditions";
 import {BaseFsa} from "./fsaUtils";
 import {FsaState} from "./fsaUtils";
-import {runFsaStartToStop} from "./fsaUtils";
 import {IFsaParseState} from "./fsaUtils";
 import {TreeToken} from "../../tokens/Token";
 import {streamAtFunctionCompactDeclaration} from "./lookAheadStreamConditions";
@@ -83,18 +62,15 @@ import {parseGenericArgList} from "../bracketed/GenericArgListFsa";
 import {parseWholeCompactFunctionDef} from "../declarations/FunctionCompactDefFsa";
 import {parseMacroCall} from "./../bracketed/MacroCallFsa";
 import {parseWholeFunctionDef} from "../declarations/FunctionDefFsa";
-import {parseWholeTypeDef} from "../declarations/TypeDefFsa";
 import {parseWholeBeginBlock} from "../controlFlow/BeginBlockFsa";
 import {parseWholeIfBlock} from "../controlFlow/IfBlockFsa";
 import {parseWholeForBlock} from "../controlFlow/ForBlockFsa";
 import {parseWholeWhileBlock} from "../controlFlow/WhileBlockFsa";
 import {parseWholeDoBlock} from "../controlFlow/DoBlockFsa";
 import {parseWholeTryBlock} from "../controlFlow/TryBlockFsa";
-import {parseWholeModuleDef} from "./ModuleDefFsa";
 import {streamAtLocal} from "../../tokens/streamConditions";
 import {streamAtGlobal} from "../../tokens/streamConditions";
 import {streamAtConst} from "../../tokens/streamConditions";
-import {streamAtEquals} from "../../tokens/streamConditions";
 import {alwaysPasses} from "../../tokens/streamConditions";
 import {parseLocalStatement} from "../declarations/VarDeclarationFsa";
 import {parseGlobalStatement} from "../declarations/VarDeclarationFsa";
@@ -105,16 +81,14 @@ import {parseFunctionDefArgList} from "../declarations/FunctionDefArgListFsa";
 import {BreakNode} from "../../parseTree/nodes";
 import {SymbolNode} from "../../parseTree/nodes";
 import {parseAnyArrayLiteral} from "../bracketed/SquareBracketFsa";
-//import {parseArrayLiteral} from "../bracketed/ArrayLiteralFsa";
-//import {parseIndexingArgList} from "../bracketed/ArrayIndexingFsa";
-//import {ArrayLiteralNode} from "./../../parseTree/nodes";
-//import {IndexingNode} from "./../../parseTree/nodes";
 import {parseSquareBracket} from "../bracketed/SquareBracketFsa";
 import {StringMacroNode} from "../../parseTree/nodes";
 import {streamAtStringMacro} from "../../tokens/streamConditions";
 import {Range} from "../../tokens/Token"
 import {Token} from "../../tokens/Token";
 import {streamAtOperatorThatIsIdentifier} from "./lookAheadStreamConditions";
+import {parseGroupingParentheses} from "../bracketed/ParenthesesFsa"
+
 
 /**
  * Automaton used for recognizing expressions.
@@ -243,20 +217,15 @@ export class ExpressionFsa extends BaseFsa {
       // binary ternary operators not allowed after
     }
 
-    // 'return' can only appear at the start
-    if (options.allowReturn) {
-      startState.addArc(returnState, streamAtReturn, readReturn)
-      returnState.addArc(stopState, streamAtEof, doNothing)
-      returnState.addArc(stopState, streamAtNewLineOrSemicolon, doNothing)
-      // return can also be followed by an expression which is handled below
-    }
+    returnState.addArc(stopState, streamAtEof, doNothing)
+    returnState.addArc(stopState, streamAtNewLineOrSemicolon, doNothing)
+    // return can also be followed by an expression
+    returnState.addArc(stopState, alwaysPasses, readReturnExpression)
 
     // 'break' can only appear by itself
-    startState.addArc(breakState, streamAtBreak, readBreak)
     breakState.addArc(stopState, alwaysPasses, doNothing)
 
     // continue can only appear by itself
-    startState.addArc(continueState, streamAtContinue, readContinue)
     continueState.addArc(stopState, alwaysPasses, doNothing)
 
     // 'local' 'global' 'const' can only appear at the start
@@ -322,7 +291,7 @@ export class ExpressionFsa extends BaseFsa {
     }
 
     // These states must be followed by something that creates a valid expression.
-    for (let state of [startState, returnState, unaryState, binaryState, binaryMayOmitArg2State, ternaryState, commaAfterSplatState]) {
+    for (let state of [startState, unaryState, binaryState, binaryMayOmitArg2State, ternaryState, commaAfterSplatState]) {
       state.addArc(keywordBlockState, streamAtFunctionCompactDeclaration, readFunctionCompactDef) // must be checked before streamAtIdentifier and streamAtUnaryOp
       state.addArc(unaryState, streamAtUnaryOp, readUnaryOp )  // can have multiple unary in a row
       state.addArc(numberState, streamAtNumber, readNumber )
@@ -337,6 +306,14 @@ export class ExpressionFsa extends BaseFsa {
       state.addArc(keywordBlockState, streamAtKeywordBlock, readKeywordBlock)
       state.addArc(quoteState, streamAtAnyQuote, readAnyQuote)
       state.addArc(stringMacroState, streamAtStringMacro, readStringMacro)
+
+      // technically, break/continue/return can only be after the startState or after the "&&" or "||" operator
+      // but to simplify, we just allow it after all these possibilities
+      state.addArc(continueState, streamAtContinue, readContinue)
+      state.addArc(breakState, streamAtBreak, readBreak)
+      if (options.allowReturn) {
+        state.addArc(returnState, streamAtReturn, readReturn)
+      }
     }
 
     // a number followed immediately by an identifier or an open parentheses (no whitespace in between) implies multiplication
@@ -378,6 +355,7 @@ export class ExpressionFsa extends BaseFsa {
     // However, new lines continue it, just as any other binary op.
     // Any term afterwards also continues it.
     binaryMayOmitArg2State.addArc(stopState, streamAtEof, doNothing)
+
 
   }
 
@@ -654,7 +632,7 @@ function readSingleColonAsIdentifier(state: ParseState): void {
 }
 
 function readGroupingParentheses(state: ParseState): void {
-  let node = parseGroupingParenthesisExpression(state.ts.read() as TreeToken, state.wholeState)
+  let node = parseGroupingParentheses(state.ts.read() as TreeToken, state.wholeState)
   state.nodes.push(node)
 }
 
@@ -793,6 +771,15 @@ function readKeywordBlock(state: ParseState): void {
 }
 
 
+function readReturnExpression(state: ParseState) {
+  let expr = parseGeneralBlockExpression(state.ts, state.wholeState)
+  let retNode = last(state.nodes)
+  if (retNode instanceof ReturnNode) {
+    retNode.returnValue = expr
+  } else {
+    throw new AssertError("")
+  }
+}
 
 
 
@@ -842,26 +829,30 @@ function parseTernaryOpTrueExpression(ts: TokenStream, wholeState: WholeFilePars
 
 
 
-fsaOptions = new ExpressionFsaOptions()
-fsaOptions.newLineInMiddleDoesNotEndExpression = true
-fsaOptions.allowSplat = true
-var fsaGroupingParenthesisExpression = new ExpressionFsa(fsaOptions)
 
-export function parseGroupingParenthesisExpression(parenTree: TreeToken, wholeState: WholeFileParseState): Node {
-  if (parenTree.openToken.str !== "(") throw new AssertError("")
-  let ts = new TokenStream(parenTree.contents, parenTree.openToken)
-  let node = new ParenthesesNode()
 
-  try {
-    ts.skipToNextNonWhitespace()
-    if (ts.eof()) return new EmptyTupleNode()
 
-    node.expression = fsaGroupingParenthesisExpression.runStartToStop(ts, wholeState)
-    expectNoMoreExpressions(ts)
-
-  } catch (err) {
-    handleParseErrorOnly(err, node, parenTree.contents, wholeState)
-  }
-  return node
-}
+// export function parseGroupingParenthesisExpression(parenTree: TreeToken, wholeState: WholeFileParseState): Node {
+//   // handles arithmetic expression grouping
+//   //   eg (a + b) * c
+//   // as well as tuples
+//   //   since "," is treated simply as a binary operator
+//   // as well as multiple semicolon delimited statements
+//
+//   if (parenTree.openToken.str !== "(") throw new AssertError("")
+//   let ts = new TokenStream(parenTree.contents, parenTree.openToken)
+//   let node = new ParenthesesNode()
+//
+//   try {
+//     ts.skipToNextNonWhitespace()
+//     if (ts.eof()) return new EmptyTupleNode()
+//
+//     node.expression = fsaGroupingParenthesisExpression.runStartToStop(ts, wholeState)
+//     expectNoMoreExpressions(ts)
+//
+//   } catch (err) {
+//     handleParseErrorOnly(err, node, parenTree.contents, wholeState)
+//   }
+//   return node
+// }
 

@@ -282,18 +282,36 @@ export class ContinueNode extends Node {
 
 /**
  * Simply for parentheses which are not function call related, but just order of operations.
+ * Tuples are represented by the TupleNode, which could also be wrapped by the ParenthesesNode.
+ * An empty tuple has its own EmptyTupleNode.
+ * Parentheses can wrap multiple semicolon delimited statements.
  */
 export class ParenthesesNode extends MayBeUnparsedNode {
-  expression: Node
+  expressions: Node[]
+  // expression: Node
   constructor() {
     super()
-    this.expression = null
+    // this.expression = null
+    this.expressions = []
   }
   toString(): string {
-    if (this.expression !== null) {
-      return this.expression.toString()  // don't need to wrap in extra parentheses for printing. Operator nodes will already have them.
+    if (this.expressions.length == 1) {
+      return this.expressions[0].toString()  // don't need to wrap in extra parentheses for printing. Operator nodes will already have them.
+    } else if (this.expressions.length == 0) {
+      return "( #missing# )"
+    } else {
+      let res = "( "
+      for (let expr of this.expressions) {
+        res += expr.toString()
+        res += "; "
+      }
+      res += ")"
+      return res
     }
-    return "( <missing> )"
+    // if (this.expression !== null) {
+    //   return this.expression.toString()  // don't need to wrap in extra parentheses for printing. Operator nodes will already have them.
+    // }
+    // return "( <missing> )"
   }
 }
 
