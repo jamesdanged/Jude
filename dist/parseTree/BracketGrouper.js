@@ -1,26 +1,13 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var assert_1 = require("../utils/assert");
-var TokenStream_1 = require("./../tokens/TokenStream");
-var operatorsAndKeywords_1 = require("./../tokens/operatorsAndKeywords");
-var errors_1 = require("./../utils/errors");
-var operatorsAndKeywords_2 = require("./../tokens/operatorsAndKeywords");
-var Token_1 = require("./../tokens/Token");
-var Token_2 = require("./../tokens/Token");
-var Token_3 = require("../tokens/Token");
-var Token_4 = require("../tokens/Token");
+const assert_1 = require("../utils/assert");
+const TokenStream_1 = require("./../tokens/TokenStream");
+const operatorsAndKeywords_1 = require("./../tokens/operatorsAndKeywords");
+const errors_1 = require("./../utils/errors");
+const operatorsAndKeywords_2 = require("./../tokens/operatorsAndKeywords");
+const Token_1 = require("./../tokens/Token");
+const Token_2 = require("./../tokens/Token");
+const Token_3 = require("../tokens/Token");
+const Token_4 = require("../tokens/Token");
 /**
  * Runs a partial parse of the token sequence, merely
  * grouping tokens within

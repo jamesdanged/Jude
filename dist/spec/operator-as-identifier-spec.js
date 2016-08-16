@@ -1,24 +1,19 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 /// <reference path="../defs/node/node.d.ts" />
 /// <reference path="../defs/jasmine/jasmine.d.ts" />
-var emptySession_1 = require("./utils/emptySession");
-var jasmine13to20_1 = require("../utils/jasmine13to20");
-var emptySession_2 = require("./utils/emptySession");
-var parseWorkspace_1 = require("../core/parseWorkspace");
-var emptySession_3 = require("./utils/emptySession");
+const emptySession_1 = require("./utils/emptySession");
+const jasmine13to20_1 = require("../utils/jasmine13to20");
+const emptySession_2 = require("./utils/emptySession");
+const parseWorkspace_1 = require("../core/parseWorkspace");
+const emptySession_3 = require("./utils/emptySession");
 describe("operators", () => {
     let j13to20 = jasmine13to20_1.jasmine13to20();
     let beforeAll = j13to20.beforeAll;
@@ -63,18 +58,18 @@ arr = [+, -, *, /]
     afterAll(() => {
         emptySession_3.unmockAll();
     });
-    it("can be treated as identifiers in function calls", (done) => __awaiter(this, void 0, Promise, function* () {
+    it("can be treated as identifiers in function calls", (done) => __awaiter(this, void 0, void 0, function* () {
         yield parseWorkspace_1.parseFullWorkspaceAsync(sessionModel);
         expect(errors[path1].parseErrors.length).toBe(0);
         expect(errors[path1].nameErrors.length).toBe(0);
         done();
     }));
-    it("can be identifiers in an array", (done) => __awaiter(this, void 0, Promise, function* () {
+    it("can be identifiers in an array", (done) => __awaiter(this, void 0, void 0, function* () {
         expect(errors[path2].parseErrors.length).toBe(0);
         expect(errors[path2].nameErrors.length).toBe(0);
         done();
     }));
-    it("can be identifiers on their own", (done) => __awaiter(this, void 0, Promise, function* () {
+    it("can be identifiers on their own", (done) => __awaiter(this, void 0, void 0, function* () {
         expect(errors[path3].parseErrors.length).toBe(0);
         expect(errors[path3].nameErrors.length).toBe(0);
         done();

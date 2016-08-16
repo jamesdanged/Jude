@@ -1,22 +1,17 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
-var emptySession_1 = require("./utils/emptySession");
-var jasmine13to20_1 = require("../utils/jasmine13to20");
-var parseWorkspace_1 = require("../core/parseWorkspace");
-var emptySession_2 = require("./utils/emptySession");
-var emptySession_3 = require("./utils/emptySession");
+const emptySession_1 = require("./utils/emptySession");
+const jasmine13to20_1 = require("../utils/jasmine13to20");
+const parseWorkspace_1 = require("../core/parseWorkspace");
+const emptySession_2 = require("./utils/emptySession");
+const emptySession_3 = require("./utils/emptySession");
 describe("basic module parsing", () => {
     let j13to20 = jasmine13to20_1.jasmine13to20();
     let beforeAll = j13to20.beforeAll;
@@ -60,7 +55,7 @@ baz = 5
     afterAll(() => {
         emptySession_2.unmockAll();
     });
-    it("should only have 1 parse error for the missing file", (done) => __awaiter(this, void 0, Promise, function* () {
+    it("should only have 1 parse error for the missing file", (done) => __awaiter(this, void 0, void 0, function* () {
         yield parseWorkspace_1.parseFullWorkspaceAsync(sessionModel);
         expect(errors[modPath].parseErrors.length).toBe(1);
         expect(errors[path1].parseErrors.length).toBe(0);
@@ -100,7 +95,7 @@ Mod2.bar()
     afterAll(() => {
         emptySession_2.unmockAll();
     });
-    it("should be able to have multiple modules in a single file", (done) => __awaiter(this, void 0, Promise, function* () {
+    it("should be able to have multiple modules in a single file", (done) => __awaiter(this, void 0, void 0, function* () {
         yield parseWorkspace_1.parseFullWorkspaceAsync(sessionModel);
         expect(errors[path].parseErrors.length).toBe(0);
         expect(errors[path].nameErrors.length).toBe(0);

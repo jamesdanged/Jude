@@ -1,32 +1,27 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 /// <reference path="./../defs/atom/atom.d.ts" />
 /// <reference path="./../defs/chokidar/chokidar.d.ts" />
-var resolveFullWorkspace_1 = require("../nameResolution/resolveFullWorkspace");
-var JumpController_1 = require("./JumpController");
-var Linter_1 = require("./Linter");
-var assert_1 = require("../utils/assert");
-var parseWorkspace_1 = require("./parseWorkspace");
-var assert_2 = require("../utils/assert");
-var SessionModel_1 = require("./SessionModel");
-var nodepath = require("path");
-var parseWorkspace_2 = require("./parseWorkspace");
-var Autocompleter_1 = require("./Autocompleter");
-var chokidar = require("chokidar");
-var taskUtils_1 = require("../utils/taskUtils");
-var atomModule = require("atom");
+const resolveFullWorkspace_1 = require("../nameResolution/resolveFullWorkspace");
+const JumpController_1 = require("./JumpController");
+const Linter_1 = require("./Linter");
+const assert_1 = require("../utils/assert");
+const parseWorkspace_1 = require("./parseWorkspace");
+const assert_2 = require("../utils/assert");
+const SessionModel_1 = require("./SessionModel");
+const nodepath = require("path");
+const parseWorkspace_2 = require("./parseWorkspace");
+const Autocompleter_1 = require("./Autocompleter");
+const chokidar = require("chokidar");
+const taskUtils_1 = require("../utils/taskUtils");
+const atomModule = require("atom");
 // TODO
 // symbol quote blocks, eg ":( ... )", "quote ... end"
 // certain operators treated as identifiers in certain circumstances
@@ -62,7 +57,7 @@ class Controller {
         this.sessionModel = new SessionModel_1.SessionModel();
         this.linter = new Linter_1.Linter(this.sessionModel);
         this.jumper = new JumpController_1.JumpController(this.sessionModel);
-        this.autocompleter = new Autocompleter_1.Autocompleter(this.sessionModel, this.jumper);
+        this.autocompleter = new Autocompleter_1.Autocompleter(this.sessionModel, this.jumper, this);
         this.subscriptions = new atomModule.CompositeDisposable();
         this.dirWatcher = null;
         this.taskQueue = new taskUtils_1.TaskQueue();
@@ -71,7 +66,7 @@ class Controller {
     }
     get moduleLibrary() { return this.sessionModel.moduleLibrary; }
     initalizeAsync() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let that = this;
             let commandHandler = atom.commands.add("atom-workspace", "jude:reparse-all", this.reparseAllFilesAsync.bind(this));
             this.subscriptions.add(commandHandler);
@@ -85,7 +80,7 @@ class Controller {
                 that.onNewEditor(editor);
             });
             this.subscriptions.add(observeHandler);
-            observeHandler = atom.project.onDidChangePaths(() => __awaiter(this, void 0, Promise, function* () {
+            observeHandler = atom.project.onDidChangePaths(() => __awaiter(this, void 0, void 0, function* () {
                 yield that.refreshDirWatcher();
                 yield that.reparseAllFilesAsync();
             }));
@@ -110,7 +105,7 @@ class Controller {
         });
     }
     refreshDirWatcher() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             yield this.taskQueue.addToQueueAndRun(() => {
                 if (this.dirWatcher !== null) {
                     this.dirWatcher.close();
@@ -139,7 +134,7 @@ class Controller {
                             console.log("Removed dir: " + path);
                             that.reparseAllFilesAsync();
                         });
-                        dirWatcher.on('change', (path, stats) => __awaiter(this, void 0, Promise, function* () {
+                        dirWatcher.on('change', (path, stats) => __awaiter(this, void 0, void 0, function* () {
                             console.log("File updated: " + path);
                             let file = new atomModule.File(path, false);
                             if (!(yield file.exists()))
@@ -159,25 +154,25 @@ class Controller {
         });
     }
     reparseAllFilesAsync() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let sessionModel = this.sessionModel;
-            yield this.taskQueue.addToQueueAndRun(() => __awaiter(this, void 0, Promise, function* () {
+            yield this.taskQueue.addToQueueAndRun(() => __awaiter(this, void 0, void 0, function* () {
                 console.log("Reparsing all files.");
                 yield parseWorkspace_1.parseFullWorkspaceAsync(sessionModel);
             }));
         });
     }
     reparseFileAsync(path, contents) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let sessionModel = this.sessionModel;
-            yield this.taskQueue.addToQueueAndRun(() => __awaiter(this, void 0, Promise, function* () {
+            yield this.taskQueue.addToQueueAndRun(() => __awaiter(this, void 0, void 0, function* () {
                 //console.log("Reparsing file " + path)
                 yield parseWorkspace_2.refreshFileAsync(path, contents, sessionModel);
             }));
         });
     }
     reloadModulesFromJuliaAndReparseAsync() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             yield this.moduleLibrary.refreshLoadPathsAsync();
             this.moduleLibrary.modules = {};
             this.moduleLibrary.workspaceModulePaths = {};
@@ -194,22 +189,22 @@ class Controller {
         });
     }
     goBackAsync() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             yield this.jumper.goBackAsync();
         });
     }
     goForwardAsync() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             yield this.jumper.goForwardAsync();
         });
     }
     onDidChangeActivePaneItem(item) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             this.jumper.onSwitchedTab();
             if (this.sessionModel.partiallyResolved) {
                 // now is a good time to quickly re-resolve full workspace
                 let sessionModel = this.sessionModel;
-                yield this.taskQueue.addToQueueAndRun(() => __awaiter(this, void 0, Promise, function* () {
+                yield this.taskQueue.addToQueueAndRun(() => __awaiter(this, void 0, void 0, function* () {
                     yield resolveFullWorkspace_1.resolveFullWorkspaceAsync(sessionModel);
                 }));
             }
@@ -225,7 +220,7 @@ class Controller {
             return [];
         }
         let that = this;
-        return new Promise((resolve, reject) => __awaiter(this, void 0, Promise, function* () {
+        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
             try {
                 if (that.initializedPromise === false) {
                     that.initializedPromise = that.initalizeAsync();

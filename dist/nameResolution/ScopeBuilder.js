@@ -1,32 +1,19 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var Resolve_1 = require("./Resolve");
-var StringSet_1 = require("../utils/StringSet");
-var Scope_1 = require("./Scope");
-var Resolve_2 = require("./Resolve");
-var errors_1 = require("../utils/errors");
-var arrayUtils_1 = require("../utils/arrayUtils");
-var assert_1 = require("../utils/assert");
-var nodes_1 = require("../parseTree/nodes");
-var Resolve_3 = require("./Resolve");
-var Resolve_4 = require("./Resolve");
-var Resolve_5 = require("./Resolve");
-var Resolve_6 = require("./Resolve");
-var Resolve_7 = require("./Resolve");
-var Resolve_8 = require("./Resolve");
-var Resolve_9 = require("./Resolve");
+const Resolve_1 = require("./Resolve");
+const StringSet_1 = require("../utils/StringSet");
+const ModuleScope_1 = require("./ModuleScope");
+const Resolve_2 = require("./Resolve");
+const errors_1 = require("../utils/errors");
+const arrayUtils_1 = require("../utils/arrayUtils");
+const assert_1 = require("../utils/assert");
+const nodes_1 = require("../parseTree/nodes");
+const Resolve_3 = require("./Resolve");
+const Resolve_4 = require("./Resolve");
+const Resolve_5 = require("./Resolve");
+const Resolve_6 = require("./Resolve");
+const Resolve_7 = require("./Resolve");
+const Resolve_8 = require("./Resolve");
+const Resolve_9 = require("./Resolve");
 /**
  * Works with the ScopeRecurser to build out a scope tree.
  * The recurser does the navigation through the node tree.
@@ -47,14 +34,16 @@ class ScopeBuilder {
     logUnresolvedImport(moduleName) {
         StringSet_1.addToSet(this.moduleLibrary.toQueryFromJulia, moduleName);
     }
-    logImport(moduleName) {
-        let importList = this._recurser.currResolveRoot.imports;
+    logSingleImportName(moduleName) {
+        if (moduleName.split(".").length > 1)
+            throw new assert_1.AssertError("");
+        let importList = this._recurser.currModuleResolveInfo.imports;
         if (importList.indexOf(moduleName) < 0) {
             importList.push(moduleName);
         }
     }
     registerImportAllOrUsing(multiPartName, isUsing) {
-        if (!(this.currScope instanceof Scope_1.ModuleScope))
+        if (!(this.currScope instanceof ModuleScope_1.ModuleScope))
             throw new assert_1.AssertError("");
         let scope = this.currScope;
         // register the name itself
@@ -77,17 +66,24 @@ class ScopeBuilder {
         }
     }
     registerImport(multiPartName) {
-        if (!(this.currScope instanceof Scope_1.ModuleScope))
+        if (!(this.currScope instanceof ModuleScope_1.ModuleScope))
             throw new assert_1.AssertError("");
         if (multiPartName.length == 0)
             throw new assert_1.AssertError("");
         // If the first part is not already imported, must be imported.
         let firstPart = multiPartName[0];
-        let firstNameSuccessfullyRegistered = this.registerSingleNameImport(firstPart);
-        if (!firstNameSuccessfullyRegistered)
-            return;
-        if (multiPartName.length === 1)
-            return;
+        if (firstPart.token.str !== ".") {
+            if (this.registerSingleNameImport(firstPart)) {
+                if (multiPartName.length === 1) {
+                    return; // no more name parts to register
+                }
+                else {
+                }
+            }
+            else {
+                return;
+            }
+        }
         // try to search through modules for the full multi part name
         let resolveOrError = this.currScope.tryResolveMultiPartName(multiPartName);
         if (resolveOrError instanceof errors_1.NameError) {
@@ -149,7 +145,7 @@ class ScopeBuilder {
      */
     registerSingleNameImport(singlePartName) {
         let name = singlePartName.str;
-        this.logImport(name);
+        this.logSingleImportName(name);
         let resolve = this.currScope.tryResolveNameThisLevel(name);
         if (resolve !== null) {
             if (resolve instanceof Resolve_2.ModuleResolve) {
@@ -169,13 +165,13 @@ class ScopeBuilder {
         }
         // register the imported module
         // get corresponding node if in the workspace
-        let resolveRoot = this.parseSet.resolveRoots.find((o) => { return o.scope === rootScope; });
-        if (resolveRoot) {
-            let rootNode = resolveRoot.root;
+        let mri = this.parseSet.moduleResolveInfos.find((o) => { return o.scope === rootScope; });
+        if (mri) {
+            let rootNode = mri.root;
             if (!(rootNode instanceof nodes_1.ModuleDefNode))
                 throw new assert_1.AssertError(""); // cannot be in the module library if it is a file level node
             let moduleDefNode = rootNode;
-            this.currScope.names[name] = new Resolve_3.LocalModuleResolve(moduleDefNode, resolveRoot.containingFile, rootScope);
+            this.currScope.names[name] = new Resolve_3.LocalModuleResolve(moduleDefNode, mri.containingFile, rootScope);
         }
         else {
             this.currScope.names[name] = new Resolve_1.ExternalModuleResolve(name, rootScope);

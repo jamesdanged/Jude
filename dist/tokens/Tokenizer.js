@@ -1,32 +1,19 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var operatorsAndKeywords_1 = require("./operatorsAndKeywords");
-var operatorsAndKeywords_2 = require("./operatorsAndKeywords");
-var assert_1 = require("../utils/assert");
-var charUtils = require("./../utils/charUtils");
-var errors_1 = require("./../utils/errors");
-var operatorsAndKeywords_3 = require("./operatorsAndKeywords");
-var operatorsAndKeywords_4 = require("./operatorsAndKeywords");
-var operatorsAndKeywords_5 = require("./operatorsAndKeywords");
-var operatorsAndKeywords_6 = require("./operatorsAndKeywords");
-var operatorsAndKeywords_7 = require("./operatorsAndKeywords");
-var operatorsAndKeywords_8 = require("./operatorsAndKeywords");
-var StringStream_1 = require("./../utils/StringStream");
-var Token_1 = require("./Token");
-var Token_2 = require("./Token");
-var arrayUtils_1 = require("./../utils/arrayUtils");
+const operatorsAndKeywords_1 = require("./operatorsAndKeywords");
+const operatorsAndKeywords_2 = require("./operatorsAndKeywords");
+const assert_1 = require("../utils/assert");
+const charUtils = require("./../utils/charUtils");
+const errors_1 = require("./../utils/errors");
+const operatorsAndKeywords_3 = require("./operatorsAndKeywords");
+const operatorsAndKeywords_4 = require("./operatorsAndKeywords");
+const operatorsAndKeywords_5 = require("./operatorsAndKeywords");
+const operatorsAndKeywords_6 = require("./operatorsAndKeywords");
+const operatorsAndKeywords_7 = require("./operatorsAndKeywords");
+const operatorsAndKeywords_8 = require("./operatorsAndKeywords");
+const StringStream_1 = require("./../utils/StringStream");
+const Token_1 = require("./Token");
+const Token_2 = require("./Token");
+const arrayUtils_1 = require("./../utils/arrayUtils");
 /**
  * Converts a string into a sequence of julia tokens.
  * Doesn't do any significant parsing except for recognizing string literals
@@ -587,7 +574,9 @@ class Tokenizer {
                 return true;
             if (tok.type === operatorsAndKeywords_8.TokenType.Bracket && (tok.str === "(" || tok.str === "[" || tok.str === "{"))
                 return true;
-            if (tok.type === operatorsAndKeywords_8.TokenType.Operator && tok.str in operatorsAndKeywords_3.binaryOperators)
+            if (tok.type === operatorsAndKeywords_8.TokenType.Operator && (tok.str in operatorsAndKeywords_3.binaryOperators || tok.str === "?"))
+                return true;
+            if (tok.type === operatorsAndKeywords_8.TokenType.Keyword)
                 return true;
             return false;
         };

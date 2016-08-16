@@ -1,30 +1,25 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 /// <reference path="../defs/node/node.d.ts" />
 /// <reference path="../defs/jasmine/jasmine.d.ts" />
-var atomApi_1 = require("../utils/atomApi");
-var nodes_1 = require("../parseTree/nodes");
-var Token_1 = require("../tokens/Token");
-var parseFile_1 = require("../parseTree/parseFile");
-var resolveFullWorkspace_1 = require("../nameResolution/resolveFullWorkspace");
-var jasmine13to20_1 = require("../utils/jasmine13to20");
-var emptySession_1 = require("./utils/emptySession");
-var nodes_2 = require("../parseTree/nodes");
-var Resolve_1 = require("../nameResolution/Resolve");
-var nodes_3 = require("../parseTree/nodes");
-var atomApi_2 = require("../utils/atomApi");
+const atomApi_1 = require("../utils/atomApi");
+const nodes_1 = require("../parseTree/nodes");
+const Token_1 = require("../tokens/Token");
+const parseFile_1 = require("../parseTree/parseFile");
+const resolveFullWorkspace_1 = require("../nameResolution/resolveFullWorkspace");
+const jasmine13to20_1 = require("../utils/jasmine13to20");
+const emptySession_1 = require("./utils/emptySession");
+const nodes_2 = require("../parseTree/nodes");
+const Resolve_1 = require("../nameResolution/Resolve");
+const nodes_3 = require("../parseTree/nodes");
+const atomApi_2 = require("../utils/atomApi");
 // TODO
 // test for ccall
 // should not throw error in promise when
@@ -53,7 +48,7 @@ end`;
     it("should not have any entries before parse", () => {
         expect(errors[path]).toBeUndefined();
     });
-    it("should have no parse errors", (done) => __awaiter(this, void 0, Promise, function* () {
+    it("should have no parse errors", (done) => __awaiter(this, void 0, void 0, function* () {
         sessionModel.parseSet.createEntriesForFile(path);
         parseFile_1.parseFile(path, contents, sessionModel);
         expect(errors[path].parseErrors.length).toBe(0);
@@ -62,7 +57,7 @@ end`;
     it("should have no name errors before resolution", () => {
         expect(errors[path].nameErrors.length).toBe(0);
     });
-    it("should have one name error after resolution", (done) => __awaiter(this, void 0, Promise, function* () {
+    it("should have one name error after resolution", (done) => __awaiter(this, void 0, void 0, function* () {
         yield resolveFullWorkspace_1.resolveFullWorkspaceAsync(sessionModel);
         expect(errors[path].nameErrors.length).toBe(1);
         expect(errors[path].nameErrors[0].token.str).toBe("arg3");

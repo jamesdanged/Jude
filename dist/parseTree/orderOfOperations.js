@@ -1,42 +1,26 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var Token_1 = require("../tokens/Token");
-var nodes_1 = require("./nodes");
-var nodes_2 = require("./nodes");
-var StringSet_1 = require("../utils/StringSet");
-var operatorsAndKeywords_1 = require("../tokens/operatorsAndKeywords");
-var nodes_3 = require("./nodes");
-var nodes_4 = require("./nodes");
-var assert_1 = require("../utils/assert");
-var StringSet_2 = require("./../utils/StringSet");
-var operatorsAndKeywords_2 = require("./../tokens/operatorsAndKeywords");
-var StringSet_3 = require("./../utils/StringSet");
-var nodes_5 = require("./nodes");
-var nodes_6 = require("./nodes");
-var nodes_7 = require("./nodes");
-var errors_1 = require("./../utils/errors");
-var nodes_8 = require("./nodes");
-var nodes_9 = require("./nodes");
-var operatorsAndKeywords_3 = require("../tokens/operatorsAndKeywords");
-var operatorsAndKeywords_4 = require("../tokens/operatorsAndKeywords");
-var operatorsAndKeywords_5 = require("../tokens/operatorsAndKeywords");
-var operatorsAndKeywords_6 = require("../tokens/operatorsAndKeywords");
-var nodes_10 = require("./nodes");
-//import {ArrayLiteralNode} from "./nodes";
-//import {IndexingNode} from "./nodes";
-var nodes_11 = require("./nodes");
+const Token_1 = require("../tokens/Token");
+const nodes_1 = require("./nodes");
+const nodes_2 = require("./nodes");
+const StringSet_1 = require("../utils/StringSet");
+const operatorsAndKeywords_1 = require("../tokens/operatorsAndKeywords");
+const nodes_3 = require("./nodes");
+const assert_1 = require("../utils/assert");
+const StringSet_2 = require("./../utils/StringSet");
+const operatorsAndKeywords_2 = require("./../tokens/operatorsAndKeywords");
+const StringSet_3 = require("./../utils/StringSet");
+const nodes_4 = require("./nodes");
+const nodes_5 = require("./nodes");
+const nodes_6 = require("./nodes");
+const errors_1 = require("./../utils/errors");
+const nodes_7 = require("./nodes");
+const nodes_8 = require("./nodes");
+const operatorsAndKeywords_3 = require("../tokens/operatorsAndKeywords");
+const operatorsAndKeywords_4 = require("../tokens/operatorsAndKeywords");
+const operatorsAndKeywords_5 = require("../tokens/operatorsAndKeywords");
+const operatorsAndKeywords_6 = require("../tokens/operatorsAndKeywords");
+const nodes_9 = require("./nodes");
+const nodes_10 = require("./nodes");
 const UNARY_LEVEL = 3;
 const ASSIGNMENTS_LEVEL = 17;
 // binary operators are left to right associative except for assignments (and unary operators)
@@ -101,7 +85,7 @@ function parseIntoTreeByOrderOfOperations(nodes, wholeState) {
     // generic args, left to right, before anything else
     for (let idx = 0; idx < nodes.length; idx++) {
         let node = nodes[idx];
-        if (node instanceof nodes_9.GenericArgListNode) {
+        if (node instanceof nodes_8.GenericArgListNode) {
             let idxOffset = joinGenericArgListToType(nodes, idx);
             idx += idxOffset;
         }
@@ -118,13 +102,13 @@ function parseIntoTreeByOrderOfOperations(nodes, wholeState) {
             for (let idx = 0; idx < nodes.length; idx++) {
                 let node = nodes[idx];
                 // join () [] with left to right associativity
-                if (node instanceof nodes_8.FunctionCallNode) {
+                if (node instanceof nodes_7.FunctionCallNode) {
                     if (iOrderLevel === 0) {
                         let idxOffset = joinFunctionCallToFunctionObject(nodes, idx);
                         idx += idxOffset;
                     }
                 }
-                else if (node instanceof nodes_11.SquareBracketNode) {
+                else if (node instanceof nodes_10.SquareBracketNode) {
                     if (iOrderLevel === 0) {
                         let idxOffset = joinSquareBracketToArrayObject(nodes, idx);
                         idx += idxOffset;
@@ -136,12 +120,12 @@ function parseIntoTreeByOrderOfOperations(nodes, wholeState) {
                         idx += idxOffset;
                     }
                 }
-                else if (node instanceof nodes_5.BinaryOpNode) {
+                else if (node instanceof nodes_4.BinaryOpNode) {
                     let opNode = node;
                     if (opNode.op in orderLevel) {
                         // handle situation like: 10^-2
                         if (iOrderLevel < UNARY_LEVEL && idx < nodes.length - 1) {
-                            if (nodes[idx + 1] instanceof nodes_6.UnaryOpNode) {
+                            if (nodes[idx + 1] instanceof nodes_5.UnaryOpNode) {
                                 joinMultipleUnaryToRightOfBinary(nodes, idx);
                             }
                         }
@@ -149,7 +133,7 @@ function parseIntoTreeByOrderOfOperations(nodes, wholeState) {
                         idx += idxOffset;
                     }
                 }
-                else if (node instanceof nodes_7.TernaryOpNode) {
+                else if (node instanceof nodes_6.TernaryOpNode) {
                     if ("?" in orderLevel) {
                         let idxOffset = joinTernaryOperands(nodes, idx);
                         idx += idxOffset;
@@ -169,7 +153,7 @@ function parseIntoTreeByOrderOfOperations(nodes, wholeState) {
             for (let idx = nodes.length - 1; idx >= 0; idx--) {
                 let node = nodes[idx];
                 if (isUnaryLevel) {
-                    if (node instanceof nodes_6.UnaryOpNode) {
+                    if (node instanceof nodes_5.UnaryOpNode) {
                         let opNode = node;
                         if (opNode.op in orderLevel) {
                             let idxOffset = joinUnaryOperands(nodes, idx);
@@ -178,7 +162,7 @@ function parseIntoTreeByOrderOfOperations(nodes, wholeState) {
                     }
                 }
                 else {
-                    if (node instanceof nodes_5.BinaryOpNode) {
+                    if (node instanceof nodes_4.BinaryOpNode) {
                         let opNode = node;
                         if (opNode.op in orderLevel) {
                             let idxOffset = joinBinaryOperands(nodes, idx);
@@ -189,15 +173,6 @@ function parseIntoTreeByOrderOfOperations(nodes, wholeState) {
             }
         } // isLeftToRight
     } // for iOrderLevel
-    // may be a return statement
-    if (nodes[0] instanceof nodes_4.ReturnNode) {
-        if (nodes.length > 1) {
-            let retNode = nodes[0];
-            let retValue = nodes[1];
-            retNode.returnValue = retValue;
-            nodes.splice(0, 2, retNode);
-        }
-    }
     if (nodes.length !== 1) {
         let msg = "Failed to sort by order of operations! Still has " + nodes.length + " nodes in the sequence. Nodes are:\n";
         for (let node of nodes) {
@@ -231,11 +206,11 @@ function joinMultipleUnaryToRightOfBinary(nodes, binaryOpIndex) {
     let closestUnaryIndex = binaryOpIndex + 1;
     if (closestUnaryIndex >= nodes.length - 1)
         throw new assert_1.AssertError("Unary op needs right operand");
-    if (!(nodes[closestUnaryIndex] instanceof nodes_6.UnaryOpNode))
+    if (!(nodes[closestUnaryIndex] instanceof nodes_5.UnaryOpNode))
         throw new assert_1.AssertError("Must call only if unary op to right of binary.");
     let firstUnaryIndex = closestUnaryIndex;
     for (let idx = closestUnaryIndex; idx < nodes.length; idx++) {
-        if (nodes[idx] instanceof nodes_6.UnaryOpNode) {
+        if (nodes[idx] instanceof nodes_5.UnaryOpNode) {
             firstUnaryIndex = idx;
         }
         else {
@@ -287,13 +262,13 @@ function joinBinaryOperands(nodes, opIndex) {
     // join tuples into a new node
     if (opNode.op === ",") {
         let tupleNode = null;
-        if (opNode.arg1 instanceof nodes_10.TupleNode) {
+        if (opNode.arg1 instanceof nodes_9.TupleNode) {
             tupleNode = opNode.arg1;
             if (opNode.arg2 !== null)
                 tupleNode.nodes.push(opNode.arg2);
         }
         else {
-            tupleNode = new nodes_10.TupleNode();
+            tupleNode = new nodes_9.TupleNode();
             tupleNode.nodes.push(opNode.arg1);
             if (opNode.arg2 !== null)
                 tupleNode.nodes.push(opNode.arg2);
@@ -356,7 +331,7 @@ function joinSquareBracketToArrayObject(nodes, bracketIndex) {
         return 0; // must be an array literal
     let opNode = nodes[bracketIndex];
     let operand = nodes[bracketIndex - 1];
-    if (operand instanceof nodes_6.UnaryOpNode || operand instanceof nodes_5.BinaryOpNode || operand instanceof nodes_7.TernaryOpNode) {
+    if (operand instanceof nodes_5.UnaryOpNode || operand instanceof nodes_4.BinaryOpNode || operand instanceof nodes_6.TernaryOpNode) {
         return 0; // must be an array literal
     }
     // otherwise is something that can be indexed

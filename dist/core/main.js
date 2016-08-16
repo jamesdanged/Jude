@@ -1,23 +1,18 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 /// <reference path="./../defs/atom/atom.d.ts" />
 /// <reference path="./../defs/atom_package_deps/atom-package-deps.d.ts" />
-var ConfigSchema_1 = require("./ConfigSchema");
-var Controller_1 = require("./Controller");
-var taskUtils_1 = require("../utils/taskUtils");
-var atomPackageDeps = require("atom-package-deps");
+const ConfigSchema_1 = require("./ConfigSchema");
+const Controller_1 = require("./Controller");
+const taskUtils_1 = require("../utils/taskUtils");
+const atomPackageDeps = require("atom-package-deps");
 var gParseController = null;
 class MainObject {
     constructor() {
@@ -26,7 +21,7 @@ class MainObject {
     activate(state) {
         gParseController = new Controller_1.Controller(state);
         // Allow window to load before performing main thread blocking operations
-        taskUtils_1.runDelayed(() => __awaiter(this, void 0, Promise, function* () {
+        taskUtils_1.runDelayed(() => __awaiter(this, void 0, void 0, function* () {
             yield atomPackageDeps.install("Jude");
         }));
     }

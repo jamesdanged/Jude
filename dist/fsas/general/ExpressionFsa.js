@@ -1,106 +1,86 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var lookAheadStreamConditions_1 = require("./lookAheadStreamConditions");
-var streamConditions_1 = require("../../tokens/streamConditions");
-var fsaUtils_1 = require("./fsaUtils");
-var LetBlockFsa_1 = require("../controlFlow/LetBlockFsa");
-var streamConditions_2 = require("../../tokens/streamConditions");
-var streamConditions_3 = require("../../tokens/streamConditions");
-var GenericDefArgListFsa_1 = require("../declarations/GenericDefArgListFsa");
-var nodes_1 = require("../../parseTree/nodes");
-var streamConditions_4 = require("../../tokens/streamConditions");
-var operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
-var nodes_2 = require("../../parseTree/nodes");
-var streamConditions_5 = require("../../tokens/streamConditions");
-var nodes_3 = require("../../parseTree/nodes");
-var streamConditions_6 = require("../../tokens/streamConditions");
-var streamConditions_7 = require("../../tokens/streamConditions");
-var streamConditions_8 = require("../../tokens/streamConditions");
-var lookAheadStreamConditions_2 = require("./lookAheadStreamConditions");
-var streamConditions_9 = require("../../tokens/streamConditions");
-var fsaUtils_2 = require("./fsaUtils");
-var fsaUtils_3 = require("./fsaUtils");
-var StringFsa_1 = require("./StringFsa");
-var FunctionCallFsa_1 = require("../bracketed/FunctionCallFsa");
-var streamConditions_10 = require("../../tokens/streamConditions");
-var streamConditions_11 = require("../../tokens/streamConditions");
-var assert_1 = require("../../utils/assert");
-var StringSet_1 = require("../../utils/StringSet");
-var operatorsAndKeywords_2 = require("./../../tokens/operatorsAndKeywords");
-var operatorsAndKeywords_3 = require("./../../tokens/operatorsAndKeywords");
-var streamConditions_12 = require("./../../tokens/streamConditions");
-var streamConditions_13 = require("./../../tokens/streamConditions");
-var streamConditions_14 = require("./../../tokens/streamConditions");
-var streamConditions_15 = require("./../../tokens/streamConditions");
-var streamConditions_16 = require("./../../tokens/streamConditions");
-var streamConditions_17 = require("./../../tokens/streamConditions");
-var streamConditions_18 = require("./../../tokens/streamConditions");
-var streamConditions_19 = require("./../../tokens/streamConditions");
-var TokenStream_1 = require("./../../tokens/TokenStream");
-var nodes_4 = require("./../../parseTree/nodes");
-var nodes_5 = require("./../../parseTree/nodes");
-var nodes_6 = require("./../../parseTree/nodes");
-var nodes_7 = require("./../../parseTree/nodes");
-var nodes_8 = require("./../../parseTree/nodes");
-var nodes_9 = require("./../../parseTree/nodes");
-var orderOfOperations_1 = require("./../../parseTree/orderOfOperations");
-var nodes_10 = require("./../../parseTree/nodes");
-var nodes_11 = require("./../../parseTree/nodes");
-var streamConditions_20 = require("./../../tokens/streamConditions");
-var streamConditions_21 = require("./../../tokens/streamConditions");
-var streamConditions_22 = require("./../../tokens/streamConditions");
-var fsaUtils_4 = require("./fsaUtils");
-var fsaUtils_5 = require("./fsaUtils");
-var lookAheadStreamConditions_3 = require("./lookAheadStreamConditions");
-var nodes_12 = require("../../parseTree/nodes");
-var errors_1 = require("../../utils/errors");
-var streamConditions_23 = require("../../tokens/streamConditions");
-var nodes_13 = require("../../parseTree/nodes");
-var GenericArgListFsa_1 = require("../bracketed/GenericArgListFsa");
-var FunctionCompactDefFsa_1 = require("../declarations/FunctionCompactDefFsa");
-var MacroCallFsa_1 = require("./../bracketed/MacroCallFsa");
-var FunctionDefFsa_1 = require("../declarations/FunctionDefFsa");
-var BeginBlockFsa_1 = require("../controlFlow/BeginBlockFsa");
-var IfBlockFsa_1 = require("../controlFlow/IfBlockFsa");
-var ForBlockFsa_1 = require("../controlFlow/ForBlockFsa");
-var WhileBlockFsa_1 = require("../controlFlow/WhileBlockFsa");
-var DoBlockFsa_1 = require("../controlFlow/DoBlockFsa");
-var TryBlockFsa_1 = require("../controlFlow/TryBlockFsa");
-var streamConditions_24 = require("../../tokens/streamConditions");
-var streamConditions_25 = require("../../tokens/streamConditions");
-var streamConditions_26 = require("../../tokens/streamConditions");
-var streamConditions_27 = require("../../tokens/streamConditions");
-var VarDeclarationFsa_1 = require("../declarations/VarDeclarationFsa");
-var VarDeclarationFsa_2 = require("../declarations/VarDeclarationFsa");
-var VarDeclarationFsa_3 = require("../declarations/VarDeclarationFsa");
-var streamConditions_28 = require("../../tokens/streamConditions");
-var nodes_14 = require("../../parseTree/nodes");
-var FunctionDefArgListFsa_1 = require("../declarations/FunctionDefArgListFsa");
-var nodes_15 = require("../../parseTree/nodes");
-var nodes_16 = require("../../parseTree/nodes");
-var SquareBracketFsa_1 = require("../bracketed/SquareBracketFsa");
-//import {parseArrayLiteral} from "../bracketed/ArrayLiteralFsa";
-//import {parseIndexingArgList} from "../bracketed/ArrayIndexingFsa";
-//import {ArrayLiteralNode} from "./../../parseTree/nodes";
-//import {IndexingNode} from "./../../parseTree/nodes";
-var SquareBracketFsa_2 = require("../bracketed/SquareBracketFsa");
-var nodes_17 = require("../../parseTree/nodes");
-var streamConditions_29 = require("../../tokens/streamConditions");
-var Token_1 = require("../../tokens/Token");
-var Token_2 = require("../../tokens/Token");
-var lookAheadStreamConditions_4 = require("./lookAheadStreamConditions");
+const lookAheadStreamConditions_1 = require("./lookAheadStreamConditions");
+const arrayUtils_1 = require("../../utils/arrayUtils");
+const streamConditions_1 = require("../../tokens/streamConditions");
+const fsaUtils_1 = require("./fsaUtils");
+const LetBlockFsa_1 = require("../controlFlow/LetBlockFsa");
+const streamConditions_2 = require("../../tokens/streamConditions");
+const streamConditions_3 = require("../../tokens/streamConditions");
+const GenericDefArgListFsa_1 = require("../declarations/GenericDefArgListFsa");
+const nodes_1 = require("../../parseTree/nodes");
+const streamConditions_4 = require("../../tokens/streamConditions");
+const operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
+const nodes_2 = require("../../parseTree/nodes");
+const streamConditions_5 = require("../../tokens/streamConditions");
+const nodes_3 = require("../../parseTree/nodes");
+const streamConditions_6 = require("../../tokens/streamConditions");
+const streamConditions_7 = require("../../tokens/streamConditions");
+const streamConditions_8 = require("../../tokens/streamConditions");
+const lookAheadStreamConditions_2 = require("./lookAheadStreamConditions");
+const streamConditions_9 = require("../../tokens/streamConditions");
+const StringFsa_1 = require("./StringFsa");
+const FunctionCallFsa_1 = require("../bracketed/FunctionCallFsa");
+const streamConditions_10 = require("../../tokens/streamConditions");
+const streamConditions_11 = require("../../tokens/streamConditions");
+const assert_1 = require("../../utils/assert");
+const StringSet_1 = require("../../utils/StringSet");
+const operatorsAndKeywords_2 = require("./../../tokens/operatorsAndKeywords");
+const operatorsAndKeywords_3 = require("./../../tokens/operatorsAndKeywords");
+const streamConditions_12 = require("./../../tokens/streamConditions");
+const streamConditions_13 = require("./../../tokens/streamConditions");
+const streamConditions_14 = require("./../../tokens/streamConditions");
+const streamConditions_15 = require("./../../tokens/streamConditions");
+const streamConditions_16 = require("./../../tokens/streamConditions");
+const streamConditions_17 = require("./../../tokens/streamConditions");
+const streamConditions_18 = require("./../../tokens/streamConditions");
+const streamConditions_19 = require("./../../tokens/streamConditions");
+const nodes_4 = require("./../../parseTree/nodes");
+const nodes_5 = require("./../../parseTree/nodes");
+const nodes_6 = require("./../../parseTree/nodes");
+const nodes_7 = require("./../../parseTree/nodes");
+const orderOfOperations_1 = require("./../../parseTree/orderOfOperations");
+const nodes_8 = require("./../../parseTree/nodes");
+const nodes_9 = require("./../../parseTree/nodes");
+const streamConditions_20 = require("./../../tokens/streamConditions");
+const streamConditions_21 = require("./../../tokens/streamConditions");
+const streamConditions_22 = require("./../../tokens/streamConditions");
+const fsaUtils_2 = require("./fsaUtils");
+const fsaUtils_3 = require("./fsaUtils");
+const lookAheadStreamConditions_3 = require("./lookAheadStreamConditions");
+const nodes_10 = require("../../parseTree/nodes");
+const errors_1 = require("../../utils/errors");
+const streamConditions_23 = require("../../tokens/streamConditions");
+const nodes_11 = require("../../parseTree/nodes");
+const GenericArgListFsa_1 = require("../bracketed/GenericArgListFsa");
+const FunctionCompactDefFsa_1 = require("../declarations/FunctionCompactDefFsa");
+const MacroCallFsa_1 = require("./../bracketed/MacroCallFsa");
+const FunctionDefFsa_1 = require("../declarations/FunctionDefFsa");
+const BeginBlockFsa_1 = require("../controlFlow/BeginBlockFsa");
+const IfBlockFsa_1 = require("../controlFlow/IfBlockFsa");
+const ForBlockFsa_1 = require("../controlFlow/ForBlockFsa");
+const WhileBlockFsa_1 = require("../controlFlow/WhileBlockFsa");
+const DoBlockFsa_1 = require("../controlFlow/DoBlockFsa");
+const TryBlockFsa_1 = require("../controlFlow/TryBlockFsa");
+const streamConditions_24 = require("../../tokens/streamConditions");
+const streamConditions_25 = require("../../tokens/streamConditions");
+const streamConditions_26 = require("../../tokens/streamConditions");
+const streamConditions_27 = require("../../tokens/streamConditions");
+const VarDeclarationFsa_1 = require("../declarations/VarDeclarationFsa");
+const VarDeclarationFsa_2 = require("../declarations/VarDeclarationFsa");
+const VarDeclarationFsa_3 = require("../declarations/VarDeclarationFsa");
+const streamConditions_28 = require("../../tokens/streamConditions");
+const nodes_12 = require("../../parseTree/nodes");
+const FunctionDefArgListFsa_1 = require("../declarations/FunctionDefArgListFsa");
+const nodes_13 = require("../../parseTree/nodes");
+const nodes_14 = require("../../parseTree/nodes");
+const SquareBracketFsa_1 = require("../bracketed/SquareBracketFsa");
+const SquareBracketFsa_2 = require("../bracketed/SquareBracketFsa");
+const nodes_15 = require("../../parseTree/nodes");
+const streamConditions_29 = require("../../tokens/streamConditions");
+const Token_1 = require("../../tokens/Token");
+const Token_2 = require("../../tokens/Token");
+const lookAheadStreamConditions_4 = require("./lookAheadStreamConditions");
+const ParenthesesFsa_1 = require("../bracketed/ParenthesesFsa");
 /**
  * Automaton used for recognizing expressions.
  * In Julia, almost everything is a valid expression, including arithmetic expressions, for loops,
@@ -110,45 +90,45 @@ var lookAheadStreamConditions_4 = require("./lookAheadStreamConditions");
  * Even though +- can be unary or binary ops, they will only be unary if they are the
  * first token encountered or they are immediately after a binary op.
  */
-class ExpressionFsa extends fsaUtils_4.BaseFsa {
+class ExpressionFsa extends fsaUtils_2.BaseFsa {
     constructor(options) {
         super();
         let startState = this.startState;
         let stopState = this.stopState;
-        let unaryState = new fsaUtils_5.FsaState("unary"); // prefix unary operators
-        let binaryState = new fsaUtils_5.FsaState("binary");
-        let binaryMayOmitArg2State = new fsaUtils_5.FsaState("binary may omit arg2"); // commas are like binary operators (they create tuples), but after the last comma, they do not require a trailing operand
-        let ternaryState = new fsaUtils_5.FsaState("ternary");
-        let postFixState = new fsaUtils_5.FsaState("postfix");
-        let numberState = new fsaUtils_5.FsaState("number");
-        let identifierState = new fsaUtils_5.FsaState("identifier");
-        let symbolState = new fsaUtils_5.FsaState("symbol");
-        let parenthesesState = new fsaUtils_5.FsaState("parentheses"); // Parentheses on their own control order of operations.
-        let functionCallState = new fsaUtils_5.FsaState("function call"); // Parentheses after identifiers or certain expressions is a function call.
+        let unaryState = new fsaUtils_3.FsaState("unary"); // prefix unary operators
+        let binaryState = new fsaUtils_3.FsaState("binary");
+        let binaryMayOmitArg2State = new fsaUtils_3.FsaState("binary may omit arg2"); // commas are like binary operators (they create tuples), but after the last comma, they do not require a trailing operand
+        let ternaryState = new fsaUtils_3.FsaState("ternary");
+        let postFixState = new fsaUtils_3.FsaState("postfix");
+        let numberState = new fsaUtils_3.FsaState("number");
+        let identifierState = new fsaUtils_3.FsaState("identifier");
+        let symbolState = new fsaUtils_3.FsaState("symbol");
+        let parenthesesState = new fsaUtils_3.FsaState("parentheses"); // Parentheses on their own control order of operations.
+        let functionCallState = new fsaUtils_3.FsaState("function call"); // Parentheses after identifiers or certain expressions is a function call.
         // collapse together the array literal and the indexing state
-        let squareBracketState = new fsaUtils_5.FsaState("square bracket");
+        let squareBracketState = new fsaUtils_3.FsaState("square bracket");
         //let arrayLiteralState = new FsaState("array literal") // Square brackets on their own create an array literal.
         //let indexingState = new FsaState("indexing") // Square brackets after identifiers or certain expressions is essentially an indexing function call.
-        let anyArrayLiteralState = new fsaUtils_5.FsaState("any array literal"); // {} on their own create an Any array literal.
-        let typeParametersState = new fsaUtils_5.FsaState("type parameters"); // {} after identifiers or certain expressions is a type parameters qualifier
-        let keywordBlockState = new fsaUtils_5.FsaState("keyword block"); // ie if...end, for...end, try...end
-        let doBlockState = new fsaUtils_5.FsaState("do block");
-        let quoteState = new fsaUtils_5.FsaState("quote");
-        let stringMacroState = new fsaUtils_5.FsaState("string macro"); // eg regex r""
-        let macroCallState = new fsaUtils_5.FsaState("macro invocation");
-        let returnState = new fsaUtils_5.FsaState("return");
-        let breakState = new fsaUtils_5.FsaState("break");
-        let continueState = new fsaUtils_5.FsaState("continue");
-        let singleColonState = new fsaUtils_5.FsaState(":");
-        let localVarState = new fsaUtils_5.FsaState("local var");
-        let globalVarState = new fsaUtils_5.FsaState("global var");
-        let constVarState = new fsaUtils_5.FsaState("const var");
-        let typeAliasKeyword = new fsaUtils_5.FsaState("typealias");
-        let typeAliasName = new fsaUtils_5.FsaState("typealias name");
-        let typeAliasGenericParamList = new fsaUtils_5.FsaState("type alias generic param list");
-        let typeAliasRefersTo = new fsaUtils_5.FsaState("typealias refers to");
-        let splatState = new fsaUtils_5.FsaState("...");
-        let commaAfterSplatState = new fsaUtils_5.FsaState("comma after ...");
+        let anyArrayLiteralState = new fsaUtils_3.FsaState("any array literal"); // {} on their own create an Any array literal.
+        let typeParametersState = new fsaUtils_3.FsaState("type parameters"); // {} after identifiers or certain expressions is a type parameters qualifier
+        let keywordBlockState = new fsaUtils_3.FsaState("keyword block"); // ie if...end, for...end, try...end
+        let doBlockState = new fsaUtils_3.FsaState("do block");
+        let quoteState = new fsaUtils_3.FsaState("quote");
+        let stringMacroState = new fsaUtils_3.FsaState("string macro"); // eg regex r""
+        let macroCallState = new fsaUtils_3.FsaState("macro invocation");
+        let returnState = new fsaUtils_3.FsaState("return");
+        let breakState = new fsaUtils_3.FsaState("break");
+        let continueState = new fsaUtils_3.FsaState("continue");
+        let singleColonState = new fsaUtils_3.FsaState(":");
+        let localVarState = new fsaUtils_3.FsaState("local var");
+        let globalVarState = new fsaUtils_3.FsaState("global var");
+        let constVarState = new fsaUtils_3.FsaState("const var");
+        let typeAliasKeyword = new fsaUtils_3.FsaState("typealias");
+        let typeAliasName = new fsaUtils_3.FsaState("typealias name");
+        let typeAliasGenericParamList = new fsaUtils_3.FsaState("type alias generic param list");
+        let typeAliasRefersTo = new fsaUtils_3.FsaState("typealias refers to");
+        let splatState = new fsaUtils_3.FsaState("...");
+        let commaAfterSplatState = new fsaUtils_3.FsaState("comma after ...");
         // used to ignore comments, line whitespace, and new lines (via option)
         let allStatesNotStop = [startState, unaryState, binaryState, binaryMayOmitArg2State, ternaryState, postFixState,
             numberState, identifierState, symbolState,
@@ -208,17 +188,13 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
             startState.addArc(singleColonState, streamConditions_10.streamAtColon, readSingleColonAsIdentifier);
             singleColonState.addArc(stopState, streamNotAtContinuingOp, doNothing);
         }
-        // 'return' can only appear at the start
-        if (options.allowReturn) {
-            startState.addArc(returnState, streamConditions_11.streamAtReturn, readReturn);
-            returnState.addArc(stopState, streamConditions_12.streamAtEof, doNothing);
-            returnState.addArc(stopState, streamConditions_23.streamAtNewLineOrSemicolon, doNothing);
-        }
+        returnState.addArc(stopState, streamConditions_12.streamAtEof, doNothing);
+        returnState.addArc(stopState, streamConditions_23.streamAtNewLineOrSemicolon, doNothing);
+        // return can also be followed by an expression
+        returnState.addArc(stopState, streamConditions_27.alwaysPasses, readReturnExpression);
         // 'break' can only appear by itself
-        startState.addArc(breakState, streamConditions_7.streamAtBreak, readBreak);
         breakState.addArc(stopState, streamConditions_27.alwaysPasses, doNothing);
         // continue can only appear by itself
-        startState.addArc(continueState, streamConditions_6.streamAtContinue, readContinue);
         continueState.addArc(stopState, streamConditions_27.alwaysPasses, doNothing);
         // 'local' 'global' 'const' can only appear at the start
         startState.addArc(localVarState, streamConditions_24.streamAtLocal, readLocalVarDeclaration);
@@ -270,7 +246,7 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
             state.addArc(identifierState, lookAheadStreamConditions_4.streamAtOperatorThatIsIdentifier, readOperatorAndConvertToIdentifier);
         }
         // These states must be followed by something that creates a valid expression.
-        for (let state of [startState, returnState, unaryState, binaryState, binaryMayOmitArg2State, ternaryState, commaAfterSplatState]) {
+        for (let state of [startState, unaryState, binaryState, binaryMayOmitArg2State, ternaryState, commaAfterSplatState]) {
             state.addArc(keywordBlockState, lookAheadStreamConditions_3.streamAtFunctionCompactDeclaration, readFunctionCompactDef); // must be checked before streamAtIdentifier and streamAtUnaryOp
             state.addArc(unaryState, streamConditions_17.streamAtUnaryOp, readUnaryOp); // can have multiple unary in a row
             state.addArc(numberState, streamConditions_15.streamAtNumber, readNumber);
@@ -285,6 +261,13 @@ class ExpressionFsa extends fsaUtils_4.BaseFsa {
             state.addArc(keywordBlockState, streamConditions_3.streamAtKeywordBlock, readKeywordBlock);
             state.addArc(quoteState, streamConditions_22.streamAtAnyQuote, readAnyQuote);
             state.addArc(stringMacroState, streamConditions_29.streamAtStringMacro, readStringMacro);
+            // technically, break/continue/return can only be after the startState or after the "&&" or "||" operator
+            // but to simplify, we just allow it after all these possibilities
+            state.addArc(continueState, streamConditions_6.streamAtContinue, readContinue);
+            state.addArc(breakState, streamConditions_7.streamAtBreak, readBreak);
+            if (options.allowReturn) {
+                state.addArc(returnState, streamConditions_11.streamAtReturn, readReturn);
+            }
         }
         // a number followed immediately by an identifier or an open parentheses (no whitespace in between) implies multiplication
         numberState.addArc(identifierState, streamConditions_16.streamAtIdentifier, readImplicitMultiplicationIdentifier);
@@ -420,11 +403,11 @@ function skipOneToken(state) {
 }
 function readReturn(state) {
     state.ts.read(); // discard return token
-    state.nodes.push(new nodes_13.ReturnNode());
+    state.nodes.push(new nodes_11.ReturnNode());
 }
 function readBreak(state) {
     state.ts.read(); // discard break token
-    state.nodes.push(new nodes_15.BreakNode());
+    state.nodes.push(new nodes_13.BreakNode());
 }
 function readContinue(state) {
     state.ts.read(); // discard continue token
@@ -443,7 +426,7 @@ function readConstVarDeclaration(state) {
     state.nodes.push(VarDeclarationFsa_3.parseConstStatement(state.ts, state.wholeState));
 }
 function readTypeAliasName(state) {
-    let typeDefNode = new nodes_11.TypeDefNode();
+    let typeDefNode = new nodes_9.TypeDefNode();
     typeDefNode.name = new nodes_7.IdentifierNode(state.ts.read());
     state.mostRecentTypeAlias = typeDefNode;
 }
@@ -471,7 +454,7 @@ function readBinaryOp(state) {
 }
 function readTernaryOp(state) {
     let token = state.ts.read();
-    let node = new nodes_12.TernaryOpNode(token);
+    let node = new nodes_10.TernaryOpNode(token);
     node.trueExpression = parseTernaryOpTrueExpression(state.ts, state.wholeState);
     // read the colon
     state.ts.skipToNextNonWhitespace();
@@ -511,12 +494,12 @@ function readNumber(state) {
 }
 function readSymbol(state) {
     let token = state.ts.read();
-    let node = new nodes_16.SymbolNode(token);
+    let node = new nodes_14.SymbolNode(token);
     state.nodes.push(node);
 }
 function readStringMacro(state) {
     let token = state.ts.read();
-    let node = new nodes_17.StringMacroNode(token);
+    let node = new nodes_15.StringMacroNode(token);
     state.nodes.push(node);
 }
 function readIdentifier(state) {
@@ -539,7 +522,7 @@ function readSingleColonAsIdentifier(state) {
     state.nodes.push(node);
 }
 function readGroupingParentheses(state) {
-    let node = parseGroupingParenthesisExpression(state.ts.read(), state.wholeState);
+    let node = ParenthesesFsa_1.parseGroupingParentheses(state.ts.read(), state.wholeState);
     state.nodes.push(node);
 }
 function readFunctionCallParentheses(state) {
@@ -583,10 +566,10 @@ function readAnonymousFunctionDef(state) {
     state.ts.skipToNextNonWhitespace();
     state.ts.read(); // arrow
     state.ts.skipToNextNonWhitespace();
-    let funcNode = new nodes_10.FunctionDefNode();
+    let funcNode = new nodes_8.FunctionDefNode();
     // args
     if (argsToken.type === operatorsAndKeywords_3.TokenType.Identifier) {
-        let arg = new nodes_14.FunctionDefArgNode();
+        let arg = new nodes_12.FunctionDefArgNode();
         arg.name = new nodes_7.IdentifierNode(argsToken);
         funcNode.args.orderedArgs.push(arg);
     }
@@ -639,8 +622,8 @@ function readKeywordBlock(state) {
             break;
         case "quote":
             throw new errors_1.InvalidParseError("Unimplemented", unparsedTree);
-            //node = new CodeQuoteNode()
-            break;
+        //node = new CodeQuoteNode()
+        // break
         case "begin":
             node = BeginBlockFsa_1.parseWholeBeginBlock(unparsedTree, state.wholeState);
             break;
@@ -664,6 +647,16 @@ function readKeywordBlock(state) {
     }
     state.nodes.push(node);
 }
+function readReturnExpression(state) {
+    let expr = parseGeneralBlockExpression(state.ts, state.wholeState);
+    let retNode = arrayUtils_1.last(state.nodes);
+    if (retNode instanceof nodes_11.ReturnNode) {
+        retNode.returnValue = expr;
+    }
+    else {
+        throw new assert_1.AssertError("");
+    }
+}
 // FSA objects take a bit of work to construct and are designed to be stateless,
 // so just create global objects once and reuse them.
 // This fsa can be used to read any block contents
@@ -686,26 +679,27 @@ var fsaTernaryOpTrueExpression = new ExpressionFsa(fsaOptions);
 function parseTernaryOpTrueExpression(ts, wholeState) {
     return fsaTernaryOpTrueExpression.runStartToStop(ts, wholeState);
 }
-fsaOptions = new ExpressionFsaOptions();
-fsaOptions.newLineInMiddleDoesNotEndExpression = true;
-fsaOptions.allowSplat = true;
-var fsaGroupingParenthesisExpression = new ExpressionFsa(fsaOptions);
-function parseGroupingParenthesisExpression(parenTree, wholeState) {
-    if (parenTree.openToken.str !== "(")
-        throw new assert_1.AssertError("");
-    let ts = new TokenStream_1.TokenStream(parenTree.contents, parenTree.openToken);
-    let node = new nodes_8.ParenthesesNode();
-    try {
-        ts.skipToNextNonWhitespace();
-        if (ts.eof())
-            return new nodes_9.EmptyTupleNode();
-        node.expression = fsaGroupingParenthesisExpression.runStartToStop(ts, wholeState);
-        fsaUtils_2.expectNoMoreExpressions(ts);
-    }
-    catch (err) {
-        fsaUtils_3.handleParseErrorOnly(err, node, parenTree.contents, wholeState);
-    }
-    return node;
-}
-exports.parseGroupingParenthesisExpression = parseGroupingParenthesisExpression;
+// export function parseGroupingParenthesisExpression(parenTree: TreeToken, wholeState: WholeFileParseState): Node {
+//   // handles arithmetic expression grouping
+//   //   eg (a + b) * c
+//   // as well as tuples
+//   //   since "," is treated simply as a binary operator
+//   // as well as multiple semicolon delimited statements
+//
+//   if (parenTree.openToken.str !== "(") throw new AssertError("")
+//   let ts = new TokenStream(parenTree.contents, parenTree.openToken)
+//   let node = new ParenthesesNode()
+//
+//   try {
+//     ts.skipToNextNonWhitespace()
+//     if (ts.eof()) return new EmptyTupleNode()
+//
+//     node.expression = fsaGroupingParenthesisExpression.runStartToStop(ts, wholeState)
+//     expectNoMoreExpressions(ts)
+//
+//   } catch (err) {
+//     handleParseErrorOnly(err, node, parenTree.contents, wholeState)
+//   }
+//   return node
+// }
 //# sourceMappingURL=ExpressionFsa.js.map

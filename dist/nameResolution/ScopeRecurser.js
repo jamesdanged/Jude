@@ -1,49 +1,35 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var nodes_1 = require("../parseTree/nodes");
-var nodes_2 = require("../parseTree/nodes");
-var nodes_3 = require("../parseTree/nodes");
-var nodes_4 = require("../parseTree/nodes");
-var nodes_5 = require("../parseTree/nodes");
-var Token_1 = require("../tokens/Token");
-var ScopeBuilder_1 = require("./ScopeBuilder");
-var nodepath = require("path");
-var arrayUtils_1 = require("../utils/arrayUtils");
-var errors_1 = require("../utils/errors");
-var nodes_6 = require("../parseTree/nodes");
-var Scope_1 = require("./Scope");
-var nodes_7 = require("../parseTree/nodes");
-var nodes_8 = require("../parseTree/nodes");
-var nodes_9 = require("../parseTree/nodes");
-var nodes_10 = require("../parseTree/nodes");
-var nodes_11 = require("../parseTree/nodes");
-var nodes_12 = require("../parseTree/nodes");
-var nodes_13 = require("../parseTree/nodes");
-var nodes_14 = require("../parseTree/nodes");
-var nodes_15 = require("../parseTree/nodes");
-var nodes_16 = require("../parseTree/nodes");
-var nodes_17 = require("../parseTree/nodes");
-var nodes_18 = require("../parseTree/nodes");
-var nodes_19 = require("../parseTree/nodes");
-var nodes_20 = require("../parseTree/nodes");
-var assert_1 = require("../utils/assert");
-var StringSet_1 = require("../utils/StringSet");
-var Resolve_1 = require("./Resolve");
-var Resolve_2 = require("./Resolve");
-var errors_2 = require("../utils/errors");
-var nodes_21 = require("../parseTree/nodes");
+const nodes_1 = require("../parseTree/nodes");
+const nodes_2 = require("../parseTree/nodes");
+const nodes_3 = require("../parseTree/nodes");
+const nodes_4 = require("../parseTree/nodes");
+const nodes_5 = require("../parseTree/nodes");
+const Token_1 = require("../tokens/Token");
+const ScopeBuilder_1 = require("./ScopeBuilder");
+const nodepath = require("path");
+const arrayUtils_1 = require("../utils/arrayUtils");
+const errors_1 = require("../utils/errors");
+const nodes_6 = require("../parseTree/nodes");
+const Scope_1 = require("./Scope");
+const nodes_7 = require("../parseTree/nodes");
+const nodes_8 = require("../parseTree/nodes");
+const nodes_9 = require("../parseTree/nodes");
+const nodes_10 = require("../parseTree/nodes");
+const nodes_11 = require("../parseTree/nodes");
+const nodes_12 = require("../parseTree/nodes");
+const nodes_13 = require("../parseTree/nodes");
+const nodes_14 = require("../parseTree/nodes");
+const nodes_15 = require("../parseTree/nodes");
+const nodes_16 = require("../parseTree/nodes");
+const nodes_17 = require("../parseTree/nodes");
+const nodes_18 = require("../parseTree/nodes");
+const nodes_19 = require("../parseTree/nodes");
+const nodes_20 = require("../parseTree/nodes");
+const assert_1 = require("../utils/assert");
+const StringSet_1 = require("../utils/StringSet");
+const Resolve_1 = require("./Resolve");
+const Resolve_2 = require("./Resolve");
+const nodes_21 = require("../parseTree/nodes");
 /**
  * Recursively creates scopes.
  */
@@ -54,22 +40,22 @@ class ScopeRecurser {
         this.onlyRetrieveImports = onlyRetrieveImports;
         this.alreadyInitializedRoots = alreadyInitializedRoots;
         this.openFiles = openFiles;
-        this.resolveRootStack = [];
+        this.moduleResolveInfoStack = [];
         this.scopeStack = [];
         this.fileStack = [];
         this.deferredFunctionsToResolve = [];
         this.builder = new ScopeBuilder_1.ScopeBuilder(this);
     }
-    get currResolveRoot() { return arrayUtils_1.last(this.resolveRootStack); }
+    get currModuleResolveInfo() { return arrayUtils_1.last(this.moduleResolveInfoStack); }
     get currFile() { return arrayUtils_1.last(this.fileStack); }
     get currScope() { return arrayUtils_1.last(this.scopeStack); }
     /**
      * Recursively resolves all scopes within the module.
      * Also recurses through included files.
      */
-    resolveRecursively(resolveRoot) {
-        this.fileStack.push(resolveRoot.containingFile);
-        this.resolveRootScope(resolveRoot);
+    resolveRecursively(moduleResolveInfo) {
+        this.fileStack.push(moduleResolveInfo.containingFile);
+        this.resolveModuleScope(moduleResolveInfo);
         this.fileStack.pop();
         // resolve bodies of functions after the enclosing module has been resolved
         while (this.deferredFunctionsToResolve.length > 0) {
@@ -77,10 +63,10 @@ class ScopeRecurser {
             cb();
         }
     }
-    resolveRootScope(resolveRoot) {
-        this.resolveRootStack.push(resolveRoot);
-        let rootNode = resolveRoot.root;
-        let rootScope = resolveRoot.scope;
+    resolveModuleScope(moduleResolveInfo) {
+        this.moduleResolveInfoStack.push(moduleResolveInfo);
+        let rootNode = moduleResolveInfo.root;
+        let rootScope = moduleResolveInfo.scope;
         if (this.alreadyInitializedRoots.indexOf(rootScope) >= 0)
             throw new assert_1.AssertError("");
         this.alreadyInitializedRoots.push(rootScope);
@@ -102,7 +88,7 @@ class ScopeRecurser {
         // recurse
         this.resolveNodeSequence(rootNode.expressions);
         this.scopeStack.pop();
-        this.resolveRootStack.pop();
+        this.moduleResolveInfoStack.pop();
     }
     resolveNodeSequence(nodes) {
         for (let node of nodes) {
@@ -220,21 +206,44 @@ class ScopeRecurser {
     resolveMultiDotNode(node) {
         if (node.nodes.length === 0)
             throw new assert_1.AssertError("");
-        // resolve recursively if any part is a complex expression
-        for (let part of node.nodes) {
-            if (!(part instanceof nodes_6.IdentifierNode)) {
-                this.resolveNode(part);
-            }
-        }
-        // only try to resolve parts which are not dynamic
-        let prefix = [];
+        // Gather the parts that can be resolved via module lookup
+        //   ie Foo.Bar.Baz
+        //   but not after the 'Foo' in Foo.(a || b).Baz
+        // Also gather any parts which are expressions which need to be resolved in the current context
+        // instead of another module.
+        let multiPartName = [];
+        let toResolveInContext = [];
+        let continueMultiPartName = true;
         for (let part of node.nodes) {
             if (part instanceof nodes_6.IdentifierNode) {
-                prefix.push(part);
+                if (continueMultiPartName) {
+                    multiPartName.push(part);
+                }
+            }
+            else if (part instanceof nodes_1.GenericArgListNode && part.typeName instanceof nodes_6.IdentifierNode) {
+                if (continueMultiPartName) {
+                    multiPartName.push(part.typeName);
+                }
+                for (let iparam of part.params) {
+                    toResolveInContext.push(iparam);
+                }
+                continueMultiPartName = false;
+            }
+            else {
+                // some sort of compound expression
+                // ie foo.(A || B).bar
+                // resolve the expression within this context
+                toResolveInContext.push(part);
+                continueMultiPartName = false;
             }
         }
-        if (prefix.length > 0) {
-            this.resolveMultiPartName(prefix);
+        // resolve the multi part name by looking up in modules
+        if (multiPartName.length > 0) {
+            this.resolveMultiPartName(multiPartName);
+        }
+        // resolve anything that should be resolved in the current context
+        for (let toResolve of toResolveInContext) {
+            this.resolveNode(toResolve);
         }
     }
     resolveMultiPartName(multiPartName) {
@@ -242,7 +251,8 @@ class ScopeRecurser {
         // storing a resolution object for each name part
         // Stop when encounter a non-module,
         //   eg stop at 'obj' in the name 'Mod1.obj.prop.propOfProp'
-        for (let i = 0; i < multiPartName.length; i++) {
+        let i_first_non_dot = multiPartName.findIndex(o => o.str !== ".");
+        for (let i = i_first_non_dot; i < multiPartName.length; i++) {
             let prefix = multiPartName.slice(0, i + 1);
             let resOrError = this.currScope.tryResolveMultiPartName(prefix);
             if (resOrError instanceof errors_1.NameError) {
@@ -273,8 +283,8 @@ class ScopeRecurser {
             }
             else if (node.arg1 instanceof nodes_1.ParenthesesNode) {
                 let parenNode = node.arg1;
-                if (parenNode.expression instanceof nodes_5.TupleNode) {
-                    let tupNode = parenNode.expression;
+                if (parenNode.expressions.length == 1 && parenNode.expressions[0] instanceof nodes_5.TupleNode) {
+                    let tupNode = parenNode.expressions[0];
                     for (let item of tupNode.nodes) {
                         if (item instanceof nodes_6.IdentifierNode) {
                             this.builder.createNameByAssignmentIfNecessary(item);
@@ -287,7 +297,6 @@ class ScopeRecurser {
             else if (node.arg1 instanceof nodes_21.MultiDotNode) {
                 let multiDotNode = node.arg1;
                 if (!multiDotNode.nodes.every((o) => { return o instanceof nodes_6.IdentifierNode; })) {
-                    this.logParseError(new errors_2.InvalidParseError("Expected a variable name to be assigned to.", node.token));
                 }
                 else {
                 }
@@ -456,11 +465,11 @@ class ScopeRecurser {
     }
     resolveModuleDefNode(node) {
         // recurse into the inner module
-        let resolveRoot = this.parseSet.getResolveRoot(node);
-        if (this.alreadyInitializedRoots.indexOf(resolveRoot.scope) < 0) {
-            this.resolveRootScope(resolveRoot);
+        let mri = this.parseSet.getModuleResolveInfo(node);
+        if (this.alreadyInitializedRoots.indexOf(mri.scope) < 0) {
+            this.resolveModuleScope(mri);
         }
-        this.builder.registerModule(node, resolveRoot.scope);
+        this.builder.registerModule(node, mri.scope);
     }
     resolveIncludeNode(node) {
         let path = nodepath.resolve(nodepath.dirname(this.currFile), node.relativePath);
@@ -513,13 +522,13 @@ class ScopeRecurser {
     deferResolvingFunction(functionDefNode) {
         let scopeStackSnapshot = this.scopeStack.slice();
         let fileStackSnapshot = this.fileStack.slice();
-        let resolveRootStackSnapshot = this.resolveRootStack.slice();
+        let moduleResolveInfoStackSnapshot = this.moduleResolveInfoStack.slice();
         let that = this;
         let cb = () => {
             // restore stacks
             that.scopeStack = scopeStackSnapshot;
             that.fileStack = fileStackSnapshot;
-            that.resolveRootStack = resolveRootStackSnapshot;
+            that.moduleResolveInfoStack = moduleResolveInfoStackSnapshot;
             // register generic arg names
             if (functionDefNode.genericArgs !== null) {
                 for (let arg of functionDefNode.genericArgs.args) {

@@ -1,32 +1,19 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var fsaUtils_1 = require("../general/fsaUtils");
-var fsaUtils_2 = require("../general/fsaUtils");
-var streamConditions_1 = require("./../../tokens/streamConditions");
-var TokenStream_1 = require("./../../tokens/TokenStream");
-var nodes_1 = require("./../../parseTree/nodes");
-var streamConditions_2 = require("./../../tokens/streamConditions");
-var streamConditions_3 = require("./../../tokens/streamConditions");
-var streamConditions_4 = require("./../../tokens/streamConditions");
-var streamConditions_5 = require("./../../tokens/streamConditions");
-var streamConditions_6 = require("./../../tokens/streamConditions");
-var fsaUtils_3 = require("../general/fsaUtils");
-var fsaUtils_4 = require("../general/fsaUtils");
-var fsaUtils_5 = require("../general/fsaUtils");
-var assert_1 = require("../../utils/assert");
-var ExpressionFsa_1 = require("../general/ExpressionFsa");
+const fsaUtils_1 = require("../general/fsaUtils");
+const fsaUtils_2 = require("../general/fsaUtils");
+const streamConditions_1 = require("./../../tokens/streamConditions");
+const TokenStream_1 = require("./../../tokens/TokenStream");
+const nodes_1 = require("./../../parseTree/nodes");
+const streamConditions_2 = require("./../../tokens/streamConditions");
+const streamConditions_3 = require("./../../tokens/streamConditions");
+const streamConditions_4 = require("./../../tokens/streamConditions");
+const streamConditions_5 = require("./../../tokens/streamConditions");
+const streamConditions_6 = require("./../../tokens/streamConditions");
+const fsaUtils_3 = require("../general/fsaUtils");
+const fsaUtils_4 = require("../general/fsaUtils");
+const fsaUtils_5 = require("../general/fsaUtils");
+const assert_1 = require("../../utils/assert");
+const ExpressionFsa_1 = require("../general/ExpressionFsa");
 class WhileBlockFsa extends fsaUtils_3.BaseFsa {
     constructor() {
         super();
@@ -47,7 +34,7 @@ class WhileBlockFsa extends fsaUtils_3.BaseFsa {
         startState.addArc(condition, streamConditions_3.alwaysPasses, readCondition);
         condition.addArc(body, streamConditions_3.alwaysPasses, doNothing);
         body.addArc(stopState, streamConditions_4.streamAtEof, doNothing);
-        body.addArc(body, streamConditions_5.streamAtSemicolon, doNothing);
+        body.addArc(body, streamConditions_5.streamAtSemicolon, skipOneToken); // can have extra semicolons in body
         body.addArc(betweenExpressions, streamConditions_3.alwaysPasses, readBodyExpression);
         betweenExpressions.addArc(stopState, streamConditions_4.streamAtEof, doNothing);
         betweenExpressions.addArc(body, streamConditions_6.streamAtNewLineOrSemicolon, skipOneToken); // require delimiter

@@ -1,26 +1,21 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 /// <reference path="./../defs/atom/atom.d.ts" />
-var atomModule = require("atom");
-var nodepath = require("path");
-var Scope_1 = require("../nameResolution/Scope");
-var juliaChildProcess_1 = require("../utils/juliaChildProcess");
-var assert_1 = require("../utils/assert");
-var nodes_1 = require("../parseTree/nodes");
-var juliaChildProcess_2 = require("../utils/juliaChildProcess");
-var assert_2 = require("../utils/assert");
+const atomModule = require("atom");
+const nodepath = require("path");
+const ExternalModuleScope_1 = require("../nameResolution/ExternalModuleScope");
+const juliaChildProcess_1 = require("../utils/juliaChildProcess");
+const assert_1 = require("../utils/assert");
+const nodes_1 = require("../parseTree/nodes");
+const juliaChildProcess_2 = require("../utils/juliaChildProcess");
+const assert_2 = require("../utils/assert");
 /**
  * Contains summary info for all modules registered in the system.
  * Modules may be in the workspace or not.
@@ -40,12 +35,12 @@ class ModuleLibrary {
         }
         if ("serializedLines" in state) {
             for (let moduleFullName in state.serializedLines) {
-                this.modules[moduleFullName] = new Scope_1.ExternalModuleScope(moduleFullName, state.serializedLines[moduleFullName], this);
+                this.modules[moduleFullName] = new ExternalModuleScope_1.ExternalModuleScope(moduleFullName, state.serializedLines[moduleFullName], this);
             }
         }
     }
     refreshLoadPathsAsync() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let loadPaths = yield juliaChildProcess_1.runJuliaToGetLoadPathsAsync();
             this.loadPaths = loadPaths;
         });
@@ -59,7 +54,7 @@ class ModuleLibrary {
         state.loadPaths = this.loadPaths.slice();
         for (let moduleName in this.modules) {
             let scope = this.modules[moduleName];
-            if (scope instanceof Scope_1.ExternalModuleScope) {
+            if (scope instanceof ExternalModuleScope_1.ExternalModuleScope) {
                 state.serializedLines[moduleName] = scope.getSerializedLines();
             }
         }
@@ -86,7 +81,7 @@ exports.LibrarySerialized = LibrarySerialized;
  * Parse sets must already be built before this is run.
  */
 function resolveModuleForLibrary(fullModuleName, sessionModel) {
-    return __awaiter(this, void 0, Promise, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
         let moduleLibrary = sessionModel.moduleLibrary;
         if (fullModuleName in moduleLibrary.modules)
             throw new assert_1.AssertError("");
@@ -117,8 +112,8 @@ function resolveModuleForLibrary(fullModuleName, sessionModel) {
                         let moduleDefNode = expr;
                         if (moduleDefNode.name.str === outerModuleName) {
                             // get the matching scope
-                            let resolveRoot = sessionModel.parseSet.getResolveRoot(moduleDefNode);
-                            let moduleScope = resolveRoot.scope;
+                            let moduleResolveInfo = sessionModel.parseSet.getModuleResolveInfo(moduleDefNode);
+                            let moduleScope = moduleResolveInfo.scope;
                             // register it in the module library
                             //console.log("Registering workspace module '" + moduleName + "' in the library." )
                             moduleLibrary.modules[outerModuleName] = moduleScope;
@@ -143,7 +138,7 @@ exports.resolveModuleForLibrary = resolveModuleForLibrary;
  * @param moduleFullName  '.' delimited name
  */
 function addExternalModuleAsync(moduleLibrary, moduleFullName) {
-    return __awaiter(this, void 0, Promise, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
         try {
             console.log("Fetching module '" + moduleFullName + "' from Julia process to get type and function information.");
             let linesList = (yield juliaChildProcess_2.runJuliaToGetModuleDataAsync(moduleFullName));
@@ -171,7 +166,7 @@ function addExternalModuleAsync(moduleLibrary, moduleFullName) {
                     line[2] = "exported";
                 moduleLinesByName[name].push(line);
             }
-            moduleLibrary.modules[moduleFullName] = new Scope_1.ExternalModuleScope(moduleFullName, moduleLinesByName, moduleLibrary);
+            moduleLibrary.modules[moduleFullName] = new ExternalModuleScope_1.ExternalModuleScope(moduleFullName, moduleLinesByName, moduleLibrary);
             console.log("Successfully retrieved '" + moduleFullName + "' from Julia process.");
         }
         catch (err) {

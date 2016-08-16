@@ -1,20 +1,7 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var arrayUtils_1 = require("../utils/arrayUtils");
-var operatorsAndKeywords_1 = require("./../tokens/operatorsAndKeywords");
-var assert_1 = require("../utils/assert");
+const arrayUtils_1 = require("../utils/arrayUtils");
+const operatorsAndKeywords_1 = require("./../tokens/operatorsAndKeywords");
+const assert_1 = require("../utils/assert");
 class Node {
     constructor() {
     }
@@ -251,17 +238,37 @@ class ContinueNode extends Node {
 exports.ContinueNode = ContinueNode;
 /**
  * Simply for parentheses which are not function call related, but just order of operations.
+ * Tuples are represented by the TupleNode, which could also be wrapped by the ParenthesesNode.
+ * An empty tuple has its own EmptyTupleNode.
+ * Parentheses can wrap multiple semicolon delimited statements.
  */
 class ParenthesesNode extends MayBeUnparsedNode {
+    // expression: Node
     constructor() {
         super();
-        this.expression = null;
+        // this.expression = null
+        this.expressions = [];
     }
     toString() {
-        if (this.expression !== null) {
-            return this.expression.toString(); // don't need to wrap in extra parentheses for printing. Operator nodes will already have them.
+        if (this.expressions.length == 1) {
+            return this.expressions[0].toString(); // don't need to wrap in extra parentheses for printing. Operator nodes will already have them.
         }
-        return "( <missing> )";
+        else if (this.expressions.length == 0) {
+            return "( #missing# )";
+        }
+        else {
+            let res = "( ";
+            for (let expr of this.expressions) {
+                res += expr.toString();
+                res += "; ";
+            }
+            res += ")";
+            return res;
+        }
+        // if (this.expression !== null) {
+        //   return this.expression.toString()  // don't need to wrap in extra parentheses for printing. Operator nodes will already have them.
+        // }
+        // return "( <missing> )"
     }
 }
 exports.ParenthesesNode = ParenthesesNode;
@@ -714,6 +721,8 @@ class FileLevelNode extends ModuleContentsNode {
 }
 exports.FileLevelNode = FileLevelNode;
 class LoadNamesNode extends Node {
+    // Path parts can also involve periods.
+    //   eg import ..Foo.Inner
     constructor() {
         super();
         this.prefix = null;

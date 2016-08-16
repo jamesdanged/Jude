@@ -1,62 +1,56 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
-var taskUtils_1 = require("../utils/taskUtils");
-var nodepath = require("path");
-var atomApi_1 = require("../utils/atomApi");
-var Scope_1 = require("./Scope");
-var ScopeRecurser_1 = require("./ScopeRecurser");
-var StringSet_1 = require("../utils/StringSet");
-var ModuleLibrary_1 = require("../core/ModuleLibrary");
-var SessionModel_1 = require("../core/SessionModel");
-var nodes_1 = require("../parseTree/nodes");
-var assert_1 = require("../utils/assert");
-var nodes_2 = require("../parseTree/nodes");
-var errors_1 = require("../utils/errors");
-var StringSet_2 = require("../utils/StringSet");
+const taskUtils_1 = require("../utils/taskUtils");
+const nodepath = require("path");
+const atomApi_1 = require("../utils/atomApi");
+const ScopeRecurser_1 = require("./ScopeRecurser");
+const StringSet_1 = require("../utils/StringSet");
+const ModuleLibrary_1 = require("../core/ModuleLibrary");
+const SessionModel_1 = require("../core/SessionModel");
+const nodes_1 = require("../parseTree/nodes");
+const assert_1 = require("../utils/assert");
+const nodes_2 = require("../parseTree/nodes");
+const nodes_3 = require("../parseTree/nodes");
+const errors_1 = require("../utils/errors");
+const StringSet_2 = require("../utils/StringSet");
+const ModuleScope_1 = require("./ModuleScope");
 function resolveFullWorkspaceAsync(sessionModel) {
-    return __awaiter(this, void 0, Promise, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
         let parseSet = sessionModel.parseSet;
         let moduleLibrary = sessionModel.moduleLibrary;
         // map out the inclusion trees
         let t0 = Date.now();
-        populateRoots(sessionModel);
+        populateModuleResolveInfos(sessionModel);
         let t1 = Date.now();
-        taskUtils_1.log_elapsed("Mapped inclusion trees: " + (t1 - t0) + " ms");
+        taskUtils_1.logElapsed("Mapped inclusion trees: " + (t1 - t0) + " ms");
         // This pass will get a list of imports each module has.
         // Variable, function, type names are not resolved yet.
         t0 = Date.now();
         moduleLibrary.toQueryFromJulia = {};
         let alreadyInitializedRoots = [];
-        for (let resolveRoot of parseSet.resolveRoots) {
+        for (let mri of parseSet.compileRoots) {
             // already done in one of the previous recursive buildouts.
-            // A file level scope which is a root is by definition not included anywhere, so is not a problem for
-            // being included in multiple places.
-            if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) {
+            if (alreadyInitializedRoots.indexOf(mri.scope) >= 0) {
                 continue;
             }
             let recurser = new ScopeRecurser_1.ScopeRecurser(parseSet, moduleLibrary, true, alreadyInitializedRoots, []);
-            recurser.resolveRecursively(resolveRoot);
+            recurser.resolveRecursively(mri);
         }
         t1 = Date.now();
-        taskUtils_1.log_elapsed("Gather import list: " + (t1 - t0) + " ms");
+        taskUtils_1.logElapsed("Gather import list: " + (t1 - t0) + " ms");
         // refresh julia load paths if necessary
         if (moduleLibrary.loadPaths.length === 0) {
             t0 = Date.now();
             yield moduleLibrary.refreshLoadPathsAsync();
             t1 = Date.now();
-            taskUtils_1.log_elapsed("Refreshed load paths from Julia: " + (t1 - t0) + " ms");
+            taskUtils_1.logElapsed("Refreshed load paths from Julia: " + (t1 - t0) + " ms");
         }
         // load all top level modules that were imported but could not be found
         t0 = Date.now();
@@ -65,56 +59,113 @@ function resolveFullWorkspaceAsync(sessionModel) {
             yield ModuleLibrary_1.resolveModuleForLibrary(moduleName, sessionModel);
         }
         t1 = Date.now();
-        taskUtils_1.log_elapsed("Loaded unresolved modules: " + (t1 - t0) + " ms");
-        // now resolve all the scopes
+        taskUtils_1.logElapsed("Loaded unresolved modules: " + (t1 - t0) + " ms");
+        // now that all available external modules from Julia have been loaded,
+        // resolve all the scopes
+        //
+        // Need to determine which modules in the workspace are dependent on other modules
+        // so they are resolved in correct order.
         t0 = Date.now();
-        // determine sequence to resolve, starting with dependencies first
-        let isDependencyOf = (mod1, mod2) => {
-            for (let importName of mod2.imports) {
-                if (importName in moduleLibrary.modules) {
-                    let scope = moduleLibrary.modules[importName];
-                    if (mod1.scope === scope)
-                        return true;
-                }
-                else {
-                }
-            }
-            return false;
-        };
-        let rootsOrderedByDependencies = [];
-        for (let resolveRoot of parseSet.resolveRoots) {
-            // search for any dependencies
-            // be sure to insert after the last dependency found
-            let indexToInsert = 0;
-            for (let i = 0; i < rootsOrderedByDependencies.length; i++) {
-                let iRoot = rootsOrderedByDependencies[i];
-                if (isDependencyOf(iRoot, resolveRoot)) {
-                    indexToInsert = i + 1;
-                }
-            }
-            rootsOrderedByDependencies.splice(indexToInsert, 0, resolveRoot);
-        }
-        // store them back in that order
-        parseSet.resolveRoots = rootsOrderedByDependencies;
+        sortCompileRootsByDependencyOrder(sessionModel);
         yield resolveRepeatedlyAsync(sessionModel);
-        parseSet.resolveRoots.forEach((o) => { o.scope.refreshPrefixTree(); });
+        parseSet.moduleResolveInfos.forEach((o) => { o.scope.refreshPrefixTree(); });
         sessionModel.partiallyResolved = false;
         t1 = Date.now();
-        taskUtils_1.log_elapsed("Resolve names fully: " + (t1 - t0) + " ms");
+        taskUtils_1.logElapsed("Resolve names fully: " + (t1 - t0) + " ms");
     });
 }
 exports.resolveFullWorkspaceAsync = resolveFullWorkspaceAsync;
+function sortCompileRootsByDependencyOrder(sessionModel) {
+    let parseSet = sessionModel.parseSet;
+    let moduleLibrary = sessionModel.moduleLibrary;
+    // gather all descendent mri's for each compile root
+    let mapNodeToModuleResolveInfo = new Map();
+    let mapCompileRootToAllDescendents = new Map();
+    for (let mri of parseSet.moduleResolveInfos) {
+        mapNodeToModuleResolveInfo.set(mri.root, mri);
+    }
+    for (let compileRoot of parseSet.compileRoots) {
+        let descendents = [];
+        mapCompileRootToAllDescendents.set(compileRoot, descendents);
+        let toRecurse = [];
+        toRecurse.push(compileRoot);
+        while (toRecurse.length > 0) {
+            let mri = toRecurse.shift();
+            for (let childModuleNode of mri.childrenModules) {
+                let childMri = mapNodeToModuleResolveInfo.get(childModuleNode);
+                if (!childMri)
+                    throw new assert_1.AssertError("");
+                descendents.push(childMri);
+                toRecurse.push(childMri);
+            }
+        }
+    }
+    // what global module name (if any) is each compile root associated with
+    let nameToCompileRoot = {};
+    for (let moduleFullName in moduleLibrary.modules) {
+        if (moduleFullName.split(".").length != 1)
+            continue;
+        let scope = moduleLibrary.modules[moduleFullName];
+        let foundMatchingCompileRoot = false;
+        for (let compileRoot of parseSet.compileRoots) {
+            let descendents = mapCompileRootToAllDescendents.get(compileRoot);
+            for (let mri of descendents) {
+                if (mri.scope === scope) {
+                    nameToCompileRoot[moduleFullName] = compileRoot;
+                    foundMatchingCompileRoot = true;
+                    break;
+                }
+            }
+            if (foundMatchingCompileRoot)
+                break;
+        }
+    }
+    let mapCompileRootToAllImportedNames = new Map();
+    for (let compileRoot of parseSet.compileRoots) {
+        let names = [];
+        mapCompileRootToAllImportedNames.set(compileRoot, names);
+        for (let iimport of compileRoot.imports)
+            names.push(iimport);
+        for (let desc of mapCompileRootToAllDescendents.get(compileRoot)) {
+            for (let iimport of desc.imports)
+                names.push(iimport);
+        }
+    }
+    let isDependencyOf = (compileRoot1, compileRoot2) => {
+        for (let iimport of mapCompileRootToAllImportedNames.get(compileRoot2)) {
+            if (nameToCompileRoot[iimport] === compileRoot1) {
+                return true;
+            }
+        }
+        return false;
+    };
+    let compileRootsOrderedByDependencies = [];
+    for (let mri of parseSet.compileRoots) {
+        // search for any dependencies
+        // be sure to insert after the last dependency found
+        let indexToInsert = 0;
+        for (let i = 0; i < compileRootsOrderedByDependencies.length; i++) {
+            let iRoot = compileRootsOrderedByDependencies[i];
+            if (isDependencyOf(iRoot, mri)) {
+                indexToInsert = i + 1;
+            }
+        }
+        compileRootsOrderedByDependencies.splice(indexToInsert, 0, mri);
+    }
+    // store them back in that order
+    parseSet.compileRoots = compileRootsOrderedByDependencies;
+}
 /**
  * Runs a resolve, then if any modules outside of workspace are needed, loads them from Julia, then
  * repeats.
  *
- * This progressively will properly resolve inner modules.
+ * This progressively will properly resolve inner modules, ie Base.LinAlg.
  * It allows us to only query from Julia the modules actively used in the workspace.
  *
- * The resolve roots need to already be set up.
+ * The compileRoots and moduleResolveInfos need to already be set up.
  */
 function resolveRepeatedlyAsync(sessionModel) {
-    return __awaiter(this, void 0, Promise, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
         let parseSet = sessionModel.parseSet;
         let moduleLibrary = sessionModel.moduleLibrary;
         let openFiles = atomApi_1.atomGetOpenFiles();
@@ -125,17 +176,17 @@ function resolveRepeatedlyAsync(sessionModel) {
             for (let fileName in parseSet.fileLevelNodes) {
                 parseSet.resetNamesForFile(fileName);
             }
-            for (let resolveRoot of parseSet.resolveRoots) {
-                resolveRoot.reset();
+            for (let mri of parseSet.moduleResolveInfos) {
+                mri.reset();
             }
             // resolve
             let alreadyInitializedRoots = [];
-            for (let resolveRoot of parseSet.resolveRoots) {
-                if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0) {
+            for (let mri of parseSet.compileRoots) {
+                if (alreadyInitializedRoots.indexOf(mri.scope) >= 0) {
                     continue;
                 }
                 let recurser = new ScopeRecurser_1.ScopeRecurser(parseSet, moduleLibrary, false, alreadyInitializedRoots, openFiles);
-                recurser.resolveRecursively(resolveRoot);
+                recurser.resolveRecursively(mri);
             }
             // if any modules need to load from Julia, load them, and then do another round of resolving
             let needAnotherRound = false;
@@ -150,49 +201,60 @@ function resolveRepeatedlyAsync(sessionModel) {
         }
     });
 }
-function populateRoots(sessionModel) {
+function populateModuleResolveInfos(sessionModel) {
     let parseSet = sessionModel.parseSet;
     let fileLevelNodes = parseSet.fileLevelNodes;
-    let candidateRoots = [];
-    // All module declarations are roots.
-    // All files not included by another file are roots.
-    // A file may contain a module declaration. Then the module is not considered a child of the file, but forming its own root.
-    let startNodesQueue = []; // [node, containing file path]
+    let moduleResolveInfos = [];
+    // ModuleContentsNodes can be broken down into three sets:
+    //   ModuleDefNodes: There will be a ModuleResolveInfo for all modules.
+    //   FileLevelNodes: There will also be a ModuleResolveInfo for all top level files (ie files not included by any other file)
+    //   FileLevelNodes: if included by any other file, not considered top level.
+    // A file may contain a module declaration. Then the module is not considered a child of the file,
+    // but will have its own info.
+    let modulesToSearchQueue = []; // [root node, containing file path, parent module]
     for (let file in fileLevelNodes) {
-        startNodesQueue.push([fileLevelNodes[file], file]);
+        modulesToSearchQueue.push([fileLevelNodes[file], file, null]);
     }
     let fileIsRoot = {};
     for (let file in fileLevelNodes) {
         fileIsRoot[file] = true;
     }
+    // track which includes point to files which don't exist
+    // and also which includes are duplicates or create a circular inclusion loop
     let badIncludeNodes = [];
-    // recurse through each root, finding any inner modules which will then be new roots
+    // recurse through each file or module, finding any inner modules which will then be new roots
     // as well as finding any inclusions, which define relateds
-    while (startNodesQueue.length > 0) {
-        let tup = startNodesQueue.shift();
-        let startNode = tup[0];
-        let startPath = tup[1];
+    while (modulesToSearchQueue.length > 0) {
+        let tup = modulesToSearchQueue.shift();
+        let rootNode = tup[0];
+        let rootContainingFile = tup[1];
+        let parent = tup[2];
         let relateds = [];
         let inclusionsToSearchQueue = [];
+        let children = [];
         let findInclusions = (nodeToSearch, containingFilePath) => {
             for (let expr of nodeToSearch.expressions) {
-                if (expr instanceof nodes_2.IncludeNode) {
+                if (expr instanceof nodes_3.IncludeNode) {
                     let inclNode = expr;
                     if (badIncludeNodes.indexOf(inclNode) >= 0)
                         continue;
                     let inclFullPath = nodepath.resolve(nodepath.dirname(containingFilePath), inclNode.relativePath); // these nodepath calls do not fail regardless of string
+                    // mark if included file doesn't exist
                     if (!(inclFullPath in fileLevelNodes)) {
                         badIncludeNodes.push(inclNode);
                         parseSet.errors[containingFilePath].parseErrors.push(new errors_1.InvalidParseError("File not found in workspace: " + inclFullPath, inclNode.includeString.token));
                         continue;
                     }
+                    // mark if include file is duplicate or circular
                     let inclFileNode = fileLevelNodes[inclFullPath];
-                    if (relateds.indexOf(inclFileNode) >= 0 || inclFullPath === startPath) {
+                    if (relateds.indexOf(inclFileNode) >= 0 || inclFullPath === rootContainingFile) {
                         badIncludeNodes.push(inclNode);
-                        parseSet.errors[containingFilePath].parseErrors.push(new errors_1.InvalidParseError("Circular includes.", inclNode.includeString.token));
+                        parseSet.errors[containingFilePath].parseErrors.push(new errors_1.InvalidParseError("Duplicate or circular include.", inclNode.includeString.token));
                         continue;
                     }
+                    // the included file is considered related to the current root
                     relateds.push(inclFileNode);
+                    // mark that the included file is not itself a root
                     fileIsRoot[inclFullPath] = false;
                     // queue up to later recurse through this included file
                     inclusionsToSearchQueue.push(inclFileNode);
@@ -200,50 +262,72 @@ function populateRoots(sessionModel) {
                 else if (expr instanceof nodes_1.ModuleDefNode) {
                     // an inner module
                     // this is a new root which must be searched separately
-                    startNodesQueue.push([expr, containingFilePath]);
+                    let innerModule = expr;
+                    modulesToSearchQueue.push([innerModule, containingFilePath, rootNode]); // parent of the inner module is this root
+                    children.push(innerModule);
                 }
-            }
-        };
-        findInclusions(startNode, startPath);
+            } // for expr
+        }; // findInclusions
+        // find inclusions
+        // initialize
+        findInclusions(rootNode, rootContainingFile);
         // recurse
         while (inclusionsToSearchQueue.length > 0) {
             let fileNode = inclusionsToSearchQueue.shift();
             findInclusions(fileNode, fileNode.path);
         }
-        let resolveRoot = new SessionModel_1.ResolveRoot();
-        resolveRoot.root = startNode;
-        resolveRoot.containingFile = startPath;
-        resolveRoot.relateds = relateds;
-        resolveRoot.scope = new Scope_1.ModuleScope();
-        resolveRoot.scope.tokenStart = startNode.scopeStartToken;
-        resolveRoot.scope.tokenEnd = startNode.scopeEndToken;
-        if (startNode instanceof nodes_1.ModuleDefNode)
-            resolveRoot.scope.moduleShortName = startNode.name.str;
-        // leave resolving imports for later
-        candidateRoots.push(resolveRoot);
-    }
-    // remove any non roots
+        let moduleResolveInfo = new SessionModel_1.ModuleResolveInfo();
+        moduleResolveInfo.root = rootNode;
+        moduleResolveInfo.containingFile = rootContainingFile;
+        moduleResolveInfo.relateds = relateds;
+        moduleResolveInfo.scope = new ModuleScope_1.ModuleScope();
+        moduleResolveInfo.scope.tokenStart = rootNode.scopeStartToken;
+        moduleResolveInfo.scope.tokenEnd = rootNode.scopeEndToken;
+        moduleResolveInfo.parentModule = parent;
+        moduleResolveInfo.childrenModules = children;
+        if (rootNode instanceof nodes_1.ModuleDefNode)
+            moduleResolveInfo.scope.moduleShortName = rootNode.name.str;
+        if (parent !== null) {
+            let parentMri = moduleResolveInfos.find((o) => o.root === parent);
+            if (!parentMri)
+                throw new assert_1.AssertError("");
+            moduleResolveInfo.scope.parentModuleScope = parentMri.scope;
+        }
+        moduleResolveInfos.push(moduleResolveInfo);
+    } // moduleToSearchQueue
+    // The above recursions would have encountered a file more than once if it was not really a root, but rather
+    // was included by other roots.
+    // Remove these non roots.
+    // This should deduplicate all files.
     for (let filePath in fileIsRoot) {
         if (!fileIsRoot[filePath]) {
             let fileLevelNode = fileLevelNodes[filePath];
-            let index = candidateRoots.findIndex((item) => { return item.root === fileLevelNode; });
+            let index = moduleResolveInfos.findIndex((item) => { return item.root === fileLevelNode; });
             if (index < 0)
                 throw new assert_1.AssertError("");
-            candidateRoots.splice(index, 1);
+            moduleResolveInfos.splice(index, 1);
         }
     }
-    parseSet.resolveRoots = candidateRoots;
+    parseSet.moduleResolveInfos = moduleResolveInfos;
+    parseSet.compileRoots = [];
+    for (let mri of parseSet.moduleResolveInfos) {
+        if (mri.parentModule === null) {
+            if (!(mri.root instanceof nodes_2.FileLevelNode))
+                throw new assert_1.AssertError("");
+            parseSet.compileRoots.push(mri);
+        }
+    }
     // update the module library
     let moduleLibrary = sessionModel.moduleLibrary;
-    for (let resolveRoot of parseSet.resolveRoots) {
-        let path = resolveRoot.containingFile;
+    for (let mri of parseSet.moduleResolveInfos) {
+        let path = mri.containingFile;
         if (path in moduleLibrary.workspaceModulePaths) {
             let moduleName = moduleLibrary.workspaceModulePaths[path];
-            if (resolveRoot.root instanceof nodes_1.ModuleDefNode) {
-                let moduleDefNode = resolveRoot.root;
+            if (mri.root instanceof nodes_1.ModuleDefNode) {
+                let moduleDefNode = mri.root;
                 if (moduleDefNode.name.str === moduleName) {
                     // is a match
-                    moduleLibrary.modules[moduleName] = resolveRoot.scope;
+                    moduleLibrary.modules[moduleName] = mri.scope;
                 }
             }
         }
@@ -262,29 +346,29 @@ function populateRoots(sessionModel) {
  * to correct the inconsistencies. A good time to do that is when switching tabs.
  */
 function resolveScopesInWorkspaceInvolvingFile(path, sessionModel) {
-    return __awaiter(this, void 0, Promise, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
         let t0 = Date.now();
         let parseSet = sessionModel.parseSet;
         let fileLevelNode = parseSet.fileLevelNodes[path];
         if (!fileLevelNode)
             throw new assert_1.AssertError("");
         // gather list of roots involving the file
-        let rootsInvolvingFile = [];
-        for (let resolveRoot of parseSet.resolveRoots) {
-            if (resolveRoot.containingFile === path) {
-                rootsInvolvingFile.push(resolveRoot);
+        let modulesInvolvingFile = [];
+        for (let mri of parseSet.moduleResolveInfos) {
+            if (mri.containingFile === path) {
+                modulesInvolvingFile.push(mri);
             }
             else {
-                if (resolveRoot.relateds.indexOf(fileLevelNode) >= 0) {
-                    rootsInvolvingFile.push(resolveRoot);
+                if (mri.relateds.indexOf(fileLevelNode) >= 0) {
+                    modulesInvolvingFile.push(mri);
                 }
             }
         }
         // reset modules that involve the file directly
-        for (let resolveRoot of rootsInvolvingFile) {
-            resolveRoot.scope.reset();
-            parseSet.resetNamesForFile(resolveRoot.containingFile);
-            for (let relatedFileNode of resolveRoot.relateds) {
+        for (let mri of modulesInvolvingFile) {
+            mri.scope.reset();
+            parseSet.resetNamesForFile(mri.containingFile);
+            for (let relatedFileNode of mri.relateds) {
                 parseSet.resetNamesForFile(relatedFileNode.path);
             }
         }
@@ -292,21 +376,21 @@ function resolveScopesInWorkspaceInvolvingFile(path, sessionModel) {
         // re resolve them
         let openFiles = atomApi_1.atomGetOpenFiles();
         let alreadyInitializedRoots = [];
-        for (let resolveRoot of rootsInvolvingFile) {
-            if (alreadyInitializedRoots.indexOf(resolveRoot.scope) >= 0)
+        for (let mri of modulesInvolvingFile) {
+            if (alreadyInitializedRoots.indexOf(mri.scope) >= 0)
                 continue;
             let recurser = new ScopeRecurser_1.ScopeRecurser(parseSet, sessionModel.moduleLibrary, false, alreadyInitializedRoots, openFiles);
-            recurser.resolveRecursively(resolveRoot);
-            resolveRoot.scope.refreshPrefixTree();
+            recurser.resolveRecursively(mri);
+            mri.scope.refreshPrefixTree();
         }
         // if any inner modules newly need to be queried from julia, retrieve them
         if (StringSet_2.stringSetToArray(sessionModel.moduleLibrary.toQueryFromJulia).length > 0) {
             yield resolveRepeatedlyAsync(sessionModel);
-            parseSet.resolveRoots.forEach((o) => { o.scope.refreshPrefixTree(); });
+            parseSet.moduleResolveInfos.forEach((o) => { o.scope.refreshPrefixTree(); });
         }
         sessionModel.partiallyResolved = true;
         let t1 = Date.now();
-        taskUtils_1.log_elapsed("Refreshed related scopes: " + (t1 - t0) + " ms");
+        taskUtils_1.logElapsed("Refreshed related scopes: " + (t1 - t0) + " ms");
     });
 }
 exports.resolveScopesInWorkspaceInvolvingFile = resolveScopesInWorkspaceInvolvingFile;

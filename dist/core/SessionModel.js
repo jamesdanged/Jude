@@ -1,22 +1,9 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var arrayUtils_1 = require("../utils/arrayUtils");
-var arrayUtils_2 = require("../utils/arrayUtils");
-var ModuleLibrary_1 = require("./ModuleLibrary");
-var assert_1 = require("../utils/assert");
-var nodes_1 = require("../parseTree/nodes");
+const arrayUtils_1 = require("../utils/arrayUtils");
+const arrayUtils_2 = require("../utils/arrayUtils");
+const ModuleLibrary_1 = require("./ModuleLibrary");
+const assert_1 = require("../utils/assert");
+const nodes_1 = require("../parseTree/nodes");
 /**
  * Stores the parses from the files.
  * Stores names resolved from modules in library.
@@ -39,7 +26,8 @@ class ParseSet {
         this.scopes = {};
         this.identifiers = {};
         this.errors = {};
-        this.resolveRoots = [];
+        this.moduleResolveInfos = [];
+        this.compileRoots = [];
     }
     createEntriesForFile(path) {
         this.fileLevelNodes[path] = new nodes_1.FileLevelNode(path);
@@ -52,7 +40,8 @@ class ParseSet {
         arrayUtils_2.resetHash(this.scopes);
         arrayUtils_2.resetHash(this.identifiers);
         arrayUtils_2.resetHash(this.errors);
-        arrayUtils_1.clearArray(this.resolveRoots);
+        arrayUtils_1.clearArray(this.moduleResolveInfos);
+        arrayUtils_1.clearArray(this.compileRoots);
     }
     /**
      * Clears node contents, and all logged scopes, logged identifiers, and logged errors related to a file.
@@ -77,41 +66,44 @@ class ParseSet {
         this.identifiers[path] = new FileIdentifiers();
         this.errors[path].nameErrors = [];
     }
-    getResolveRoot(rootNode) {
-        let res = this.tryGetResolveRoot(rootNode);
+    getModuleResolveInfo(rootNode) {
+        let res = this.tryGetModuleResolveInfo(rootNode);
         if (res === null) {
             throw new assert_1.AssertError("");
         }
         return res;
     }
-    tryGetResolveRoot(rootNode) {
-        let idx = this.resolveRoots.findIndex((pr) => { return pr.root === rootNode; });
+    tryGetModuleResolveInfo(rootNode) {
+        let idx = this.moduleResolveInfos.findIndex((pr) => { return pr.root === rootNode; });
         if (idx < 0)
             return null;
-        return this.resolveRoots[idx];
+        return this.moduleResolveInfos[idx];
     }
 }
 exports.ParseSet = ParseSet;
 /**
- * A parse root corresponds to a module.
- * Every declared module...end is a root.
- * Top level files (ie not included in any other files) are themselves roots.
+ * All contextual information needed to resolve a module.
+ *
+ * There is one of these for every declared module...end.
+ * There is also one of these for every top level file (ie a file not included in any other files).
  *
  */
-class ResolveRoot {
+class ModuleResolveInfo {
     constructor() {
         this.root = null;
         this.relateds = [];
         this.containingFile = null;
         this.scope = null;
         this.imports = [];
+        this.parentModule = null;
+        this.childrenModules = [];
     }
     reset() {
         this.scope.reset();
         this.imports = [];
     }
 }
-exports.ResolveRoot = ResolveRoot;
+exports.ModuleResolveInfo = ModuleResolveInfo;
 /**
  * Contains all the scopes created in the file.
  * One for each file.

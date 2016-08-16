@@ -1,31 +1,26 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 /// <reference path="./../defs/atom/atom.d.ts" />
-var Resolve_1 = require("../nameResolution/Resolve");
-var assert_1 = require("../utils/assert");
-var arrayUtils_1 = require("../utils/arrayUtils");
-var Resolve_2 = require("../nameResolution/Resolve");
-var atomApi_1 = require("../utils/atomApi");
-var nodepath = require("path");
-var atomApi_2 = require("../utils/atomApi");
-var arrayUtils_2 = require("../utils/arrayUtils");
-var Resolve_3 = require("../nameResolution/Resolve");
-var Resolve_4 = require("../nameResolution/Resolve");
-var Resolve_5 = require("../nameResolution/Resolve");
-var Resolve_6 = require("../nameResolution/Resolve");
-var Resolve_7 = require("../nameResolution/Resolve");
+const Resolve_1 = require("../nameResolution/Resolve");
+const assert_1 = require("../utils/assert");
+const arrayUtils_1 = require("../utils/arrayUtils");
+const Resolve_2 = require("../nameResolution/Resolve");
+const atomApi_1 = require("../utils/atomApi");
+const nodepath = require("path");
+const atomApi_2 = require("../utils/atomApi");
+const arrayUtils_2 = require("../utils/arrayUtils");
+const Resolve_3 = require("../nameResolution/Resolve");
+const Resolve_4 = require("../nameResolution/Resolve");
+const Resolve_5 = require("../nameResolution/Resolve");
+const Resolve_6 = require("../nameResolution/Resolve");
+const Resolve_7 = require("../nameResolution/Resolve");
 class JumpController {
     constructor(sessionModel) {
         this.sessionModel = sessionModel;
@@ -35,7 +30,7 @@ class JumpController {
         this.currentlyJumping = false;
     }
     jumpToDefinitionAsync(editor) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let path = editor.getPath();
             let identifiers = arrayUtils_1.getFromHash(this.sessionModel.parseSet.identifiers, path);
             let atomPoint = editor.getCursorBufferPosition();
@@ -133,7 +128,7 @@ class JumpController {
         });
     }
     onAutoCompleteDidInsertSuggestionsAsync(options) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             options.editor.undo();
             let destPath = options.suggestion.destPath;
             let node = options.suggestion.node;
@@ -146,7 +141,7 @@ class JumpController {
         });
     }
     jumpAsync(destPath, destPoint) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let destAtomPoint = atomApi_2.toAtomPoint(destPoint);
             let oldPoint = this.getCurrentPosition();
             this.currentlyJumping = true;
@@ -170,7 +165,7 @@ class JumpController {
         });
     }
     goBackAsync() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             if (this.jumpHistory.length === 0)
                 return;
             if (this.currJumpHistoryIndex === 0)
@@ -191,7 +186,7 @@ class JumpController {
         });
     }
     goForwardAsync() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             if (this.jumpHistory.length < 2)
                 return;
             if (this.currJumpHistoryIndex === this.jumpHistory.length - 1)

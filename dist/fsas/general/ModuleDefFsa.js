@@ -1,31 +1,18 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var fsaUtils_1 = require("./fsaUtils");
-var ModuleContentsFsa_1 = require("./ModuleContentsFsa");
-var fsaUtils_2 = require("./fsaUtils");
-var fsaUtils_3 = require("./fsaUtils");
-var fsaUtils_4 = require("./fsaUtils");
-var TokenStream_1 = require("../../tokens/TokenStream");
-var nodes_1 = require("../../parseTree/nodes");
-var fsaUtils_5 = require("./fsaUtils");
-var streamConditions_1 = require("../../tokens/streamConditions");
-var streamConditions_2 = require("../../tokens/streamConditions");
-var streamConditions_3 = require("../../tokens/streamConditions");
-var nodes_2 = require("../../parseTree/nodes");
-var streamConditions_4 = require("../../tokens/streamConditions");
-var assert_1 = require("../../utils/assert");
+const fsaUtils_1 = require("./fsaUtils");
+const ModuleContentsFsa_1 = require("./ModuleContentsFsa");
+const fsaUtils_2 = require("./fsaUtils");
+const fsaUtils_3 = require("./fsaUtils");
+const fsaUtils_4 = require("./fsaUtils");
+const TokenStream_1 = require("../../tokens/TokenStream");
+const nodes_1 = require("../../parseTree/nodes");
+const fsaUtils_5 = require("./fsaUtils");
+const streamConditions_1 = require("../../tokens/streamConditions");
+const streamConditions_2 = require("../../tokens/streamConditions");
+const streamConditions_3 = require("../../tokens/streamConditions");
+const nodes_2 = require("../../parseTree/nodes");
+const streamConditions_4 = require("../../tokens/streamConditions");
+const assert_1 = require("../../utils/assert");
 class ModuleDefFsa extends fsaUtils_3.BaseFsa {
     constructor() {
         super();

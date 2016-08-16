@@ -1,33 +1,28 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
-var taskUtils_1 = require("../utils/taskUtils");
-var fileUtils_1 = require("../utils/fileUtils");
-var resolveFullWorkspace_1 = require("../nameResolution/resolveFullWorkspace");
-var nodepath = require("path");
-var taskUtils_2 = require("../utils/taskUtils");
-var parseFile_1 = require("../parseTree/parseFile");
-var resolveFullWorkspace_2 = require("../nameResolution/resolveFullWorkspace");
-var assert_1 = require("../utils/assert");
-var nodes_1 = require("../parseTree/nodes");
+const taskUtils_1 = require("../utils/taskUtils");
+const fileUtils_1 = require("../utils/fileUtils");
+const resolveFullWorkspace_1 = require("../nameResolution/resolveFullWorkspace");
+const nodepath = require("path");
+const taskUtils_2 = require("../utils/taskUtils");
+const parseFile_1 = require("../parseTree/parseFile");
+const resolveFullWorkspace_2 = require("../nameResolution/resolveFullWorkspace");
+const assert_1 = require("../utils/assert");
+const nodes_1 = require("../parseTree/nodes");
 function parseFullWorkspaceAsync(sessionModel) {
-    return __awaiter(this, void 0, Promise, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
         sessionModel.parseSet.reset();
         let t0 = Date.now();
         let allContents = yield loadProjectFiles();
         let t1 = Date.now();
-        taskUtils_1.log_elapsed("Successfully read project files from disk: " + (t1 - t0) + " ms");
+        taskUtils_1.logElapsed("Successfully read project files from disk: " + (t1 - t0) + " ms");
         // parse all the files into expression trees
         t0 = Date.now();
         for (let path in allContents) {
@@ -39,7 +34,7 @@ function parseFullWorkspaceAsync(sessionModel) {
             });
         }
         t1 = Date.now();
-        taskUtils_1.log_elapsed("Parsed expression trees: " + (t1 - t0) + " ms");
+        taskUtils_1.logElapsed("Parsed expression trees: " + (t1 - t0) + " ms");
         yield resolveFullWorkspace_2.resolveFullWorkspaceAsync(sessionModel);
         // report parse errors to console
         for (let path in sessionModel.parseSet.errors) {
@@ -53,7 +48,7 @@ function parseFullWorkspaceAsync(sessionModel) {
 }
 exports.parseFullWorkspaceAsync = parseFullWorkspaceAsync;
 function refreshFileAsync(path, fileContents, sessionModel) {
-    return __awaiter(this, void 0, Promise, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
         if (nodepath.extname(path) !== ".jl")
             throw new assert_1.AssertError("");
         let mustReparseFullWorkspace = false;
@@ -66,7 +61,7 @@ function refreshFileAsync(path, fileContents, sessionModel) {
         let t0 = Date.now();
         parseFile_1.parseFile(path, fileContents, sessionModel);
         let t1 = Date.now();
-        taskUtils_1.log_elapsed("Reparsed one file: " + (t1 - t0) + " ms");
+        taskUtils_1.logElapsed("Reparsed one file: " + (t1 - t0) + " ms");
         // If module declaration involved after, also must reparse whole workspace.
         // The node object stays the same, just its contents changed.
         if (fileLevelNode.expressions.findIndex((o) => { return o instanceof nodes_1.ModuleDefNode; }) >= 0)
@@ -90,7 +85,7 @@ exports.refreshFileAsync = refreshFileAsync;
  * @returns Hash path -> contents
  */
 function loadProjectFiles() {
-    return __awaiter(this, void 0, Promise, function* () {
+    return __awaiter(this, void 0, void 0, function* () {
         if (mockedProjectFiles !== null)
             return mockedProjectFiles;
         let projectDirs = atom.project.getDirectories();

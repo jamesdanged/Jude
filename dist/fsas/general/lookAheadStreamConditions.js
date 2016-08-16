@@ -1,35 +1,22 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var streamConditions_1 = require("./../../tokens/streamConditions");
-var streamConditions_2 = require("./../../tokens/streamConditions");
-var streamConditions_3 = require("./../../tokens/streamConditions");
-var fsaUtils_1 = require("./fsaUtils");
-var streamConditions_4 = require("./../../tokens/streamConditions");
-var streamConditions_5 = require("./../../tokens/streamConditions");
-var streamConditions_6 = require("./../../tokens/streamConditions");
-var streamConditions_7 = require("./../../tokens/streamConditions");
-var streamConditions_8 = require("./../../tokens/streamConditions");
-var streamConditions_9 = require("./../../tokens/streamConditions");
-var streamConditions_10 = require("./../../tokens/streamConditions");
-var streamConditions_11 = require("./../../tokens/streamConditions");
-var streamConditions_12 = require("./../../tokens/streamConditions");
-var streamConditions_13 = require("./../../tokens/streamConditions");
-var fsaUtils_2 = require("./fsaUtils");
-var streamConditions_14 = require("./../../tokens/streamConditions");
-var streamConditions_15 = require("./../../tokens/streamConditions");
-var streamConditions_16 = require("./../../tokens/streamConditions");
+const streamConditions_1 = require("./../../tokens/streamConditions");
+const streamConditions_2 = require("./../../tokens/streamConditions");
+const streamConditions_3 = require("./../../tokens/streamConditions");
+const fsaUtils_1 = require("./fsaUtils");
+const streamConditions_4 = require("./../../tokens/streamConditions");
+const streamConditions_5 = require("./../../tokens/streamConditions");
+const streamConditions_6 = require("./../../tokens/streamConditions");
+const streamConditions_7 = require("./../../tokens/streamConditions");
+const streamConditions_8 = require("./../../tokens/streamConditions");
+const streamConditions_9 = require("./../../tokens/streamConditions");
+const streamConditions_10 = require("./../../tokens/streamConditions");
+const streamConditions_11 = require("./../../tokens/streamConditions");
+const streamConditions_12 = require("./../../tokens/streamConditions");
+const streamConditions_13 = require("./../../tokens/streamConditions");
+const fsaUtils_2 = require("./fsaUtils");
+const streamConditions_14 = require("./../../tokens/streamConditions");
+const streamConditions_15 = require("./../../tokens/streamConditions");
+const streamConditions_16 = require("./../../tokens/streamConditions");
 // For running the stream through a mini fsa to see if it satifies a complex condition.
 // These need look ahead multiple tokens. The other stream conditions just peek ahead one token.
 // Because they are more complex, it's clearer to represent them as mini FSAs.

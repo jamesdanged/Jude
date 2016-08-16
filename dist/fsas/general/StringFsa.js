@@ -1,35 +1,22 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var fsaUtils_1 = require("./fsaUtils");
-var fsaUtils_2 = require("./fsaUtils");
-var fsaUtils_3 = require("./fsaUtils");
-var fsaUtils_4 = require("./fsaUtils");
-var streamConditions_1 = require("../../tokens/streamConditions");
-var TokenStream_1 = require("../../tokens/TokenStream");
-var fsaUtils_5 = require("./fsaUtils");
-var nodes_1 = require("../../parseTree/nodes");
-var streamConditions_2 = require("../../tokens/streamConditions");
-var nodes_2 = require("../../parseTree/nodes");
-var streamConditions_3 = require("../../tokens/streamConditions");
-var streamConditions_4 = require("../../tokens/streamConditions");
-var streamConditions_5 = require("../../tokens/streamConditions");
-var streamConditions_6 = require("../../tokens/streamConditions");
-var nodes_3 = require("../../parseTree/nodes");
-var Token_1 = require("../../tokens/Token");
-var assert_1 = require("../../utils/assert");
-var ExpressionFsa_1 = require("./ExpressionFsa");
+const fsaUtils_1 = require("./fsaUtils");
+const fsaUtils_2 = require("./fsaUtils");
+const fsaUtils_3 = require("./fsaUtils");
+const fsaUtils_4 = require("./fsaUtils");
+const streamConditions_1 = require("../../tokens/streamConditions");
+const TokenStream_1 = require("../../tokens/TokenStream");
+const fsaUtils_5 = require("./fsaUtils");
+const nodes_1 = require("../../parseTree/nodes");
+const streamConditions_2 = require("../../tokens/streamConditions");
+const nodes_2 = require("../../parseTree/nodes");
+const streamConditions_3 = require("../../tokens/streamConditions");
+const streamConditions_4 = require("../../tokens/streamConditions");
+const streamConditions_5 = require("../../tokens/streamConditions");
+const streamConditions_6 = require("../../tokens/streamConditions");
+const nodes_3 = require("../../parseTree/nodes");
+const Token_1 = require("../../tokens/Token");
+const assert_1 = require("../../utils/assert");
+const ParenthesesFsa_1 = require("../bracketed/ParenthesesFsa");
 /**
  * Handles interpolated strings and simple strings.
  * Works for double quoted string and backtick (`) strings.
@@ -84,7 +71,7 @@ function readInterpolationVariable(state) {
 function readInterpolationExpression(state) {
     let tok = state.ts.read();
     if (tok instanceof Token_1.TreeToken) {
-        let exprNode = ExpressionFsa_1.parseGroupingParenthesisExpression(tok, state.wholeState);
+        let exprNode = ParenthesesFsa_1.parseGroupingParentheses(tok, state.wholeState);
         state.nodeToFill.contents.push(exprNode);
     }
     else {

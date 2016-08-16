@@ -1,76 +1,63 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var streamConditions_1 = require("../../tokens/streamConditions");
-var streamConditions_2 = require("../../tokens/streamConditions");
-var streamConditions_3 = require("../../tokens/streamConditions");
-var nodes_1 = require("../../parseTree/nodes");
-var streamConditions_4 = require("../../tokens/streamConditions");
-var streamConditions_5 = require("../../tokens/streamConditions");
-var fsaUtils_1 = require("./fsaUtils");
-var ExpressionFsa_1 = require("./ExpressionFsa");
-var fsaUtils_2 = require("./fsaUtils");
-var TokenStream_1 = require("../../tokens/TokenStream");
-var streamConditions_6 = require("./../../tokens/streamConditions");
-var streamConditions_7 = require("./../../tokens/streamConditions");
-var streamConditions_8 = require("./../../tokens/streamConditions");
-var streamConditions_9 = require("./../../tokens/streamConditions");
-var streamConditions_10 = require("./../../tokens/streamConditions");
-var streamConditions_11 = require("./../../tokens/streamConditions");
-var streamConditions_12 = require("./../../tokens/streamConditions");
-var streamConditions_13 = require("./../../tokens/streamConditions");
-var nodes_2 = require("../../parseTree/nodes");
-var nodes_3 = require("../../parseTree/nodes");
-var nodes_4 = require("../../parseTree/nodes");
-var nodes_5 = require("../../parseTree/nodes");
-var streamConditions_14 = require("./../../tokens/streamConditions");
-var streamConditions_15 = require("./../../tokens/streamConditions");
-var operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
-var errors_1 = require("../../utils/errors");
-var streamConditions_16 = require("./../../tokens/streamConditions");
-var streamConditions_17 = require("./../../tokens/streamConditions");
-var fsaUtils_3 = require("./fsaUtils");
-var fsaUtils_4 = require("./fsaUtils");
-var fsaUtils_5 = require("./fsaUtils");
-var streamConditions_18 = require("../../tokens/streamConditions");
-var streamConditions_19 = require("../../tokens/streamConditions");
-var nodes_6 = require("../../parseTree/nodes");
-var nodes_7 = require("../../parseTree/nodes");
-var nodes_8 = require("../../parseTree/nodes");
-var Token_1 = require("../../tokens/Token");
-var streamConditions_20 = require("../../tokens/streamConditions");
-var streamConditions_21 = require("../../tokens/streamConditions");
-var streamConditions_22 = require("../../tokens/streamConditions");
-var streamConditions_23 = require("../../tokens/streamConditions");
-var TypeDefFsa_1 = require("../declarations/TypeDefFsa");
-var MacroDefFsa_1 = require("../declarations/MacroDefFsa");
-var streamConditions_24 = require("../../tokens/streamConditions");
-var streamConditions_25 = require("../../tokens/streamConditions");
-var ModuleDefFsa_1 = require("./ModuleDefFsa");
-var streamConditions_26 = require("../../tokens/streamConditions");
-var assert_1 = require("../../utils/assert");
-var nodes_9 = require("../../parseTree/nodes");
-var GenericDefArgListFsa_1 = require("../declarations/GenericDefArgListFsa");
-var Token_2 = require("../../tokens/Token");
-var Token_3 = require("../../tokens/Token");
-var operatorsAndKeywords_2 = require("../../tokens/operatorsAndKeywords");
+const streamConditions_1 = require("../../tokens/streamConditions");
+const streamConditions_2 = require("../../tokens/streamConditions");
+const streamConditions_3 = require("../../tokens/streamConditions");
+const nodes_1 = require("../../parseTree/nodes");
+const streamConditions_4 = require("../../tokens/streamConditions");
+const streamConditions_5 = require("../../tokens/streamConditions");
+const fsaUtils_1 = require("./fsaUtils");
+const ExpressionFsa_1 = require("./ExpressionFsa");
+const fsaUtils_2 = require("./fsaUtils");
+const TokenStream_1 = require("../../tokens/TokenStream");
+const streamConditions_6 = require("./../../tokens/streamConditions");
+const streamConditions_7 = require("./../../tokens/streamConditions");
+const streamConditions_8 = require("./../../tokens/streamConditions");
+const streamConditions_9 = require("./../../tokens/streamConditions");
+const streamConditions_10 = require("./../../tokens/streamConditions");
+const streamConditions_11 = require("./../../tokens/streamConditions");
+const streamConditions_12 = require("./../../tokens/streamConditions");
+const streamConditions_13 = require("./../../tokens/streamConditions");
+const nodes_2 = require("../../parseTree/nodes");
+const nodes_3 = require("../../parseTree/nodes");
+const nodes_4 = require("../../parseTree/nodes");
+const nodes_5 = require("../../parseTree/nodes");
+const streamConditions_14 = require("./../../tokens/streamConditions");
+const streamConditions_15 = require("./../../tokens/streamConditions");
+const operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
+const errors_1 = require("../../utils/errors");
+const streamConditions_16 = require("./../../tokens/streamConditions");
+const streamConditions_17 = require("./../../tokens/streamConditions");
+const fsaUtils_3 = require("./fsaUtils");
+const fsaUtils_4 = require("./fsaUtils");
+const fsaUtils_5 = require("./fsaUtils");
+const streamConditions_18 = require("../../tokens/streamConditions");
+const streamConditions_19 = require("../../tokens/streamConditions");
+const nodes_6 = require("../../parseTree/nodes");
+const nodes_7 = require("../../parseTree/nodes");
+const nodes_8 = require("../../parseTree/nodes");
+const Token_1 = require("../../tokens/Token");
+const streamConditions_20 = require("../../tokens/streamConditions");
+const streamConditions_21 = require("../../tokens/streamConditions");
+const streamConditions_22 = require("../../tokens/streamConditions");
+const streamConditions_23 = require("../../tokens/streamConditions");
+const TypeDefFsa_1 = require("../declarations/TypeDefFsa");
+const MacroDefFsa_1 = require("../declarations/MacroDefFsa");
+const streamConditions_24 = require("../../tokens/streamConditions");
+const streamConditions_25 = require("../../tokens/streamConditions");
+const ModuleDefFsa_1 = require("./ModuleDefFsa");
+const streamConditions_26 = require("../../tokens/streamConditions");
+const assert_1 = require("../../utils/assert");
+const nodes_9 = require("../../parseTree/nodes");
+const GenericDefArgListFsa_1 = require("../declarations/GenericDefArgListFsa");
+const Token_2 = require("../../tokens/Token");
+const Token_3 = require("../../tokens/Token");
+const operatorsAndKeywords_2 = require("../../tokens/operatorsAndKeywords");
 /**
  * Recognizes the contents of a module.
  * Can be used for statements in the top level module or
  * for contents of a file which are included in a module
  * (both of which aren't surrounded by module...end).
- * This is the only FSA allowed to recognize import, importall, export, and using statements.
+ * This is the only FSA allowed to recognize include, import, importall, export, and using statements.
  */
 class ModuleContentsFsa extends fsaUtils_3.BaseFsa {
     constructor() {
@@ -168,11 +155,11 @@ class ModuleContentsFsa extends fsaUtils_3.BaseFsa {
         impFirstName.addArc(impComma, streamConditions_14.streamAtComma, skipOneToken);
         impFirstName.addArc(betweenExpressions, streamConditions_7.alwaysPasses, doNothing); // otherwise end of the import|importall|using statement
         // must be at least one name after a colon
-        impColon.addArc(impNamesList, streamConditions_7.alwaysPasses, readImpName);
+        impColon.addArc(impNamesList, streamConditions_7.alwaysPasses, readImpNameNoDots);
         // must have a comma to continue, or else end of the import/importall/using statement
         impNamesList.addArc(impComma, streamConditions_14.streamAtComma, skipOneToken);
         impNamesList.addArc(betweenExpressions, streamConditions_7.alwaysPasses, doNothing);
-        impComma.addArc(impNamesList, streamConditions_7.alwaysPasses, readImpName);
+        impComma.addArc(impNamesList, streamConditions_7.alwaysPasses, readImpNameNoDots);
         // handle export statement
         // must have at least one name
         exportStart.addArc(exportNamesList, streamConditions_17.streamAtIdentifier, readExportedName);
@@ -281,7 +268,11 @@ function readBodyExpression(state) {
     state.nodeToFill.expressions.push(expr);
 }
 function readImpName(state) {
-    let name = readMultiPartName(state);
+    let name = readMultiPartName(state, true);
+    state.lastImp.names.push(name);
+}
+function readImpNameNoDots(state) {
+    let name = readMultiPartName(state, false);
     state.lastImp.names.push(name);
 }
 function changeImpNameToPrefix(state) {
@@ -289,27 +280,62 @@ function changeImpNameToPrefix(state) {
     // convert previous name to be a prefix
     state.lastImp.prefix = state.lastImp.names.pop();
 }
-function readMultiPartName(state) {
+function readMultiPartName(state, allowPrefixDots) {
+    // parses the stream into a multi part name
+    // any ".." are broken down into individual "." and each considered an identifier
     let ts = state.ts;
     let name = [];
     let readNamePart = () => {
         let tok = null;
         if (streamConditions_2.streamAtOverridableOperator(state.ts)) {
-            // convert operator to an identifer
             tok = ts.read();
-            tok.type = operatorsAndKeywords_1.TokenType.Identifier;
+            tok.type = operatorsAndKeywords_1.TokenType.Identifier; // convert operator to an identifer
         }
         else if (streamConditions_1.streamAtMacroIdentifier(state.ts)) {
             tok = ts.read();
         }
+        else if (streamConditions_17.streamAtIdentifier(state.ts)) {
+            tok = ts.read();
+        }
         else {
             tok = ts.read();
-            if (tok.type !== operatorsAndKeywords_1.TokenType.Identifier) {
-                throw new errors_1.InvalidParseError("Expected an identifier, got " + tok.str, tok);
-            }
+            throw new errors_1.InvalidParseError("Expected an identifier, got " + tok.str, tok);
         }
         name.push(new nodes_8.IdentifierNode(tok));
     };
+    // any prefix dots
+    if (allowPrefixDots) {
+        while (!ts.eof()) {
+            let tok = ts.peek();
+            if (tok.type === operatorsAndKeywords_1.TokenType.Operator) {
+                if (tok.str === ".") {
+                    tok = ts.read();
+                    tok.type = operatorsAndKeywords_1.TokenType.Identifier;
+                    name.push(new nodes_8.IdentifierNode(tok));
+                }
+                else if (tok.str === "..") {
+                    // split into 2
+                    tok = ts.read();
+                    for (let i = 0; i < 2; i++) {
+                        name.push(new nodes_8.IdentifierNode(new Token_1.Token(".", operatorsAndKeywords_1.TokenType.Identifier, tok.range)));
+                    }
+                }
+                else if (tok.str === "...") {
+                    // split into 3
+                    tok = ts.read();
+                    for (let i = 0; i < 3; i++) {
+                        name.push(new nodes_8.IdentifierNode(new Token_1.Token(".", operatorsAndKeywords_1.TokenType.Identifier, tok.range)));
+                    }
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        }
+    }
     // at least one name part
     readNamePart();
     // try to read any further parts

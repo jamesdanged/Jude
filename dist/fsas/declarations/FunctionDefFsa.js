@@ -1,40 +1,27 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
-    });
-};
-var streamConditions_1 = require("../../tokens/streamConditions");
-var streamConditions_2 = require("../../tokens/streamConditions");
-var fsaUtils_1 = require("../general/fsaUtils");
-var FunctionDefArgListFsa_1 = require("./FunctionDefArgListFsa");
-var fsaUtils_2 = require("../general/fsaUtils");
-var streamConditions_3 = require("./../../tokens/streamConditions");
-var nodes_1 = require("./../../parseTree/nodes");
-var TokenStream_1 = require("./../../tokens/TokenStream");
-var streamConditions_4 = require("./../../tokens/streamConditions");
-var streamConditions_5 = require("./../../tokens/streamConditions");
-var streamConditions_6 = require("./../../tokens/streamConditions");
-var streamConditions_7 = require("./../../tokens/streamConditions");
-var streamConditions_8 = require("./../../tokens/streamConditions");
-var streamConditions_9 = require("./../../tokens/streamConditions");
-var streamConditions_10 = require("./../../tokens/streamConditions");
-var fsaUtils_3 = require("../general/fsaUtils");
-var fsaUtils_4 = require("../general/fsaUtils");
-var fsaUtils_5 = require("../general/fsaUtils");
-var nodes_2 = require("../../parseTree/nodes");
-var assert_1 = require("../../utils/assert");
-var GenericDefArgListFsa_1 = require("./GenericDefArgListFsa");
-var ExpressionFsa_1 = require("../general/ExpressionFsa");
-var operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
+const streamConditions_1 = require("../../tokens/streamConditions");
+const streamConditions_2 = require("../../tokens/streamConditions");
+const fsaUtils_1 = require("../general/fsaUtils");
+const FunctionDefArgListFsa_1 = require("./FunctionDefArgListFsa");
+const fsaUtils_2 = require("../general/fsaUtils");
+const streamConditions_3 = require("./../../tokens/streamConditions");
+const nodes_1 = require("./../../parseTree/nodes");
+const TokenStream_1 = require("./../../tokens/TokenStream");
+const streamConditions_4 = require("./../../tokens/streamConditions");
+const streamConditions_5 = require("./../../tokens/streamConditions");
+const streamConditions_6 = require("./../../tokens/streamConditions");
+const streamConditions_7 = require("./../../tokens/streamConditions");
+const streamConditions_8 = require("./../../tokens/streamConditions");
+const streamConditions_9 = require("./../../tokens/streamConditions");
+const streamConditions_10 = require("./../../tokens/streamConditions");
+const fsaUtils_3 = require("../general/fsaUtils");
+const fsaUtils_4 = require("../general/fsaUtils");
+const fsaUtils_5 = require("../general/fsaUtils");
+const nodes_2 = require("../../parseTree/nodes");
+const assert_1 = require("../../utils/assert");
+const GenericDefArgListFsa_1 = require("./GenericDefArgListFsa");
+const ExpressionFsa_1 = require("../general/ExpressionFsa");
+const operatorsAndKeywords_1 = require("../../tokens/operatorsAndKeywords");
 /**
  * An automaton that recognizes the entire contents within a function ... end block.
  */
