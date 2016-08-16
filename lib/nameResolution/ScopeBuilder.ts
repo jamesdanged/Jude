@@ -4,7 +4,7 @@ import {ExternalModuleResolve} from "./Resolve";
 import {addToSet} from "../utils/StringSet";
 import {MacroDefNode} from "../parseTree/nodes";
 import {MultiPartName} from "../parseTree/nodes";
-import {ModuleScope} from "./Scope";
+import {ModuleScope} from "./ModuleScope";
 import {ModuleResolve} from "./Resolve";
 import {ScopeRecurser} from "./ScopeRecurser";
 import {Scope} from "./Scope";
@@ -91,9 +91,17 @@ export class ScopeBuilder {
 
     // If the first part is not already imported, must be imported.
     let firstPart = multiPartName[0]
-    let firstNameSuccessfullyRegistered = this.registerSingleNameImport(firstPart)
-    if (!firstNameSuccessfullyRegistered) return
-    if (multiPartName.length === 1) return
+    if (firstPart.token.str !== ".") {
+      if (this.registerSingleNameImport(firstPart)) {
+        if (multiPartName.length === 1) {
+          return // no more name parts to register
+        } else {
+          // need to register rest of the name
+        }
+      } else {
+        return
+      }
+    }
 
     // try to search through modules for the full multi part name
     let resolveOrError = this.currScope.tryResolveMultiPartName(multiPartName)

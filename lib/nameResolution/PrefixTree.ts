@@ -1,6 +1,6 @@
 "use strict"
 
-import {ModuleScope} from "./Scope";
+import {ModuleScope} from "./ModuleScope";
 import {AssertError} from "../utils/assert";
 
 export function createPrefixTree(namesObject: any): PrefixTreeNode {  // names object is just a {} with each name as a field

@@ -2,7 +2,7 @@
 
 
 import {MacroDefNode} from "../parseTree/nodes";
-import {ModuleScope} from "./Scope";
+import {ModuleScope} from "./ModuleScope";
 import {Token} from "../tokens/Token";
 import {FunctionDefNode} from "../parseTree/nodes";
 import {Scope} from "./Scope";

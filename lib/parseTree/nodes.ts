@@ -845,11 +845,15 @@ export type MultiPartName = IdentifierNode[]
 export class LoadNamesNode extends Node {
   prefix: MultiPartName // eg the 'Foo' in 'import Foo: a, b, c'.   Can be null.
   names: MultiPartName[] // comma delimited names to import. Names can be compound paths delimited by period.
+                         // Path parts can also involve periods.
+                         //   eg import ..Foo.Inner
+
   constructor() {
     super()
     this.prefix = null
     this.names = []
   }
+
   getNamesWithPrefix(): IdentifierNode[][] {
     let arr: IdentifierNode[][] = []
     for (let name of this.names) {

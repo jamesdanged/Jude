@@ -194,13 +194,13 @@ class ModuleContentsFsa extends BaseFsa {
     impFirstName.addArc(betweenExpressions, alwaysPasses, doNothing) // otherwise end of the import|importall|using statement
 
     // must be at least one name after a colon
-    impColon.addArc(impNamesList, alwaysPasses, readImpName)
+    impColon.addArc(impNamesList, alwaysPasses, readImpNameNoDots)
 
     // must have a comma to continue, or else end of the import/importall/using statement
     impNamesList.addArc(impComma, streamAtComma, skipOneToken)
     impNamesList.addArc(betweenExpressions, alwaysPasses, doNothing)
 
-    impComma.addArc(impNamesList, alwaysPasses, readImpName)
+    impComma.addArc(impNamesList, alwaysPasses, readImpNameNoDots)
 
 
 
@@ -338,7 +338,12 @@ function readBodyExpression(state: ParseState): void {
 }
 
 function readImpName(state: ParseState): void {
-  let name = readMultiPartName(state)
+  let name = readMultiPartName(state, true)
+  state.lastImp.names.push(name)
+}
+
+function readImpNameNoDots(state: ParseState): void {
+  let name = readMultiPartName(state, false)
   state.lastImp.names.push(name)
 }
 
@@ -348,7 +353,10 @@ function changeImpNameToPrefix(state: ParseState): void {
   state.lastImp.prefix = state.lastImp.names.pop()
 }
 
-function readMultiPartName(state: ParseState): MultiPartName {
+function readMultiPartName(state: ParseState, allowPrefixDots: boolean): MultiPartName {
+  // parses the stream into a multi part name
+  // any ".." are broken down into individual "." and each considered an identifier
+
   let ts = state.ts
   let name: MultiPartName = []
 
@@ -356,18 +364,48 @@ function readMultiPartName(state: ParseState): MultiPartName {
   let readNamePart = () => {
     let tok: Token = null
     if (streamAtOverridableOperator(state.ts)) {
-      // convert operator to an identifer
       tok = ts.read()
-      tok.type = TokenType.Identifier
+      tok.type = TokenType.Identifier  // convert operator to an identifer
     } else if (streamAtMacroIdentifier(state.ts)) {
+      tok = ts.read()
+    } else if (streamAtIdentifier(state.ts)) {
       tok = ts.read()
     } else {
       tok = ts.read()
-      if (tok.type !== TokenType.Identifier) {
-        throw new InvalidParseError("Expected an identifier, got " + tok.str, tok)
-      }
+      throw new InvalidParseError("Expected an identifier, got " + tok.str, tok)
     }
     name.push(new IdentifierNode(tok))
+  }
+
+
+  // any prefix dots
+  if (allowPrefixDots) {
+    while (!ts.eof()) {
+      let tok = ts.peek()
+      if (tok.type === TokenType.Operator) {
+        if (tok.str === ".") {
+          tok = ts.read()
+          tok.type = TokenType.Identifier
+          name.push(new IdentifierNode(tok))
+        } else if (tok.str === "..") {
+          // split into 2
+          tok = ts.read()
+          for (let i = 0; i < 2; i++) {
+            name.push(new IdentifierNode(new Token(".", TokenType.Identifier, tok.range)))
+          }
+        } else if (tok.str === "...") {
+          // split into 3
+          tok = ts.read()
+          for (let i = 0; i < 3; i++) {
+            name.push(new IdentifierNode(new Token(".", TokenType.Identifier, tok.range)))
+          }
+        } else {
+          break
+        }
+      } else {
+        break
+      }
+    }
   }
 
 

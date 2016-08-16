@@ -12,7 +12,7 @@ import {SessionModel} from "./SessionModel";
 import {throwErrorFromTimeout} from "../utils/assert";
 import {AssertError} from "../utils/assert";
 import {toPoint} from "../utils/atomApi";
-import {ModuleScope} from "../nameResolution/Scope";
+import {ModuleScope} from "../nameResolution/ModuleScope";
 import {ModuleDefNode} from "../parseTree/nodes";
 import {ModuleResolve} from "../nameResolution/Resolve";
 import {TypeResolve} from "../nameResolution/Resolve";

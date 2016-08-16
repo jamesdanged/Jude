@@ -6,14 +6,14 @@
 import * as atomModule from "atom"
 import * as nodepath from "path"
 import {StringSet} from "../utils/StringSet";
-import {ExternalModuleScope} from "../nameResolution/Scope";
+import {ExternalModuleScope} from "../nameResolution/ExternalModuleScope";
 import {runJuliaToGetLoadPathsAsync} from "../utils/juliaChildProcess";
 import {AssertError} from "../utils/assert";
 import {SessionModel} from "./SessionModel";
 import {ModuleDefNode} from "../parseTree/nodes";
 import {runJuliaToGetModuleDataAsync} from "../utils/juliaChildProcess";
 import {throwErrorFromTimeout} from "../utils/assert";
-import {ModuleScope} from "../nameResolution/Scope";
+import {ModuleScope} from "../nameResolution/ModuleScope";
 import {Token} from "../tokens/Token";
 import {VariableResolve} from "../nameResolution/Resolve";
 

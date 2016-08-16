@@ -5,9 +5,7 @@ import {StringSet} from "../utils/StringSet";
 import * as nodepath from "path"
 import {SessionModel} from "../core/SessionModel";
 import {atomGetOpenFiles} from "../utils/atomApi";
-import {ModuleScope} from "./Scope";
 import {ScopeRecurser} from "./ScopeRecurser";
-import {createStringSet} from "../utils/StringSet";
 import {addToSet} from "../utils/StringSet";
 import {resolveModuleForLibrary} from "../core/ModuleLibrary";
 import {ModuleResolveInfo} from "../core/SessionModel";
@@ -18,6 +16,7 @@ import {ModuleContentsNode} from "../parseTree/nodes";
 import {IncludeNode} from "../parseTree/nodes";
 import {InvalidParseError} from "../utils/errors";
 import {stringSetToArray} from "../utils/StringSet";
+import {ModuleScope} from "./ModuleScope"
 
 
 
@@ -272,6 +271,7 @@ function populateModuleResolveInfos(sessionModel: SessionModel): void {
 
     let findInclusions = (nodeToSearch: ModuleContentsNode, containingFilePath: string) => {
       for (let expr of nodeToSearch.expressions) {
+
         if (expr instanceof IncludeNode) {
           let inclNode = expr as IncludeNode
           if (badIncludeNodes.indexOf(inclNode) >= 0) continue
@@ -301,15 +301,19 @@ function populateModuleResolveInfos(sessionModel: SessionModel): void {
 
           // queue up to later recurse through this included file
           inclusionsToSearchQueue.push(inclFileNode)
+
+
         } else if (expr instanceof ModuleDefNode) {
           // an inner module
           // this is a new root which must be searched separately
           let innerModule = expr
           modulesToSearchQueue.push([innerModule, containingFilePath, rootNode])  // parent of the inner module is this root
           children.push(innerModule)
+
         }
-      }
-    }
+
+      } // for expr
+    } // findInclusions
 
     // find inclusions
     // initialize
@@ -330,11 +334,18 @@ function populateModuleResolveInfos(sessionModel: SessionModel): void {
     moduleResolveInfo.parentModule = parent
     moduleResolveInfo.childrenModules = children
     if (rootNode instanceof ModuleDefNode) moduleResolveInfo.scope.moduleShortName = rootNode.name.str
+    if (parent !== null) {
+      let parentMri = moduleResolveInfos.find((o) => o.root === parent)
+      if (!parentMri) throw new AssertError("")
+      moduleResolveInfo.scope.parentModuleScope = parentMri.scope
+    }
 
     moduleResolveInfos.push(moduleResolveInfo)
 
     // leave resolving imports for later
-  }
+  } // moduleToSearchQueue
+
+
 
   // The above recursions would have encountered a file more than once if it was not really a root, but rather
   // was included by other roots.

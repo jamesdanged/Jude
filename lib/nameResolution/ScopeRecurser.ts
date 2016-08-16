@@ -6,7 +6,7 @@ import {MacroInvocationNode} from "../parseTree/nodes";
 import {MacroDefNode} from "../parseTree/nodes";
 import {MultiPartName} from "../parseTree/nodes";
 import {TupleNode} from "../parseTree/nodes";
-import {ModuleScope} from "./Scope";
+import {ModuleScope} from "./ModuleScope";
 import {Token} from "../tokens/Token";
 import {ModuleResolveInfo} from "../core/SessionModel";
 import {ParseSet} from "../core/SessionModel";
@@ -269,7 +269,9 @@ export class ScopeRecurser {
     // Stop when encounter a non-module,
     //   eg stop at 'obj' in the name 'Mod1.obj.prop.propOfProp'
 
-    for (let i = 0; i < multiPartName.length; i++) {
+    let i_first_non_dot = multiPartName.findIndex(o => o.str !== ".")
+
+    for (let i = i_first_non_dot; i < multiPartName.length; i++) {
       let prefix = multiPartName.slice(0, i+1)
       let resOrError = this.currScope.tryResolveMultiPartName(prefix)
       if (resOrError instanceof NameError) {
