@@ -49,15 +49,31 @@ module Mod1
     end
   end
 end
-
-# Mod1.Inner2.abc()
-
 `
+
+  let path2 = "/modules_2.jl"
+  let contents2 = `
+module Mod1
+  module Inner1
+    export foo
+    
+    function foo()
+      10
+    end
+  end
+  
+  using .Inner1
+  
+  foo()
+end
+`
+
 
 
   beforeAll(() => {
     let o: ProjectFilesHash = {}
     o[path1] = contents1
+    o[path2] = contents2
     mockAll(o)
   })
 
@@ -73,6 +89,11 @@ end
     done()
   })
 
+  it("should handle using with dots", async (done) => {
+    expect(errors[path2].parseErrors.length).toBe(0)
+    expect(errors[path2].nameErrors.length).toBe(0)
+    done()
+  })
 
 
 })
